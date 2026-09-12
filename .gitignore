@@ -1,0 +1,17 @@
+# Exclude 04 past exam folder
+04*/
+
+# Java build output
+**/target/
+*.class
+
+# IDE / OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+# Secrets
+.env
+.env.*
