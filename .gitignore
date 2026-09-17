@@ -1,6 +1,10 @@
 # Exclude 04 past exam folder
 04*/
 
+# Large local-only assets (not versioned)
+spring-todo-demo/vehicle_fmu_editor.zip
+（已压缩）系统分析师教程第二版(OCR).pdf
+
 # Java build output
 **/target/
 *.class
