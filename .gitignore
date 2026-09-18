@@ -1,3 +1,18 @@
+# Local symlinks (not versioned)
+/3dStudio
+/readme
+3dStudio/
+readme/
+
+# Study knowledge base runtime data
+study-kb/data/*.sqlite
+study-kb/data/*.sqlite-*
+
+# Debug session logs
+debug-*.log
+study-kb/debug-*.log
+study-kb/.cursor/
+
 # Exclude 04 past exam folder
 04*/
 
@@ -8,6 +23,10 @@ spring-todo-demo/vehicle_fmu_editor.zip
 # Java build output
 **/target/
 *.class
+
+# Python cache
+__pycache__/
+*.pyc
 
 # IDE / OS
 .idea/

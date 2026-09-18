@@ -1,0 +1,15 @@
+{
+  "id": "study.node-tree",
+  "version": "1.0.0",
+  "api": {"host": ">=1.0 <2.0"},
+  "activation": ["onStartupFinished"],
+  "contributes": {
+    "panels": [
+      {"id": "node-tree", "location": "inspector", "label": "章节树图"}
+    ],
+    "commands": [
+      {"id": "tree.refresh", "label": "刷新章节树"}
+    ]
+  },
+  "permissions": ["data.read:study_node", "data.read:v_study_scope_tree"]
+}

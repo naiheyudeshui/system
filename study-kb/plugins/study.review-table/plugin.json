@@ -1,0 +1,19 @@
+{
+  "id": "study.review-table",
+  "version": "1.0.0",
+  "api": {"host": ">=1.0 <2.0"},
+  "activation": ["onStartupFinished"],
+  "contributes": {
+    "panels": [
+      {"id": "review-table", "location": "inspector", "label": "表格复习"}
+    ],
+    "commands": [
+      {"id": "review.next", "label": "下一张到期卡"},
+      {"id": "review.grade", "label": "打分并跳下一张"}
+    ]
+  },
+  "permissions": [
+    "data.read:v_study_due_cards",
+    "data.write:study_card_fsrs"
+  ]
+}

@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Study Knowledge Base</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div id="app" class="app-shell">
+      <header class="topbar">
+        <div class="brand-block">
+          <span class="brand-mark">KB</span>
+          <div>
+            <h1>Study Knowledge Base</h1>
+            <p>章节树、知识卡片与 FSRS 复习调度</p>
+          </div>
+        </div>
+        <div class="toolbar">
+          <label class="search-box">
+            <span>搜索</span>
+            <input id="global-search" type="search" placeholder="卡片 / 章节 / 主题 / 来源">
+          </label>
+          <button id="theme-toggle" class="icon-button" data-icon="moon" type="button" title="切换日间/夜间" aria-label="切换日间/夜间">夜间</button>
+          <button id="refresh" class="primary icon-button" data-icon="refresh" type="button" title="刷新" aria-label="刷新">刷新</button>
+        </div>
+      </header>
+
+      <section id="metric-area" class="metric-area" aria-label="学习摘要">
+        <section id="metric-strip" class="metric-strip"></section>
+        <button id="metric-strip-toggle" class="pane-edge-toggle metric-strip-toggle" type="button" aria-pressed="false" title="收起学习指标" aria-label="收起学习指标">⌃</button>
+      </section>
+
+      <main class="workbench" id="workbench">
+        <button id="sidebar-toggle" class="pane-edge-toggle sidebar-toggle" data-icon="collapse" type="button" aria-pressed="false" aria-expanded="true" title="收起左侧" aria-label="收起左侧">&#9664;</button>
+        <aside id="left-column" class="left-column"></aside>
+
+        <div class="splitter vertical" data-splitter="main" role="separator" aria-orientation="vertical" tabindex="0"></div>
+
+        <section class="right-column">
+          <section class="pane data-pane">
+            <div class="pane-title data-title">
+              <div>
+                <h2 id="active-title">正在载入</h2>
+                <p id="active-summary">读取本地 SQLite 索引</p>
+              </div>
+              <div class="action-group">
+                <button id="add-record" class="symbol-button" type="button" title="新增记录" aria-label="新增记录">＋</button>
+                <button id="edit-lock" class="symbol-button" type="button" title="Editing locked" aria-label="Editing locked">🔒</button>
+                <button id="clear-filter" type="button">清除筛选</button>
+              </div>
+            </div>
+            <div class="table-frame"><table id="data-grid"><thead></thead><tbody></tbody></table></div>
+            <section id="load-state" class="load-state" role="status" aria-live="polite">
+              <div class="load-state-card"><strong id="load-state-title">正在载入工作台</strong><span id="load-state-detail">准备读取本地 SQLite 索引</span><div class="load-progress"><i id="load-progress-value"></i></div><button id="retry-load" type="button" hidden>重试</button></div>
+            </section>
+          </section>
+          <div class="splitter horizontal" data-splitter="right" role="separator" aria-orientation="horizontal" tabindex="0"></div>
+          <section class="pane inspector-pane">
+            <div class="tabs" role="tablist">
+              <button class="tab active" data-tab="fields" type="button">字段说明</button>
+              <button class="tab" data-tab="sql" type="button">SQL</button>
+              <button class="tab" data-tab="plugins" type="button">插件</button>
+            </div>
+            <button id="inspector-toggle" class="pane-edge-toggle inspector-toggle" type="button" aria-pressed="false" title="收起右下检查器" aria-label="收起右下检查器">⌄</button>
+            <div id="inspector-fields" class="inspector-panel active"></div>
+            <pre id="inspector-sql" class="inspector-panel code-panel"></pre>
+            <div id="inspector-plugins" class="inspector-panel"></div>
+            <div id="inspector-actions" class="inspector-panel" hidden></div>
+            <pre id="inspector-command" class="inspector-panel code-panel" hidden></pre>
+            <p id="inspector-message" class="inspector-message" role="status" aria-live="polite"></p>
+            <div id="inspector-plugin-panels"></div>
+          </section>
+        </section>
+      </main>
+    </div>
+    <dialog id="view-dialog" class="view-dialog">
+      <form id="view-form" method="dialog">
+        <header><h2 id="view-dialog-title">新建外观视图</h2><button id="close-view-dialog" type="button" class="symbol-button" aria-label="关闭">×</button></header>
+        <p id="view-dialog-message" class="action-hint" role="status"></p>
+        <label>技术名称<input name="name" placeholder="v_user_due_by_scope" pattern="v_user_[A-Za-z][A-Za-z0-9_]{0,62}" required></label>
+        <label>显示名称<input name="name_zh" placeholder="按 scope 到期卡片"></label>
+        <label>只读 SQL<textarea name="sql" rows="9" required placeholder="SELECT * FROM v_study_due_cards"></textarea></label>
+        <button id="parse-view-sql" type="button">解析 SQL 列与关联键建议</button>
+          <section class="view-mapping-section">
+            <div class="dialog-section-title"><h3>可编辑列与写回目标</h3><button id="add-view-mapping" type="button">+</button></div>
+            <p class="action-hint">每行定义一个可编辑的视图列：它通过视图中的关联键，写回已有基础表记录。未列出的列保持只读。</p>
+            <div id="view-mappings"></div>
+          </section>
+          <footer><button value="cancel">取消</button><button class="primary" value="submit">校验并保存</button></footer>
+        </form>
+      </dialog>
+      <dialog id="view-delete-dialog" class="view-dialog compact-dialog">
+        <form id="view-delete-form" method="dialog">
+          <header><h2>删除外观视图</h2><button id="close-view-delete-dialog" type="button" class="symbol-button" aria-label="关闭">×</button></header>
+          <p id="view-delete-message" class="action-hint"></p>
+          <ul id="view-delete-dependencies" class="dependency-list"></ul>
+          <footer><button value="cancel">取消</button><button id="confirm-view-delete" class="danger" value="submit">删除视图</button></footer>
+        </form>
+      </dialog>
+    <dialog id="record-dialog" class="view-dialog">
+      <form id="record-form" method="dialog">
+        <header><h2 id="record-dialog-title">Record editor</h2><button id="close-record-dialog" type="button" class="symbol-button" aria-label="Close">×</button></header>
+        <p id="record-dialog-message" class="action-hint"></p>
+        <div id="record-dialog-fields" class="dialog-fields"></div>
+        <pre id="record-dialog-preview" class="code-panel"></pre>
+        <footer><button id="record-cancel" value="cancel">Cancel</button><button id="record-preview" type="button">Preview</button><button id="record-apply" class="primary" type="button" disabled>Apply</button></footer>
+      </form>
+    </dialog>
+    <dialog id="metric-dialog" class="view-dialog compact-dialog">
+      <form id="metric-form" method="dialog">
+        <header><h2 id="metric-dialog-title">配置指标</h2><button id="close-metric-dialog" type="button" class="symbol-button" aria-label="关闭">×</button></header>
+        <p id="metric-dialog-message" class="action-hint" role="status"></p>
+        <label>指标来源<select name="source" id="metric-source"></select></label>
+        <label>显示名称<input name="label" required maxlength="48"></label>
+        <section id="metric-custom-fields">
+          <label>指标标识<input name="id" pattern="[a-z][a-z0-9_]{0,31}" placeholder="due_cards"></label>
+          <label>只读 SQL<textarea name="sql" rows="5" placeholder="SELECT COUNT(*) FROM v_study_due_cards"></textarea></label>
+          <label>格式<select name="format"><option value="number">数值</option><option value="currency">金额（元）</option></select></label>
+        </section>
+        <footer><button value="cancel">取消</button><button value="save_builtin">保存至内置</button><button class="primary" value="submit">新增指标</button></footer>
+      </form>
+    </dialog>
+    <dialog id="builtin-metric-dialog" class="view-dialog compact-dialog">
+      <form id="builtin-metric-form" method="dialog">
+        <header><h2>编辑内置指标</h2><button id="close-builtin-metric-dialog" type="button" class="symbol-button" aria-label="关闭">×</button></header>
+        <p id="builtin-metric-dialog-message" class="action-hint" role="status"></p>
+        <label>内置指标<select name="source" id="builtin-metric-source"></select></label>
+        <label>显示名称<input name="label" required maxlength="48"></label>
+        <label>只读 SQL<textarea name="sql" id="builtin-metric-sql" rows="6" required placeholder="SELECT COUNT(*) FROM ..."></textarea></label>
+        <button id="preview-builtin-metric-sql" type="button">校验 SQL 并预览数值</button>
+        <label>格式<select name="format"><option value="number">数值</option><option value="currency">金额（元）</option></select></label>
+        <label class="visibility-toggle"><input name="enabled" type="checkbox"><span class="visibility-icon" aria-hidden="true">◉</span><span>显示在指标栏</span></label>
+        <footer><button value="cancel">取消</button><button class="primary" value="submit">保存内置指标</button></footer>
+      </form>
+    </dialog>
+    <dialog id="schema-doc-dialog" class="view-dialog">
+      <form id="schema-doc-form" method="dialog">
+        <header><h2>编辑表格说明</h2><button id="close-schema-doc-dialog" type="button" class="symbol-button" aria-label="关闭">×</button></header>
+        <label>显示名称<input name="name_zh" required></label>
+        <label>说明<textarea name="description_zh" rows="6" placeholder="说明此表或外观视图的用途、数据来源和注意事项"></textarea></label>
+        <label>排序<input name="sort_order" type="number" step="1" required></label>
+        <footer><button value="cancel">取消</button><button class="primary" value="submit">保存说明</button></footer>
+      </form>
+    </dialog>
+    <dialog id="trigger-dialog" class="view-dialog trigger-dialog">
+      <form id="trigger-form" method="dialog">
+        <header><h2 id="trigger-dialog-title"></h2><button id="close-trigger-dialog" type="button" class="symbol-button" aria-label="close">x</button></header>
+        <p id="trigger-dialog-message" class="action-hint" role="status"></p>
+        <label>说明<textarea name="description_zh" rows="3" maxlength="500" placeholder="说明这个触发器什么时候运行、会影响哪些数据"></textarea></label>
+        <label id="trigger-sql-label">SQL<textarea name="sql" rows="11" required placeholder="CREATE TRIGGER ..."></textarea></label>
+        <footer><button value="cancel">cancel</button><button id="trigger-preview" type="button">preview</button><button id="trigger-apply" class="primary" value="submit" disabled>save</button></footer>
+      </form>
+    </dialog>
+    <script type="module" src="app.js"></script>
+  </body>
+</html>

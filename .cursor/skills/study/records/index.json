@@ -1,0 +1,19 @@
+{
+  "schema": "rsim.readme.records/v1",
+  "id": "record-root.study-imports",
+  "description": "Study knowledge base import audit records",
+  "records": [
+    {
+      "id": "study-import.2026-09-18-system-analyst-ch1",
+      "path": "imports/2026-09-18-system-analyst-ch1.json",
+      "description": "系统分析师教程第二版 第1章 样例导入",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "import-audit"
+        }
+      ]
+    }
+  ]
+}
