@@ -1,0 +1,11 @@
+{
+  "name": "study-kb-ui-tests",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --experimental-vm-modules --test test_study_review.mjs test_plugin_workspace.mjs"
+  },
+  "devDependencies": {
+    "jsdom": "26.1.0"
+  }
+}

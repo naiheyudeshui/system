@@ -7,6 +7,7 @@ readme/
 # Study knowledge base runtime data
 study-kb/data/*.sqlite
 study-kb/data/*.sqlite-*
+study-kb/data/backups/
 
 # Debug session logs
 debug-*.log
@@ -27,6 +28,7 @@ spring-todo-demo/vehicle_fmu_editor.zip
 # Python cache
 __pycache__/
 *.pyc
+study-kb/tests/node_modules/
 
 # IDE / OS
 .idea/

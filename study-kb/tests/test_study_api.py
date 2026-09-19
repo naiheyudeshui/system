@@ -27,6 +27,40 @@ class StudyApiTests(unittest.TestCase):
         self.con.close()
         self.tmp.cleanup()
 
+    def test_unified_nodes_include_cards_and_scope_without_history_changes(self) -> None:
+        from study_api import build_knowledge_tree
+
+        before = [tuple(row) for row in self.con.execute("SELECT * FROM study_card_fsrs ORDER BY card_id")]
+        tree = build_knowledge_tree(self.con)
+        cards = [row for row in tree["rows"] if row["source_type"] == "card"]
+        self.assertEqual(len(cards), 2)
+        card = next(row for row in cards if row["source_id"] == self.card_a["id"])
+        self.assertEqual(card["title"], "Q1")
+        self.assertEqual(card["content_md"], "A1")
+        self.assertEqual(card["parent_id"], "node:" + self.card_a["node_id"])
+        self.assertEqual(len({row["node_id"] for row in tree["rows"]}), tree["node_count"])
+        self.assertEqual(build_knowledge_tree(self.con, scope_id="missing")["node_count"], 0)
+        self.con.execute("UPDATE study_card SET status='suspended' WHERE id=?", (self.card_b["id"],))
+        self.assertEqual(sum(row["source_type"] == "card" for row in build_knowledge_tree(self.con)["rows"]), 1)
+        self.assertEqual(before, [tuple(row) for row in self.con.execute("SELECT * FROM study_card_fsrs ORDER BY card_id")])
+
+    def test_tree_default_upgrade_preserves_custom_sql_and_is_idempotent(self) -> None:
+        from study_sql_configs import TREE_DEFAULTS
+        from workbench_plugins import seed_configs
+
+        seed_configs(self.con, "study.node-tree", "trees", TREE_DEFAULTS)
+        old_sql = "SELECT id AS node_id, parent_id, title, answer_md, sort_order FROM study_node ORDER BY sort_order,title,id"
+        self.con.execute("UPDATE workbench_plugin_config SET sql=? WHERE id='study.tree.default.v1'", (old_sql,))
+        db.upgrade_knowledge_tree_config(self.con)
+        row = self.con.execute("SELECT sql,revision FROM workbench_plugin_config WHERE id='study.tree.default.v1'").fetchone()
+        self.assertIn("v_study_knowledge_nodes", row["sql"])
+        self.assertEqual(row["revision"], 2)
+        db.upgrade_knowledge_tree_config(self.con)
+        self.assertEqual(self.con.execute("SELECT revision FROM workbench_plugin_config WHERE id='study.tree.default.v1'").fetchone()[0], 2)
+        self.con.execute("UPDATE workbench_plugin_config SET sql=?,revision=3 WHERE id='study.tree.default.v1'", (old_sql,))
+        db.upgrade_knowledge_tree_config(self.con)
+        self.assertEqual(self.con.execute("SELECT sql FROM workbench_plugin_config WHERE id='study.tree.default.v1'").fetchone()[0], old_sql)
+
     def test_tree_and_review_flow(self) -> None:
         tree = build_node_tree(self.con)
         self.assertGreaterEqual(tree["node_count"], 2)

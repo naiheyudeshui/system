@@ -1,9 +1,11 @@
 {
   "id": "study.review-table",
+  "icon": "icon.svg",
   "version": "1.0.0",
   "api": {"host": ">=1.0 <2.0"},
   "activation": ["onStartupFinished"],
   "contributes": {
+    "sqlModules": [{"id": "reviews", "label": "复习方案", "contract": "review-cards/v1"}],
     "panels": [
       {"id": "review-table", "location": "inspector", "label": "表格复习"}
     ],

@@ -162,3 +162,20 @@ JOIN v_study_scope_tree t ON t.scope_id = s.id
 JOIN study_card sc ON sc.node_id = t.node_id AND sc.status = 'active'
 LEFT JOIN study_card_fsrs f ON f.card_id = sc.id
 GROUP BY s.id, s.label;
+
+CREATE VIEW v_study_knowledge_nodes AS
+SELECT 'node:' || n.id AS node_id,
+       CASE WHEN pc.status = 'active' THEN 'card:' || pc.id
+            WHEN n.parent_id IS NULL THEN NULL ELSE 'node:' || n.parent_id END AS parent_id,
+       n.title, n.answer_md AS content_md, n.answer_md,
+       'node' AS source_type, n.id AS source_id, n.id AS owner_node_id,
+       n.source_ref, n.sort_order, '' AS status
+FROM study_node n
+LEFT JOIN study_node_parent_card relation ON relation.node_id = n.id
+LEFT JOIN study_card pc ON pc.id = relation.parent_card_id
+UNION ALL
+SELECT 'card:' || c.id, 'node:' || c.node_id,
+       c.front, c.back, c.back,
+       'card', c.id, c.node_id, c.source_ref, 0, c.status
+FROM study_card c
+WHERE c.status = 'active';

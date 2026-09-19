@@ -1,9 +1,11 @@
 {
   "id": "study.node-tree",
+  "icon": "icon.svg",
   "version": "1.0.0",
   "api": {"host": ">=1.0 <2.0"},
   "activation": ["onStartupFinished"],
   "contributes": {
+    "sqlModules": [{"id": "trees", "label": "章节树方案", "contract": "tree-nodes/v1"}],
     "panels": [
       {"id": "node-tree", "location": "inspector", "label": "章节树图"}
     ],

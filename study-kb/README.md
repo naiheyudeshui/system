@@ -1,5 +1,7 @@
 # Study Knowledge Base
 
+> **当前完整使用入口（2026-09-19）**：[给人：system README](../README.md#知识交互完整使用指南) · [给 Agent：资料归纳与增量入库手册](../.cursor/skills/study/SKILL.md) · [study skill](../.cursor/skills/study/SKILL.md)。下文保留早期界面说明；插件位置、SQL 方案和单卡导入边界以以上手册及 [升级说明](docs/WORKBENCH-UPGRADE.md) 为准。
+
 system 仓库专用学习/背诵知识库：**章节树 + 间隔复习（FSRS）+ 径向思维导图 + Markdown 渲染**。
 
 ## 快速开始
@@ -60,10 +62,27 @@ python study_review.py grade <card_id> 3
 
 ### 插件：表格复习
 
-- 按**当前左侧视图**顺序，取 `due_at` 最早的一张到期卡
-- 显示**卡片问题**（front）→ 点击「显示答案」→ 显示**该卡 back**（支持 Markdown）
-- 打分 1–4 后 FSRS 更新，自动跳下一张
-- 每张卡的答案独立，不会混用节点级 `answer_md`
+- 从顶栏打开 **表格复习**，插件替换中间表格区；切回“表格”不会丢失复习进度。
+- 选择已保存方案（默认“章节卡片”“今日到期”），选择章节范围，然后 **预览 / 开始新一轮**。
+- **管理方案**在插件内部打开，可新建、编辑、复制、删除 SQL 方案；点击“返回”回到原进度。
+- SQL 返回 `card_id / question / answer`，用 `WHERE / ORDER BY` 定义集合与顺序，节点参数绑定而非拼接。
+- 默认方案也可编辑和删除；只有显式“恢复默认模板”才恢复，不会自动复活。
+- 方案存储在数据库，跨浏览器共享，通过方案设置新增或编辑。
+- **预览**不修改调度；**开始新一轮**固定记录、内容和顺序，每条复习一次。左侧视图切换不会打断本轮。
+- 显示答案后评分 1–4；默认更新完整 FSRS 状态与日志，各模块共享下次复习时间。不重置既有学习历史。
+- 自定义数据可选择“评分间隔”，配置目标表、唯一键、时间列及四档间隔；仅更新已评分记录的时间。
+- 刷新后恢复当前浏览器最近集合。重复提交同一评分不会重复更新。
+
+**复习整章：**选择“章节卡片” → 搜索并选择章节 → 预览 → 开始。
+
+### 顶栏与下栏插件
+
+顶栏 **插件管理** 有“顶栏启用 / 下栏启用 / 未启用”三个区域。区内拖拽排序，跨区拖拽移动或启停；同一个插件只在一个位置。
+官方插件也可禁用。插件图标来自 manifest，可省略；二维码和打印保持自身业务，不强制使用 SQL 方案。
+全局搜索栏已移除，表格筛选与节点搜索保留。升级说明见 [WORKBENCH-UPGRADE.md](docs/WORKBENCH-UPGRADE.md)。
+
+注意：`v_study_due_cards` 本身只包含到期行，即使选择“全部”也不能读取它隐藏的未到期卡。
+详细配置、集合边界与 API 见 [通用复习说明](docs/REVIEW.md)。
 
 ---
 
@@ -114,6 +133,11 @@ study-kb/
 | `GET /api/study/card/:id` | 单卡详情 |
 | `GET /api/study/review/next?view=` | 下一张到期卡 |
 | `POST /api/study/review/grade` | FSRS 打分 |
+| `GET /api/study/review/catalog` | 可选视图、字段、节点与自定义回写目标 |
+| `POST /api/study/review/preview` | 预览配置匹配数量与样例 |
+| `POST /api/study/review/session` | 创建固定集合 |
+| `GET /api/study/review/session/:id` | 恢复集合及进度 |
+| `POST /api/study/review/session-grade` | 幂等评分并返回下一条 |
 
 ---
 
@@ -122,6 +146,10 @@ study-kb/
 ```powershell
 # 单元测试
 python -m unittest discover -s study-kb/tests -v
+
+# 界面交互测试（Node.js 18+，首次运行先安装测试依赖）
+npm --prefix study-kb/tests ci
+npm --prefix study-kb/tests test
 
 # 从旧 ops.sqlite 迁移
 python study-kb/tools/migrate_from_studio.py
@@ -136,4 +164,8 @@ python study-kb/tools/serve_ui.py
 
 在 Cursor 中可用 **study 技能**（`.cursor/skills/study/SKILL.md`）让 Agent 从教材/OCR/笔记生成章节树与复习卡。
 
-详细流程见 **[docs/AGENT.md](docs/AGENT.md)**。
+详细流程见 **[docs/AGENT.md](../.cursor/skills/study/SKILL.md)**。
+
+### 2026-09-19 插件界面修正
+
+插件管理仅在下栏进入；三区通过拖拽启停、定位和排序。顶栏使用扁平图标标签，打印/触发器自适应面板宽度。SQL 指标保留固定区域及原设置，不纳入插件。详见 `docs/WORKBENCH-UPGRADE.md`（docs 内为同级文件）。

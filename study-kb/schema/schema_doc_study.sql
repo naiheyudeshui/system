@@ -16,3 +16,8 @@ INSERT OR IGNORE INTO studio_view_meta (name, name_zh, sql, edit_contract_json) 
   ('v_study_node_cards', '章节卡片', '', '{}'),
   ('v_study_scope_tree', '学习树', '', '{}'),
   ('v_study_review_stats', '复习统计', '', '{}');
+
+INSERT OR IGNORE INTO schema_doc (kind, name, name_zh, description_zh, sort_order) VALUES
+  ('view', 'v_study_knowledge_nodes', '知识节点（含卡片）', '统一章节与活跃卡片：节点标题、Markdown 内容和父子关系；只读，不改变复习历史。', 5);
+INSERT OR IGNORE INTO studio_view_meta (name, name_zh, sql, edit_contract_json) VALUES
+  ('v_study_knowledge_nodes', '知识节点（含卡片）', '', '{}');

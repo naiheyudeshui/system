@@ -71,3 +71,17 @@ CREATE TABLE IF NOT EXISTS study_review_log (
 
 CREATE INDEX IF NOT EXISTS idx_study_review_log_card_time
   ON study_review_log(card_id, reviewed_at);
+
+CREATE TABLE IF NOT EXISTS study_review_session (
+  id TEXT PRIMARY KEY,
+  config_json TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+);
+
+CREATE TABLE IF NOT EXISTS study_review_session_item (
+  session_id TEXT NOT NULL REFERENCES study_review_session(id) ON DELETE CASCADE,
+  position INTEGER NOT NULL,
+  item_json TEXT NOT NULL,
+  result_json TEXT,
+  PRIMARY KEY (session_id, position)
+);

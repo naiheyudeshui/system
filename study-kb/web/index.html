@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Study Knowledge Base</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="/3dworkbench/pluginWorkspace.css">
   </head>
   <body>
     <div id="app" class="app-shell">
@@ -17,10 +18,6 @@
           </div>
         </div>
         <div class="toolbar">
-          <label class="search-box">
-            <span>搜索</span>
-            <input id="global-search" type="search" placeholder="卡片 / 章节 / 主题 / 来源">
-          </label>
           <button id="theme-toggle" class="icon-button" data-icon="moon" type="button" title="切换日间/夜间" aria-label="切换日间/夜间">夜间</button>
           <button id="refresh" class="primary icon-button" data-icon="refresh" type="button" title="刷新" aria-label="刷新">刷新</button>
         </div>
@@ -60,7 +57,7 @@
             <div class="tabs" role="tablist">
               <button class="tab active" data-tab="fields" type="button">字段说明</button>
               <button class="tab" data-tab="sql" type="button">SQL</button>
-              <button class="tab" data-tab="plugins" type="button">插件</button>
+              <button class="tab" data-tab="plugins" type="button">插件管理</button>
             </div>
             <button id="inspector-toggle" class="pane-edge-toggle inspector-toggle" type="button" aria-pressed="false" title="收起右下检查器" aria-label="收起右下检查器">⌄</button>
             <div id="inspector-fields" class="inspector-panel active"></div>

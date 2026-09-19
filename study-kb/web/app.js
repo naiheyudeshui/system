@@ -1,17 +1,18 @@
-﻿import {
+import { createPluginWorkspace } from "/3dworkbench/pluginWorkspace.mjs";
+import { openConfigManager } from "/3dworkbench/pluginConfigManager.mjs";
+import { rowMatchesFilter } from "/3dworkbench/tablePreview.mjs";
+let pluginWorkspace;
+import {
   applyIconButtons,
   describeColumnFilter,
   openTableFilterPopover,
   installNavigatorControls,
   renderSidebarSections,
-  renderPluginManagerPanel,
   setupLanguageSelect,
   setupEdgeToggle,
   setupSidebarCollapse,
   setupThemeToggle,
   setupWorkbenchSplitters,
-  pluginPanelContributions,
-  pluginPanelDomId,
   t,
 } from "/3dworkbench/workbenchPlatform.mjs";
 import { renderNodeTreePanel, renderReviewTablePanel } from "./studyPlugins.mjs";
@@ -157,8 +158,6 @@ function applyStudioLanguage() {
   if (subtitle) subtitle.textContent = t("app.subtitle");
   const searchLabel = document.querySelector(".search-box span");
   if (searchLabel) searchLabel.textContent = t("search.label");
-  const globalSearch = $("#global-search");
-  if (globalSearch) globalSearch.placeholder = t("search.placeholder");
   const clearFilter = $("#clear-filter");
   if (clearFilter) clearFilter.textContent = t("button.clearFilters");
   const addRecord = $("#add-record");
@@ -675,17 +674,6 @@ async function openCellEditor(cell, row, viewColumn) {
   input.addEventListener("blur", () => { void commit(); }, { once: true });
 }
 
-function rowMatchesFilter(row, filter) {
-  if (filter.kind === "choices") {
-    return !filter.values?.length || filter.values.includes(String(row[filter.column] ?? ""));
-  }
-  if (filter.kind === "range") {
-    const value = Number(row[filter.column]);
-    return Number.isFinite(value) && (filter.min === "" || value >= Number(filter.min)) && (filter.max === "" || value <= Number(filter.max));
-  }
-  return !filter.value || String(row[filter.column] ?? "").toLocaleLowerCase().includes(filter.value.toLocaleLowerCase());
-}
-
 function applyColumnFilter(rows) {
   const filters = Object.values(activeColumnFilters());
   return filters.length ? rows.filter((row) => filters.every((filter) => rowMatchesFilter(row, filter))) : rows;
@@ -932,88 +920,6 @@ function activateInspectorTab(tabName) {
   if (panel) panel.classList.add("active");
 }
 
-function pluginManagementPanel(plugin) {
-  return (plugin.contributes?.panels || []).find((panel) => panel.location === "management" && panel.id) || null;
-}
-
-function orderedPlugins() {
-  const rank = new Map((state.dashboard.pluginOrder || []).map((id, index) => [id, index]));
-  return [...(state.plugins || [])].sort((left, right) => {
-    const leftRank = rank.has(left.id) ? rank.get(left.id) : Number.MAX_SAFE_INTEGER;
-    const rightRank = rank.has(right.id) ? rank.get(right.id) : Number.MAX_SAFE_INTEGER;
-    return leftRank - rightRank || left.id.localeCompare(right.id);
-  });
-}
-
-async function persistPluginOrder() {
-  await persistDashboard();
-  renderPluginInspector();
-  activateInspectorTab("plugins");
-}
-
-async function reloadPlugins({ keepManager = false } = {}) {
-  const payload = await api("/api/plugins");
-  state.plugins = payload.plugins || [];
-  renderPluginInspector();
-  if (keepManager) activateInspectorTab("plugins");
-}
-
-function renderPluginManager() {
-  const root = $("#inspector-plugins");
-  if (!root) return;
-  renderPluginManagerPanel(root, {
-    plugins: orderedPlugins(),
-    title: "插件管理",
-    subtitle: "拖拽方框可调整上方插件标签的顺序。",
-    onToggle: async (plugin) => {
-      await postApi("/api/plugin/state", { plugin_id: plugin.id, state: plugin.state === "disabled" ? "enabled" : "disabled" });
-      await reloadPlugins({ keepManager: true });
-    },
-    onReorder: async (ids) => {
-      state.dashboard.pluginOrder = ids;
-      saveDashboardPreferences();
-      try { await persistPluginOrder(); } catch (error) { setInspectorMessage(`保存插件顺序失败：${error.message}`, "error"); }
-    },
-  });
-  const header = root.querySelector(".plugin-manager-header");
-  if (!header) return;
-  const sync = document.createElement("button");
-  sync.type = "button";
-  sync.textContent = "同步插件";
-  sync.addEventListener("click", async () => {
-    sync.disabled = true;
-    try {
-      await postApi("/api/plugin/sync", {});
-      await reloadPlugins({ keepManager: true });
-      setInspectorMessage("插件清单已同步。", "success");
-    } catch (error) {
-      setInspectorMessage(`插件同步失败：${error.message}`, "error");
-    } finally { sync.disabled = false; }
-  });
-  header.append(sync);
-}
-
-function openPluginManagement(pluginId, contributionId) {
-  const root = $("#inspector-plugins");
-  const plugin = (state.plugins || []).find((item) => item.id === pluginId);
-  if (!root || !plugin) return;
-  activateInspectorTab("plugins");
-  const header = document.createElement("div");
-  header.className = "plugin-manager-header";
-  const heading = document.createElement("div");
-  heading.innerHTML = `<h3>${pluginId}</h3><p class="action-hint">${contributionId} 管理页由插件贡献，宿主负责加载和隔离错误。</p>`;
-  const back = document.createElement("button");
-  back.type = "button";
-  back.textContent = "返回插件列表";
-  back.addEventListener("click", renderPluginManager);
-  header.append(heading, back);
-  const panel = document.createElement("section");
-  panel.className = "plugin-management-page";
-  panel.textContent = "插件管理页正在载入…";
-  root.replaceChildren(header, panel);
-  void loadPluginPanel(panel, pluginId, contributionId, createPluginContext());
-}
-
 function createPluginContext() {
   return {
     currentObject: () => state.active,
@@ -1086,37 +992,14 @@ function renderPrintPanel(panel, context = createPluginContext()) {
 }
 
 function renderPluginInspector() {
-  const tabs = document.querySelector(".inspector-pane .tabs");
-  const panels = $("#inspector-plugin-panels");
-  if (!tabs || !panels) return;
-  tabs.querySelectorAll("[data-plugin-tab]").forEach((tab) => tab.remove());
-  panels.replaceChildren();
-  renderPluginManager();
-  const context = createPluginContext();
-  for (const contribution of pluginPanelContributions(orderedPlugins())) {
-      const plugin = contribution.plugin;
-      const tabId = pluginPanelDomId(plugin.id, contribution.id);
-      const tab = document.createElement("button");
-      tab.type = "button";
-      tab.className = "tab";
-      tab.dataset.tab = tabId;
-      tab.dataset.pluginTab = "1";
-      tab.textContent = contribution.label || plugin.id;
-      tab.title = `${plugin.id} · ${contribution.id}`;
-      tabs.append(tab);
-      const panel = document.createElement("section");
-      panel.id = `inspector-${tabId}`;
-      panel.className = "inspector-panel plugin-panel";
-      panel.textContent = "插件面板正在载入…";
-      panels.append(panel);
-      void loadPluginPanel(panel, plugin.id, contribution.id, context);
-  }
+  if (!pluginWorkspace) pluginWorkspace = createPluginWorkspace({ api, postApi, loadPanel: loadPluginPanel, context: createPluginContext, onPlugins: (plugins) => { state.plugins = plugins; } });
+  void pluginWorkspace.update(state.plugins || []);
 }
 
 async function loadPluginPanel(panel, pluginId, contributionId, context = createPluginContext()) {
   try {
     if (pluginId === "study.node-tree") {
-      await renderNodeTreePanel(panel, { api });
+      await renderNodeTreePanel(panel, { api, postApi });
       return;
     }
     if (pluginId === "study.review-table") {
@@ -1133,6 +1016,11 @@ async function loadPluginPanel(panel, pluginId, contributionId, context = create
     }
     if (pluginId === "official.sqlite-triggers") {
       await renderTriggerPanel(panel);
+      const manage = document.createElement("button");
+      manage.type = "button";
+      manage.textContent = "管理 SQL 草稿";
+      manage.addEventListener("click", () => { void openConfigManager(panel, { api, postApi, pluginId, moduleId: "triggers" }); });
+      panel.prepend(manage);
       return;
     }
     if (pluginId === "legacy.sqlite-triggers") {
@@ -1662,6 +1550,7 @@ async function refresh() {
 document.addEventListener("click", (event) => {
   const tab = event.target.closest(".tab");
   if (!tab) return;
+  if (tab.dataset.pluginTab) return;
   document.querySelectorAll(".tab").forEach((item) => item.classList.toggle("active", item === tab));
   document.querySelectorAll(".inspector-panel").forEach((item) => item.classList.remove("active"));
   $(`#inspector-${tab.dataset.tab}`).classList.add("active");
@@ -1869,7 +1758,6 @@ $("#view-delete-form").addEventListener("submit", async (event) => {
 $("#clear-filter").addEventListener("click", () => {
   state.query = "";
   clearAllColumnFilters();
-  $("#global-search").value = "";
   if (state.active) void selectObject(state.active);
 });
 $("#edit-lock").addEventListener("click", () => { state.editLocked = !state.editLocked; updateEditLock(); });
@@ -1971,13 +1859,7 @@ $("#schema-doc-form").addEventListener("submit", async (event) => {
   }
 });
 updateEditLock();
-$("#global-search").addEventListener("input", (event) => {
-  state.query = event.target.value.trim();
-  clearTimeout(state.searchTimer);
-  state.searchTimer = setTimeout(() => {
-    if (state.active) void selectObject(state.active);
-  }, 250);
-});
+
 
 document.addEventListener("workbench:languagechange", () => {
   applyStudioLanguage();

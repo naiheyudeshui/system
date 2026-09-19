@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import sqlite3
+import sys
+from pathlib import Path
 from typing import Any
 
 from study_kb import build_markmap_markdown, get_node, grade_card, list_due_cards, open_db
@@ -118,6 +120,32 @@ def build_node_tree(con: sqlite3.Connection, *, scope_id: str | None = None) -> 
         "roots": roots,
         "node_count": len(nodes),
     }
+
+
+def build_knowledge_tree(con: sqlite3.Connection, *, scope_id: str | None = None) -> dict[str, Any]:
+    shared_python = str(Path(__file__).resolve().parents[2] / "3dStudio" / "3dworkbench" / "python")
+    if shared_python not in sys.path:
+        sys.path.append(shared_python)
+    from tree_model import tree_result
+
+    rows = con.execute("""
+        SELECT * FROM v_study_knowledge_nodes
+        WHERE ? IS NULL OR owner_node_id IN (
+            SELECT node_id FROM v_study_scope_tree WHERE scope_id = ?
+        )
+        ORDER BY sort_order, title, node_id
+        LIMIT 5001
+    """, (scope_id, scope_id)).fetchall()
+    result = tree_result({"rows": [dict(row) for row in rows],
+                          "columns": [row[1] for row in con.execute("PRAGMA table_info(v_study_knowledge_nodes)")],
+                          "truncated": len(rows) > 5000},
+                         {"tree": {"orphans": "root", "details": [
+                             {"column": "content_md", "label": "节点内容", "format": "markdown"},
+                             {"column": "source_ref", "label": "来源", "format": "text"}]}})
+    result["editing"] = {"provider": "study-knowledge/v1"}
+    result["scopes"] = [dict(row) for row in con.execute(
+        "SELECT id, label, is_default FROM study_scope ORDER BY is_default DESC, label")]
+    return result
 
 
 def _next_from_view(
