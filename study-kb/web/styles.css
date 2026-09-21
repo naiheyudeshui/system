@@ -195,3 +195,7 @@ button.danger { background: var(--danger); color: var(--panel); }
 .study-tree-workspace.is-browsing-tree { flex:1; min-height:0; display:flex; flex-direction:column; overflow:hidden; }
 .study-tree-viewer { flex:1; min-height:0; height:100%; }
 .study-tree-workspace.is-browsing-tree > [role="status"]:empty { display:none; }
+.study-tree-delete-dialog { position:fixed; z-index:200; inset:50% auto auto 50%; width:min(420px,calc(100vw - 32px)); transform:translate(-50%,-50%); padding:22px; border:1px solid var(--border-strong); border-radius:12px; background:var(--panel-raised); box-shadow:0 22px 60px color-mix(in srgb,var(--text) 28%,transparent); }
+.study-tree-delete-dialog h3 { margin:0 0 10px; }
+.study-tree-delete-dialog p { margin:0; color:var(--text-muted); line-height:1.6; }
+.study-tree-delete-actions { display:flex; justify-content:flex-end; flex-wrap:wrap; gap:8px; margin-top:20px; }

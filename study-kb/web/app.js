@@ -523,9 +523,17 @@ function renderGrid(result) {
   head.replaceChildren();
   body.replaceChildren();
   const columns = result.columns || [];
+  const columnWidth = (column) => {
+    const headerLength = String(column).length;
+    const samples = (result.rows || []).slice(0, 80).map((row) => String(row[column] ?? "").replace(/\s+/g, " ").length);
+    const usefulLength = Math.max(headerLength, ...samples.filter((length) => length > 0).slice(0, 12));
+    return Math.max(112, Math.min(320, 28 + usefulLength * 8));
+  };
+  grid.style.setProperty("--table-min-width", `${Math.max(840, columns.reduce((sum, column) => sum + columnWidth(column), 0))}px`);
   const headerRow = document.createElement("tr");
   for (const column of columns) {
     const cell = document.createElement("th");
+    cell.style.width = `${columnWidth(column)}px`;
     cell.textContent = column;
     cell.className = "table-filterable" + (activeColumnFilters()[column] ? " filter-active" : "");
     cell.tabIndex = 0;
@@ -560,6 +568,7 @@ function renderGrid(result) {
     });
     for (const column of columns) {
       const cell = document.createElement("td");
+      cell.style.width = `${columnWidth(column)}px`;
       const value = payload[column];
       cell.textContent = value === null || value === undefined ? "" : String(value);
       if (typeof value === "string" && (value.length > 36 || value.includes("\n"))) cell.className = "cell-long-text";

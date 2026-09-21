@@ -208,6 +208,22 @@ test("preview filters the complete collection and paginates using shared column 
   } finally { ui.dom.window.close(); }
 });
 
+test("shared previews cap long columns and wrap long values", async () => {
+  const ui = await setup();
+  try {
+    const root = ui.document.createElement("section"); ui.document.body.append(root);
+    const longValue = "长内容 ".repeat(120);
+    ui.preview.renderTablePreview(root, { rows: [{ id: "1", title: longValue }], columns: ["id", "title"] });
+    const table = root.querySelector("table");
+    assert.equal(table.style.tableLayout, "fixed");
+    assert.match(table.style.getPropertyValue("--table-min-width"), /px$/);
+    const longCell = root.querySelector("tbody td.wb-preview-long-text");
+    assert.ok(longCell);
+    assert.match(longCell.style.width, /px$/);
+    assert.match(workspaceCss, /wb-preview-frame td\.wb-preview-long-text/);
+  } finally { ui.dom.window.close(); }
+});
+
 test("collapsed inspector hides active plugin container despite consumer ID flex rule", async () => {
   const ui = await setup();
   try {
@@ -414,6 +430,25 @@ test("node controls share the rounded surface and retain accessible keyboard foc
   } finally { ui.dom.window.close(); }
 });
 
+test("child toggle remains clickable when move support is enabled", async () => {
+  const ui = await setup();
+  try {
+    const root = ui.document.createElement("section"); ui.document.body.append(root);
+    const operations = [];
+    const host = ui.tree.createTreeWorkspace(root, { roots: [{ id: "root", title: "Root", children: [{ id: "child", title: "Child", children: [] }] }], onMove: async (...args) => operations.push(args), onDelete: async () => {} });
+    const toggle = root.querySelector('[aria-label="展开或收起子树 Root"]');
+    assert.equal(root.querySelectorAll(".wb-tree-graph-node").length, 1);
+    root.querySelector(".wb-tree-graph-node").dispatchEvent(new ui.dom.window.MouseEvent("click", { bubbles: true }));
+    toggle.dispatchEvent(new ui.dom.window.MouseEvent("pointerdown", { button: 0, bubbles: true, cancelable: true }));
+    toggle.dispatchEvent(new ui.dom.window.MouseEvent("pointerup", { button: 0, bubbles: true, cancelable: true }));
+    toggle.dispatchEvent(new ui.dom.window.MouseEvent("click", { bubbles: true, cancelable: true }));
+    assert.equal(root.querySelectorAll(".wb-tree-graph-node").length, 2);
+    assert.equal(operations.length, 0);
+    assert.equal([...root.querySelectorAll("button")].find((button) => button.textContent === "删除节点")?.hidden, false);
+    host.dispose();
+  } finally { ui.dom.window.close(); }
+});
+
 
 test("canvas prevents drag selection and wheel zoom keeps the pointer anchored", async () => {
   const ui = await setup();
@@ -594,6 +629,36 @@ test("node cards keep controls inside and wrap full titles without truncation", 
     card.querySelector(".wb-tree-node-control").dispatchEvent(new ui.dom.window.Event("click"));
     assert.equal(root.querySelectorAll(".wb-tree-graph-node").length, 2);
     assert.equal(root.querySelector("svg").firstElementChild.classList.contains("wb-tree-edges"), true);
+    host.dispose();
+  } finally { ui.dom.window.close(); }
+});
+
+test("tree drag preview distinguishes parent drop from sibling insertion", async () => {
+  const ui = await setup();
+  try {
+    const root = ui.document.createElement("section"); ui.document.body.append(root);
+    const moves = []; const reorders = [];
+    const host = ui.tree.createTreeWorkspace(root, {
+      roots: [{ id: "parent", title: "Parent", children: [{ id: "first", title: "First", children: [] }, { id: "second", title: "Second", children: [] }] }],
+      onMove: async (...args) => moves.push(args),
+      onReorder: async (...args) => reorders.push(args),
+    });
+    const first = root.querySelector('[data-node-id="first"]');
+    const second = root.querySelector('[data-node-id="second"]');
+    second.getBoundingClientRect = () => ({ top: 100, bottom: 200, height: 100, left: 0, right: 300, width: 300 });
+    ui.document.elementsFromPoint = () => [second];
+    first.setPointerCapture = () => {}; first.releasePointerCapture = () => {};
+    const pointer = (type, x, y) => { const event = new ui.dom.window.Event(type, { bubbles: true, cancelable: true }); Object.defineProperties(event, { button: { value: 0 }, pointerId: { value: 1 }, clientX: { value: x }, clientY: { value: y } }); first.dispatchEvent(event); };
+    pointer("pointerdown", 10, 10); pointer("pointermove", 30, 150);
+    assert.ok(second.classList.contains("is-drop-parent"));
+    pointer("pointerup", 30, 150); await settle();
+    assert.equal(moves.length, 1);
+    pointer("pointerdown", 10, 10); pointer("pointermove", 30, 105);
+    assert.ok(second.classList.contains("is-drop-before"));
+    assert.ok(second.classList.contains("wb-tree-drop-shift"));
+    pointer("pointerup", 30, 105); await settle();
+    assert.equal(reorders.length, 1);
+    assert.deepEqual(reorders[0], ["first", "second", "before"]);
     host.dispose();
   } finally { ui.dom.window.close(); }
 });

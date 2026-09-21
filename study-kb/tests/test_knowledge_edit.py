@@ -94,3 +94,36 @@ class KnowledgeEditTests(unittest.TestCase):
         with self.assertRaises(ValueError): save_knowledge_node(payload)
         self.assertEqual(self.con.execute("SELECT COUNT(*) FROM study_node").fetchone()[0], 256)
         self.assertEqual(self.con.execute("SELECT COUNT(*) FROM study_knowledge_edit").fetchone()[0], 0)
+
+    def test_move_rejects_cycles_and_delete_modes_preserve_history(self):
+        child = save_knowledge_node(self.payload("node:" + self.root["id"], "child"))["node"]
+        grandchild = save_knowledge_node(self.payload(child["node_id"], "child"))["node"]
+        moved = save_knowledge_node({**self.payload(grandchild["node_id"], "move"), "target_node_id": "node:" + self.root["id"], "title": "", "content_md": ""})
+        self.assertEqual(moved["node"]["parent_id"], "node:" + self.root["id"])
+        with self.assertRaises(ValueError):
+            save_knowledge_node({**self.payload("node:" + self.root["id"], "move"), "target_node_id": grandchild["node_id"]})
+        before = [tuple(row) for row in self.con.execute("SELECT * FROM study_card_fsrs") ]
+        delete_payload = {**self.payload(child["node_id"], "delete"), "delete_mode": "self"}
+        result = save_knowledge_node(delete_payload)
+        self.assertTrue(result["node"]["deleted"])
+        self.assertEqual(self.con.execute("SELECT parent_id FROM study_node WHERE id=?", (grandchild["source_id"],)).fetchone()[0], self.root["id"])
+        self.assertEqual(before, [tuple(row) for row in self.con.execute("SELECT * FROM study_card_fsrs")])
+        self.assertEqual(self.con.execute("SELECT COUNT(*) FROM study_node WHERE metadata_json LIKE ?", ("%knowledge_deleted%",)).fetchone()[0], 1)
+        recursive_payload = {**self.payload(grandchild["node_id"], "delete"), "delete_mode": "recursive"}
+        save_knowledge_node(recursive_payload)
+        self.assertEqual(self.con.execute("SELECT COUNT(*) FROM study_node WHERE metadata_json LIKE ?", ("%knowledge_deleted%",)).fetchone()[0], 2)
+
+    def test_reorder_changes_only_sibling_order(self):
+        root_key = "node:" + self.root["id"]
+        first = save_knowledge_node(self.payload(root_key, "child", title="First"))["node"]
+        second = save_knowledge_node(self.payload(root_key, "child", title="Second"))["node"]
+        third = save_knowledge_node(self.payload(root_key, "child", title="Third"))["node"]
+        result = save_knowledge_node({**self.payload(third["node_id"], "reorder"), "target_node_id": first["node_id"], "position": "before", "title": "", "content_md": ""})
+        self.assertEqual(result["node"]["parent_id"], root_key)
+        ordered = [row[0] for row in self.con.execute("SELECT title FROM study_node WHERE parent_id=? ORDER BY sort_order,title,id", (self.root["id"],))]
+        self.assertEqual(ordered, ["Third", "First", "Second"])
+
+    def test_identical_node_card_is_not_projected_twice(self):
+        tree = build_knowledge_tree(self.con)
+        node_titles = [row["title"] for row in tree["rows"] if row["title"] == "Question"]
+        self.assertEqual(len(node_titles), 1)

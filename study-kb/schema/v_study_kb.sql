@@ -173,9 +173,18 @@ SELECT 'node:' || n.id AS node_id,
 FROM study_node n
 LEFT JOIN study_node_parent_card relation ON relation.node_id = n.id
 LEFT JOIN study_card pc ON pc.id = relation.parent_card_id
+WHERE json_extract(n.metadata_json, '$.knowledge_deleted') IS NOT 1
 UNION ALL
 SELECT 'card:' || c.id, 'node:' || c.node_id,
        c.front, c.back, c.back,
        'card', c.id, c.node_id, c.source_ref, 0, c.status
 FROM study_card c
-WHERE c.status = 'active';
+WHERE c.status = 'active'
+  AND NOT EXISTS (SELECT 1 FROM study_node n2 WHERE n2.id = c.node_id AND json_extract(n2.metadata_json, '$.knowledge_deleted') IS 1)
+  AND NOT EXISTS (
+    SELECT 1
+    FROM study_node n
+    WHERE n.id = c.node_id
+      AND n.title = c.front
+      AND COALESCE(n.answer_md, '') = COALESCE(c.back, '')
+  );

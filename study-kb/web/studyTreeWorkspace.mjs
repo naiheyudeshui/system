@@ -212,8 +212,53 @@ export async function renderNodeTreePanel(panel, { api, postApi }) {
   const showTree = (roots, initialRoot = "", state = null) => {
     session?.dispose();
     page(viewer);
+    const canEditKnowledge = !source?.config_id || data.editing?.provider === "study-knowledge/v1";
     session = createTreeWorkspace(viewer, { roots, detailFields: data.detail_fields, renderMarkdown, initialRoot, initialMode: state?.mode, initialState: state,
-      onEdit: data.editing?.provider === "study-knowledge/v1" ? editNode : null,
+      onEdit: canEditKnowledge ? editNode : null,
+      onMove: canEditKnowledge ? async (sourceId, targetId) => {
+        if (String(sourceId) === String(targetId)) throw new Error("不能移动到自身");
+        const sourceNode = await postApi("/api/study/knowledge/read", { node_id: sourceId });
+        const payload = { operation: "move", node_id: sourceId, target_node_id: targetId, version: sourceNode.version, request_id: window.crypto.randomUUID(), content_md: "" };
+        await postApi("/api/study/knowledge/save", payload);
+        const next = await fetchData({ ...source });
+        data = next; renderPreview(next, previewState?.filters() || []);
+        const refreshed = filterTree(next.roots, filtered.map((row) => row.node_id));
+        const current = session?.getState?.() || { mode: "graph", collapsed: [], expandedContent: [], zoom: 1, pan: { x: 0, y: 0 } };
+        const refreshedIndex = indexTree(refreshed.roots);
+        const ancestors = new Set();
+        let cursor = refreshedIndex.get(String(targetId));
+        while (cursor) { ancestors.add(cursor.id); cursor = refreshedIndex.get(cursor.parent_id); }
+        current.collapsed = (current.collapsed || []).filter((id) => !ancestors.has(String(id)));
+        current.selectedId = String(sourceId);
+        showTree(refreshed.roots, current.root || "", current);
+      } : null,
+      onReorder: canEditKnowledge ? async (sourceId, targetId, position) => {
+        const sourceNode = await postApi("/api/study/knowledge/read", { node_id: sourceId });
+        await postApi("/api/study/knowledge/save", { operation: "reorder", position, node_id: sourceId, target_node_id: targetId, version: sourceNode.version, request_id: window.crypto.randomUUID(), content_md: "" });
+        const next = await fetchData({ ...source });
+        data = next; renderPreview(next, previewState?.filters() || []);
+        const refreshed = filterTree(next.roots, filtered.map((row) => row.node_id));
+        const current = session?.getState?.() || state;
+        current.selectedId = String(sourceId);
+        showTree(refreshed.roots, current?.root || "", current);
+      } : null,
+      onDelete: canEditKnowledge ? async (node) => {
+        const dialog = make("section", null, "study-tree-delete-dialog");
+        dialog.setAttribute("role", "dialog"); dialog.setAttribute("aria-modal", "true");
+        dialog.append(make("h3", "删除知识节点"), make("p", `“${node.title}” 的复习历史会保留。请选择处理方式。`));
+        const actions = make("div", null, "study-tree-delete-actions");
+        const cancel = make("button", "取消");
+        const self = make("button", "删除该节点");
+        const recursive = make("button", "递归删除", "danger");
+        actions.append(cancel, self, recursive); dialog.append(actions); document.body.append(dialog);
+        const choice = await new Promise((resolve) => { cancel.addEventListener("click", () => resolve(null)); self.addEventListener("click", () => resolve("self")); recursive.addEventListener("click", () => resolve("recursive")); });
+        dialog.remove(); if (!choice) return;
+        const baseline = await postApi("/api/study/knowledge/read", { node_id: node.id });
+        await postApi("/api/study/knowledge/save", { operation: "delete", delete_mode: choice, node_id: node.id, version: baseline.version, request_id: window.crypto.randomUUID(), content_md: "" });
+        const next = await fetchData({ ...source });
+        data = next; renderPreview(next, previewState?.filters() || []);
+        page(preview);
+      } : null,
       onBack: () => page(preview),
       onRefresh: async () => {
         const previousSession = session;
