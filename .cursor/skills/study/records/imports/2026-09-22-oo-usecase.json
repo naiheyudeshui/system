@@ -1,0 +1,9 @@
+{
+  "batch_id": "oo-usecase-20260922-000850",
+  "parent_id": "node_699df01582b44c709d05b4487e",
+  "source_ref": "系统分析师-一本通精华知识点-第二版(OCR).docx#面向对象建模-用例模型与分析模型（用户确认归纳）",
+  "created_cards": ["card:card_586298b076784a009481e68faa","card:card_4644323c945642dba9bb562d22","card:card_3671092d9e5644bcbac17f1164","card:card_64422b2dd2174820ad9cf24892","card:card_70318c763a2a4c0cae7eeee161"],
+  "backup": "study-kb/data/backups/study-before-oo-usecase-20260922-000850.sqlite",
+  "checks": {"integrity_check":"ok","foreign_key_check":[],"active_cards_without_schedule":[],"duplicate_sibling_titles":[]},
+  "review_history_preserved": true
+}

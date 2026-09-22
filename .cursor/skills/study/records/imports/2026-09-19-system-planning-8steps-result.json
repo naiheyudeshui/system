@@ -1,0 +1,76 @@
+{
+  "id": "study-import.system-planning-8steps.2026-09-19",
+  "schema": "rsim.readme.study-import-incremental/v1",
+  "imported_at": "2026-09-19T12:14:30.899419+00:00",
+  "source_markdown": "D:\\system\\.cursor\\skills\\study\\records\\imports\\2026-09-19-system-planning-8steps.md",
+  "backup": "D:\\system\\study-kb\\data\\backups\\study-before-planning-8steps-20260919-201430.sqlite",
+  "parent_book_id": "node_4f0ded2f257a4571b0a0424d4c",
+  "chapter_node_id": "node_9b5a8ddfe0de42eeb671bf2991",
+  "node_count": 11,
+  "topic_count": 9,
+  "cards": [
+    {
+      "card_id": "card_d1e0ab77727c49d5a2d6328690",
+      "node_id": "node_800ddf59dc9e44b09b75337f9f",
+      "title": "系统规划的通用八步是什么？",
+      "due_at": "2026-09-19 20:14:30",
+      "stability": 0.0
+    },
+    {
+      "card_id": "card_1984b56f6fc64cc7a60d72c281",
+      "node_id": "node_6bdd22521bfc4c07a7ce23e803",
+      "title": "系统规划第1步「确定规划环境」做什么？产出什么？",
+      "due_at": "2026-09-19 20:14:30",
+      "stability": 0.0
+    },
+    {
+      "card_id": "card_7ca4d76db9f94ffa9949c53667",
+      "node_id": "node_4c0cab88206e4f5c9b0edff532",
+      "title": "系统规划第2步「组建规划组织」做什么？产出什么？",
+      "due_at": "2026-09-19 20:14:30",
+      "stability": 0.0
+    },
+    {
+      "card_id": "card_eda540ddf8b545749af673f313",
+      "node_id": "node_a619f691feb54de49b3244ee31",
+      "title": "系统规划第3步「现状调查与分析」做什么？产出什么？",
+      "due_at": "2026-09-19 20:14:30",
+      "stability": 0.0
+    },
+    {
+      "card_id": "card_4f320c30e07f475096472483e8",
+      "node_id": "node_8a8f124210a84d0ca8c1b8ff39",
+      "title": "系统规划第4步「确定信息系统目标」做什么？产出什么？",
+      "due_at": "2026-09-19 20:14:30",
+      "stability": 0.0
+    },
+    {
+      "card_id": "card_35e4f1ddf97947d8b324585779",
+      "node_id": "node_0e1c4cdf7aae49d19c0c4e3a67",
+      "title": "系统规划第5步「可行性分析」包含哪些维度？产出什么？",
+      "due_at": "2026-09-19 20:14:30",
+      "stability": 0.0
+    },
+    {
+      "card_id": "card_e7186ec1c33d4e66b22f62d1de",
+      "node_id": "node_57f058f833bd4085b906c4fea7",
+      "title": "系统规划第6步「制定总体方案」做什么？产出什么？",
+      "due_at": "2026-09-19 20:14:30",
+      "stability": 0.0
+    },
+    {
+      "card_id": "card_37b5f81dc1754dd4a7f33348b4",
+      "node_id": "node_1a24278f74cd42a5b4607c709b",
+      "title": "系统规划第7步「制定实施计划」做什么？产出什么？",
+      "due_at": "2026-09-19 20:14:30",
+      "stability": 0.0
+    },
+    {
+      "card_id": "card_0d5ea78ffe63424990c93e0b78",
+      "node_id": "node_5b2b8fe652324363914d82d8d2",
+      "title": "系统规划第8步「评审与批准」做什么？产出什么？",
+      "due_at": "2026-09-19 20:14:30",
+      "stability": 0.0
+    }
+  ]
+}

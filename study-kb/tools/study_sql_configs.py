@@ -17,8 +17,9 @@ from study_kb import open_db
 
 NODE_FILTER = """(:node_id IS NULL OR node_id IN (
     WITH RECURSIVE subtree(id) AS (
-      SELECT id FROM study_node WHERE id=:node_id
-      UNION SELECT child.id FROM study_node child JOIN subtree ON child.parent_id=subtree.id
+      SELECT id FROM study_knowledge_item
+      WHERE id=:node_id OR legacy_node_id=:node_id OR legacy_card_id=:node_id
+      UNION SELECT child.id FROM study_knowledge_item child JOIN subtree ON child.parent_id=subtree.id
     ) SELECT id FROM subtree))"""
 DEFAULTS = [
     {"id": "study.review.chapters.v1", "name": "章节卡片", "sql": f"""SELECT card_id, front AS question,
@@ -91,7 +92,7 @@ def sql_review(payload, *, preview=False):
         scheduler = configuration["scheduler"]
         node_paths = {}
         if "node_id" in result["columns"]:
-            nodes = {node["id"]: node for node in con.execute("SELECT id,parent_id,title FROM study_node")}
+            nodes = {node["id"]: node for node in con.execute("SELECT legacy_node_id AS id, substr(parent_id,6) AS parent_id,title FROM study_knowledge_item WHERE item_type <> 'card'")}
             for node_id in {row.get("node_id") for row in result["rows"]}:
                 path, visited = [], set()
                 current = node_id
@@ -107,8 +108,9 @@ def sql_review(payload, *, preview=False):
             if time.monotonic() > deadline:
                 raise ValueError("调度关联超过时间限制，请缩小 SQL 范围")
             key = row["card_id"]
-            target = con.execute(f'SELECT {identifier(scheduler["key"])}, {identifier(scheduler["due"])} FROM {identifier(scheduler["table"])} WHERE {identifier(scheduler["key"])}=?', (key,)).fetchone()
-            if not target or (scheduler["kind"] == "fsrs" and not con.execute("SELECT 1 FROM study_card WHERE id=? AND status='active'", (key,)).fetchone()):
+            target_key = "card:" + key if scheduler["kind"] == "fsrs" else key
+            target = con.execute(f'SELECT {identifier(scheduler["key"])}, {identifier(scheduler["due"])} FROM {identifier(scheduler["table"])} WHERE {identifier(scheduler["key"])}=?', (target_key,)).fetchone()
+            if not target or (scheduler["kind"] == "fsrs" and not con.execute("SELECT 1 FROM study_knowledge_item WHERE legacy_card_id=? AND status='active'", (key,)).fetchone()):
                 missing += 1
                 continue
             key = target[0]
@@ -142,8 +144,8 @@ def sql_review(payload, *, preview=False):
             return {"matched": matched, "selected": len(items), "duplicates": duplicates, "missing_schedule": missing, "sample": items[:5], "rows": rows, "columns": list(dict.fromkeys([*result["columns"], "due_at", *(["node_path"] if node_paths else [])])), "limit": configuration["limit"], "preview_hash": preview_hash}
         configuration.update({"source": "sql", "config_id": saved["id"], "config_revision": saved["revision"], "view": saved["name"], "sql": saved["sql"], "parameters": parameters, "selected_keys": selected_keys, "preview_hash": payload.get("preview_hash")})
         session_id = uuid.uuid4().hex
-        con.execute("INSERT INTO study_review_session (id,config_json) VALUES (?,?)", (session_id, json.dumps(configuration)))
-        con.executemany("INSERT INTO study_review_session_item (session_id,position,item_json) VALUES (?,?,?)", [(session_id, position, json.dumps(item)) for position, item in enumerate(items)])
+        con.execute("INSERT INTO study_knowledge_review_session (id,config_json) VALUES (?,?)", (session_id, json.dumps(configuration)))
+        con.executemany("INSERT INTO study_knowledge_review_session_item (session_id,position,item_json) VALUES (?,?,?)", [(session_id, position, json.dumps(item)) for position, item in enumerate(items)])
         state = session_state(con, session_id)
         con.commit()
         return state

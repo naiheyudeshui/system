@@ -8,6 +8,10 @@ metadata:
 
 # Agent 手册：从资料到知识树、Markdown 答案和背诵卡
 
+## 统一节点写入规则
+
+新知识点必须使用统一 card 节点：`create_node(role="topic")` 直接创建一个 `item_type=card` 节点并创建 FSRS 调度。禁止先创建 topic/章节节点，再在其下调用 `create_card` 生成同标题同步卡片；这会产生重复实体。纯目录才使用 `role="outline"`。旧库中的 topic+子 card 只允许通过一次性迁移合并，不得作为新数据格式继续写入。
+
 > 适用 system 仓库；源码核对日期：2026-09-19。本文同时是完整 skill 和 Agent 操作手册，不需再打开另一份 AGENT.md。人类指南在 system 根 README.md。
 
 ## 文档主源与跨仓库使用
@@ -336,6 +340,24 @@ npm --prefix study-kb/tests test
 
 这些测试验证已有业务行为，不能替代逐批内容正确性和真实浏览器的视觉验收。
 
+## 9. Agent 快捷接口（只读盘点与草稿验证）
+
+为减少 Agent 手写 SQL，提供 scripts/study_agent.py。它默认使用 study-kb/data/study.sqlite，通过 SQLite mode=ro 连接，不执行迁移、不写入知识库、不评分。所有输出均为 UTF-8 JSON。
+
+从 system 根目录调用：
+
+    python .cursor/skills/study/scripts/study_agent.py doctor
+    python .cursor/skills/study/scripts/study_agent.py inspect --node <study_node_id>
+    python .cursor/skills/study/scripts/study_agent.py validate-draft --parent <study_node_id> --input draft.json
+    python .cursor/skills/study/scripts/study_agent.py coverage --root <study_node_id>
+
+- doctor 返回 integrity、外键、active 卡缺失 FSRS、同级重复标题。
+- inspect 返回节点完整路径、子节点、卡片及调度状态、scope 和最近评分历史。
+- validate-draft 检查标题/答案、同级标题重复、上下文依赖问题和来源缺失，并返回规范化草稿与 hash；它只验证，不创建节点或卡片。
+- coverage 统计范围内 topic、没有 active 卡的 topic，以及没有来源的 active 卡。
+
+这些命令不能替代“提议 → 确认 → 写入”。正式写入仍应使用已确认的父 ID、SQLite backup、事务、helper/知识编辑接口和批次审计；不要把 node:<id> 或 card:<id> 投影 ID 当作原表外键。cardize.py 仍保留兼容用途，但不作为已有章节增量写入的默认入口。
+
 ### 本次文档核验记录（2026-09-19）
 
 - 已只读核对现有学习库的视图、树/卡/scope 关系；未写入或评分真实学习内容。
@@ -364,7 +386,7 @@ npm --prefix study-kb/tests test
 实现与用户流程详见 system 的 study-kb/docs/WORKBENCH-UPGRADE.md“通用树方案与整页浏览”。Agent 仍按本文事务流程修改知识，不能将方案设置当作知识增删接口。
 
 
-## 统一节点合同（2026-09-19）
+## 统一节点合同（2026-09-21，新结构唯一事实来源）
 
 用户确认章节、知识点、卡片在图与筛选中都是同类节点。优先查询 `v_study_knowledge_nodes`，不再只查 study_node 并把卡片藏在附属详情里。
 
@@ -377,7 +399,7 @@ npm --prefix study-kb/tests test
 | source_type/source_id | node / 原节点 ID | card / 原卡 ID |
 | owner_node_id | 原节点 ID | 所属章节原 ID |
 
-- 这是只读联合投影，不是复制导入。实体表保持分开以保留一章多卡、稳定 ID、FSRS 与日志；图 ID 不可用作写接口/外键 ID。写入仍通过 source_type/source_id 定位原记录并走本文的事务与备份流程。
+- 最终运行时不再使用“卡片投影”模型。章节、主题、卡片都是真实的 `study_knowledge_item` 行，统一拥有 `id/parent_id/sort_order/title/content_md/status`；`item_type='card'` 表示具备复习能力的知识节点。旧拆分表已从正式数据库删除；复习状态使用 `study_knowledge_schedule`，评分历史使用 `study_knowledge_review_log`，会话使用 `study_knowledge_review_session*`。
 - 所有 active 卡片都参与预览，不以“归属节点是否叶子”为条件；停用/归档卡默认不参与。scope 按 owner_node_id 限定章节子树。筛中卡片时自动补祖先，正文展开不等于子树展开。
 - 不为图上可见而创建重复 study_node，不自动合并同标题、相同正文或旧同步过的 topic/card，不清理旧回填 answer_md。空正文合法，无内容时箭头禁用。
 - 通用 SQL 树保留全部结果列用于筛选，自动识别 content_md、answer_md、back（按此顺序）；显式配置的详情模块优先。内容使用已有安全 Markdown 渲染，不自行拼未净化 HTML。

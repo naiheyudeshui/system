@@ -14,6 +14,18 @@
           "label": "import-audit"
         }
       ]
+    },
+    {
+      "id": "study-import.system-planning-8steps.2026-09-19",
+      "path": "imports/2026-09-19-system-planning-8steps-result.json",
+      "description": "第2章 系统规划通用八步（9 张 topic 卡）",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "import-audit"
+        }
+      ]
     }
   ]
 }

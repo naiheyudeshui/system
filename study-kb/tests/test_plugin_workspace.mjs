@@ -25,6 +25,8 @@ function drop(ui, id, target) {
 async function setup() {
   const dom = new JSDOM('<header class="topbar"><div class="toolbar"></div></header><section class="data-pane"><div class="table-frame">Table</div></section><section class="inspector-pane"><div class="tabs"><button class="tab" data-tab="fields">Fields</button><button class="tab" data-tab="plugins">Plugins</button></div><div id="inspector-fields" class="inspector-panel active"></div><div id="inspector-plugin-panels"></div></section>', { url: "http://localhost" });
   dom.window.confirm = () => true;
+  dom.window.HTMLDialogElement.prototype.showModal = function () { this.open = true; };
+  dom.window.HTMLDialogElement.prototype.close = function (value = "") { this.returnValue = value; this.open = false; this.dispatchEvent(new dom.window.Event("close")); };
   const context = vm.createContext({ document: dom.window.document, window: dom.window, localStorage: dom.window.localStorage, Event: dom.window.Event, Option: dom.window.Option, structuredClone, console, requestAnimationFrame: (callback) => callback() });
   const workspace = new vm.SourceTextModule(workspaceSource, { context });
   const manager = new vm.SourceTextModule(managerSource, { context });
@@ -288,6 +290,33 @@ test("plan cards expose only selected actions, edit current plan, create new and
     button("开始一轮学习").click(); await settle();
     assert.equal(root.querySelector('[data-action="confirm-start"]').disabled, true);
     assert.match(root.textContent, /筛选 0 条/);
+  } finally { ui.dom.window.close(); }
+});
+
+test("review plan cards expose edit and delete controls in management mode", async () => {
+  const ui = await setup();
+  try {
+    const root = ui.document.createElement("section"); ui.document.body.append(root);
+    let entries = [{ id: "first", revision: 3, name: "First", sql: "SELECT 1", parameters: {} }];
+    const posts = [];
+    const api = async () => ({ configs: entries, definition: { contract: "review-cards/v1" } });
+    const postApi = async (url, payload) => {
+      posts.push({ url, payload });
+      if (url.endsWith("/delete")) entries = [];
+      return {};
+    };
+    await ui.review.renderReviewTablePanel(root, { api, postApi });
+    root.querySelector('[aria-label="方案设置"]').click();
+    assert.ok(root.querySelector('[aria-label="编辑方案 First"]'));
+    root.querySelector('[aria-label="删除方案 First"]').click();
+    const dialog = ui.document.querySelector(".wb-confirm-dialog");
+    assert.match(dialog.textContent, /复习轮次与评分记录保留/);
+    dialog.returnValue = "confirm";
+    dialog.dispatchEvent(new ui.dom.window.Event("close"));
+    await settle();
+    assert.equal(posts[0].url, "/api/plugin/config/delete");
+    assert.equal(JSON.stringify(posts[0].payload), JSON.stringify({ plugin_id: "study.review-table", module_id: "reviews", id: "first", revision: 3 }));
+    assert.equal(root.querySelectorAll(".study-plan-card").length, 0);
   } finally { ui.dom.window.close(); }
 });
 

@@ -1,4 +1,4 @@
-import { openConfigManager } from "/3dworkbench/pluginConfigManager.mjs";
+import { addConfigCardControls, confirmWorkbenchAction, openConfigManager } from "/3dworkbench/pluginConfigManager.mjs";
 import { renderTablePreview } from "/3dworkbench/tablePreview.mjs";
 import { createTreeWorkspace, filterTree, indexTree } from "/3dworkbench/treeWorkspace.mjs";
 import { renderMarkdown } from "./studyMarkdown.mjs";
@@ -118,6 +118,11 @@ export async function renderNodeTreePanel(panel, { api, postApi }) {
       const choose = make("button", entry.name, "study-plan-select"); choose.setAttribute("aria-pressed", String(entry.id === selectedId));
       choose.addEventListener("click", () => { if (!busy) { selectedId = entry.id; renderCards(); } });
       card.append(choose, make("small", entry.id ? "SQL 数据源 · 自定义关系与详情模块" : "统一节点 · 章节与卡片均可筛选"));
+      if (entry.id && !management.hidden) addConfigCardControls(card, {
+        name: entry.name,
+        onEdit: () => { void openManager(entry.id); },
+        onDelete: () => { void deletePlan(entry); },
+      });
       if (entry.id === selectedId) {
         const previewButton = make("button", "预览并筛选"); previewButton.addEventListener("click", () => { void prepare(); });
         card.append(previewButton);
@@ -132,6 +137,16 @@ export async function renderNodeTreePanel(panel, { api, postApi }) {
     if (!entries.some((entry) => entry.id === selectedId)) selectedId = "";
     renderCards();
   };
+  const deletePlan = async (entry) => run(async () => {
+    const accepted = await confirmWorkbenchAction({
+      title: `删除章节树方案“${entry.name}”？`,
+      message: "只删除这份 SQL 与字段映射方案。知识节点、卡片、父子关系和排序数据都不会删除。",
+    });
+    if (!accepted) return;
+    await postApi("/api/plugin/config/delete", { plugin_id: "study.node-tree", module_id: "trees", id: entry.id, revision: entry.revision });
+    await reload();
+    message.textContent = "章节树方案已删除。";
+  });
   let editorGeneration = 0;
   const editNode = async (operation, node) => {
     const generation = ++editorGeneration;
@@ -282,9 +297,15 @@ export async function renderNodeTreePanel(panel, { api, postApi }) {
   });
   rootSearch.addEventListener("input", fillRoots);
   returnHome.addEventListener("click", () => page(home));
-  settings.addEventListener("click", () => { management.hidden = !management.hidden; settings.setAttribute("aria-pressed", String(!management.hidden)); });
-  edit.addEventListener("click", () => { void run(() => openConfigManager(panel, { api, postApi, pluginId: "study.node-tree", moduleId: "trees", initialId: selectedId, onBack: () => { void run(reload); } })); });
-  add.addEventListener("click", () => { void run(() => openConfigManager(panel, { api, postApi, pluginId: "study.node-tree", moduleId: "trees", onBack: () => { void run(reload); } })); });
+  const openManager = (initialId) => run(() => openConfigManager(panel, { api, postApi, pluginId: "study.node-tree", moduleId: "trees", initialId, onBack: () => { void run(reload); } }));
+  settings.addEventListener("click", () => {
+    management.hidden = !management.hidden;
+    settings.setAttribute("aria-pressed", String(!management.hidden));
+    settings.classList.toggle("active", !management.hidden);
+    renderCards();
+  });
+  edit.addEventListener("click", () => { void openManager(selectedId); });
+  add.addEventListener("click", () => { void openManager(""); });
   refresh.addEventListener("click", () => { void run(reload); });
   panel.dispose = () => { ++editorGeneration; session?.dispose(); };
   await run(async () => {

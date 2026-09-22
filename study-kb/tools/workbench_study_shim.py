@@ -6,10 +6,10 @@ from typing import Any
 
 STUDY_METRIC_SQL = {
     "due_cards": "SELECT COUNT(*) FROM v_study_due_cards",
-    "active_cards": "SELECT COUNT(*) FROM study_card WHERE status = 'active'",
-    "study_nodes": "SELECT COUNT(*) FROM study_node",
+    "active_cards": "SELECT COUNT(*) FROM study_knowledge_item WHERE item_type = 'card' AND status = 'active'",
+    "study_nodes": "SELECT COUNT(*) FROM study_knowledge_item WHERE item_type <> 'card' AND status = 'active'",
     "review_today": (
-        "SELECT COUNT(*) FROM study_review_log "
+        "SELECT COUNT(*) FROM study_knowledge_review_log "
         "WHERE date(reviewed_at) = date('now', 'localtime')"
     ),
 }

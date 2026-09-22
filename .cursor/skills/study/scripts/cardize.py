@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Import flashcard drafts into study_card for a node."""
+"""Import flashcard drafts as unified knowledge-item card nodes."""
 
 from __future__ import annotations
 
@@ -37,16 +37,8 @@ def main(argv: list[str] | None = None) -> int:
             item = cards[0]
             front = str(item["front"])
             back = str(item["back"])
-            con.execute(
-                """
-                UPDATE study_node
-                SET role = 'topic', answer_md = ?, updated_at = datetime('now', 'localtime')
-                WHERE id = ?
-                """,
-                (back, args.node),
-            )
-            synced = study_kb.sync_topic_card(con, args.node)
-            created.append(synced)
+            con.execute("UPDATE study_knowledge_item SET item_type='topic',content_md=?,updated_at=datetime('now','localtime') WHERE id=?", (back, 'node:'+args.node))
+            created.append(study_kb.create_card(con, node_id=args.node, front=front, back=back, hint=str(item.get('hint','')), card_type=str(item.get('card_type','basic')), source_ref=str(item.get('source_ref',''))))
         else:
             for item in cards:
                 created.append(

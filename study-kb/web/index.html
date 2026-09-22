@@ -115,7 +115,7 @@
           <label>只读 SQL<textarea name="sql" rows="5" placeholder="SELECT COUNT(*) FROM v_study_due_cards"></textarea></label>
           <label>格式<select name="format"><option value="number">数值</option><option value="currency">金额（元）</option></select></label>
         </section>
-        <footer><button value="cancel">取消</button><button value="save_builtin">保存至内置</button><button class="primary" value="submit">新增指标</button></footer>
+        <footer><button value="cancel">取消</button><button id="delete-metric" type="button" class="danger">删除指标</button><button value="save_builtin">保存至内置</button><button class="primary" value="submit">新增指标</button></footer>
       </form>
     </dialog>
     <dialog id="builtin-metric-dialog" class="view-dialog compact-dialog">
@@ -128,7 +128,7 @@
         <button id="preview-builtin-metric-sql" type="button">校验 SQL 并预览数值</button>
         <label>格式<select name="format"><option value="number">数值</option><option value="currency">金额（元）</option></select></label>
         <label class="visibility-toggle"><input name="enabled" type="checkbox"><span class="visibility-icon" aria-hidden="true">◉</span><span>显示在指标栏</span></label>
-        <footer><button value="cancel">取消</button><button class="primary" value="submit">保存内置指标</button></footer>
+        <footer><button value="cancel">取消</button><button id="delete-builtin-metric" type="button" class="danger">删除 / 恢复默认</button><button class="primary" value="submit">保存内置指标</button></footer>
       </form>
     </dialog>
     <dialog id="schema-doc-dialog" class="view-dialog">

@@ -78,80 +78,64 @@ def edit_knowledge(con, payload):
             parent_row = con.execute("SELECT parent_id FROM v_study_knowledge_nodes WHERE node_id=?", (cursor,)).fetchone()
             cursor = parent_row[0] if parent_row else None
     if operation == "content":
-        if node["source_type"] == "card":
-            con.execute("UPDATE study_card SET back=?,updated_at=datetime('now','localtime') WHERE id=?", (content, node["source_id"]))
-        else:
-            con.execute("UPDATE study_node SET answer_md=?,updated_at=datetime('now','localtime') WHERE id=?", (content, node["source_id"]))
+        con.execute("UPDATE study_knowledge_item SET content_md=?,updated_at=datetime('now','localtime') WHERE id=?", (content, node["node_id"]))
         key = node["node_id"]
     elif operation in {"child", "sibling"}:
         parent_key = node["node_id"] if operation == "child" else node["parent_id"]
         parent = read_node(con, parent_key)["node"] if parent_key else None
-        parent_id = parent["owner_node_id"] if parent else None
-        if parent and parent["source_type"] == "node":
-            parent_id = parent["source_id"]
+        parent_id = parent["node_id"] if parent else None
         order = con.execute("SELECT COALESCE(MAX(sort_order),0)+1 FROM v_study_knowledge_nodes WHERE parent_id IS ?", (parent_key,)).fetchone()[0]
-        created = create_node(con, title=title.strip(), kind="topic", parent_id=parent_id,
-                              role="outline", answer_md=content, source_ref=node["source_ref"], sort_order=order)
-        if parent and parent["source_type"] == "card":
-            con.execute("INSERT INTO study_node_parent_card(node_id,parent_card_id) VALUES (?,?)", (created["id"], parent["source_id"]))
-        key = "node:" + created["id"]
+        parent_legacy = parent["source_id"] if parent and parent["source_type"] == "node" else None
+        created = create_node(con, title=title.strip(), kind="topic", parent_id=parent_key,
+                              role="topic" if content.strip() else "outline", answer_md=content, source_ref=node["source_ref"], sort_order=order)
+        key = ("card:" + created["card_id"]) if created.get("card_id") else ("node:" + created["id"])
         from study_api import build_knowledge_tree
         build_knowledge_tree(con)
     elif operation == "reorder":
         destination = read_node(con, target)["node"]
         if node["parent_id"] != destination["parent_id"]:
             raise ValueError("只能调整同一父节点下的顺序")
-        if node["source_type"] != "node" or destination["source_type"] != "node":
-            raise ValueError("卡片投影暂不支持同级排序")
         direction = payload.get("position")
         if direction not in {"before", "after"}:
             raise ValueError("排序操作必须指定 before 或 after")
-        sibling_rows = con.execute("SELECT id FROM study_node WHERE parent_id IS (SELECT parent_id FROM study_node WHERE id=?) AND id != ? ORDER BY sort_order,title,id", (destination["source_id"], node["source_id"])).fetchall()
+        sibling_rows = con.execute("SELECT id FROM study_knowledge_item WHERE parent_id IS ? AND id != ? AND status='active' ORDER BY sort_order,title,id", (destination["parent_id"], node["node_id"])).fetchall()
         ordered = [row[0] for row in sibling_rows]
-        position = ordered.index(destination["source_id"]) + (1 if direction == "after" else 0)
-        ordered.insert(position, node["source_id"])
-        for sort_order, source_id in enumerate(ordered, start=1):
-            con.execute("UPDATE study_node SET sort_order=?,updated_at=datetime('now','localtime') WHERE id=?", (sort_order, source_id))
+        position = ordered.index(destination["node_id"]) + (1 if direction == "after" else 0)
+        ordered.insert(position, node["node_id"])
+        for sort_order, item_id in enumerate(ordered, start=1):
+            con.execute("UPDATE study_knowledge_item SET sort_order=?,updated_at=datetime('now','localtime') WHERE id=?", (sort_order, item_id))
         key = node["node_id"]
     elif operation == "move":
         destination = read_node(con, target)["node"]
-        destination_id = destination["source_id"] if destination["source_type"] == "node" else destination["owner_node_id"]
-        if node["source_type"] == "card":
-            con.execute("UPDATE study_card SET node_id=? WHERE id=?", (destination_id, node["source_id"]))
-        else:
-            if destination["source_type"] == "card":
-                con.execute("INSERT OR REPLACE INTO study_node_parent_card(node_id,parent_card_id) VALUES (?,?)", (node["source_id"], destination["source_id"]))
-            else:
-                con.execute("DELETE FROM study_node_parent_card WHERE node_id=?", (node["source_id"],))
-                con.execute("UPDATE study_node SET parent_id=?,updated_at=datetime('now','localtime') WHERE id=?", (destination_id, node["source_id"]))
+        destination_id = destination["node_id"]
+        destination_key = destination_id if destination_id.startswith(("node:", "card:")) else ("card:" + destination_id if destination.get("source_type") == "card" else "node:" + destination_id)
+        node_key = node["node_id"] if node["node_id"].startswith(("node:", "card:")) else ("card:" + node["node_id"] if node.get("source_type") == "card" else "node:" + node["node_id"])
+        con.execute("UPDATE study_knowledge_item SET parent_id=?,sort_order=(SELECT COALESCE(MAX(sort_order),0)+1 FROM study_knowledge_item WHERE parent_id=?),updated_at=datetime('now','localtime') WHERE id=?", (destination_key, destination_key, node_key))
         key = node["node_id"]
     elif operation == "delete":
         if node["source_type"] == "card":
-            con.execute("UPDATE study_card SET status='archived', updated_at=datetime('now','localtime') WHERE id=?", (node["source_id"],))
-            con.execute("DELETE FROM study_node_parent_card WHERE parent_card_id=?", (node["source_id"],))
+            con.execute("UPDATE study_knowledge_item SET status='archived',updated_at=datetime('now','localtime') WHERE id=?", (node["node_id"],))
             result = {"node": {"node_id": node["node_id"], "deleted": True}}
             con.execute("INSERT INTO study_knowledge_edit(request_id,request_hash,operation,before_json,result_json) VALUES (?,?,?,?,?)", (request_id, request_hash, operation, encoded(before), encoded(result)))
             return result
         from study_kb import get_node
-        source_ids = [node["source_id"]]
+        source_ids = [node["node_id"]]
         if payload["delete_mode"] == "recursive":
             pending = list(source_ids)
             while pending:
                 current = pending.pop()
-                children = [row[0] for row in con.execute("SELECT id FROM study_node WHERE parent_id=?", (current,))]
+                children = [row[0] for row in con.execute("SELECT id FROM study_knowledge_item WHERE parent_id=?", (current,))]
                 pending.extend(children)
                 source_ids.extend(children)
         else:
             old_parent = node["parent_id"]
             fallback = None
             if old_parent:
-                parent = read_node(con, old_parent)["node"]
-                fallback = parent["source_id"] if parent["source_type"] == "node" else parent["owner_node_id"]
-            for child in con.execute("SELECT id FROM study_node WHERE parent_id=?", (node["source_id"],)).fetchall():
-                con.execute("UPDATE study_node SET parent_id=? WHERE id=?", (fallback, child[0]))
+                fallback = old_parent
+            for child in con.execute("SELECT id FROM study_knowledge_item WHERE parent_id=?", (node["node_id"],)).fetchall():
+                con.execute("UPDATE study_knowledge_item SET parent_id=? WHERE id=?", (fallback, child[0]))
         placeholders = ",".join("?" for _ in source_ids)
-        con.execute(f"UPDATE study_node SET metadata_json=json_set(metadata_json, '$.knowledge_deleted', 1), updated_at=datetime('now','localtime') WHERE id IN ({placeholders})", source_ids)
-        con.execute(f"UPDATE study_card SET status='archived', updated_at=datetime('now','localtime') WHERE node_id IN ({placeholders})", source_ids)
+        con.execute(f"UPDATE study_knowledge_item SET status='archived',updated_at=datetime('now','localtime') WHERE id IN ({placeholders})", source_ids)
         key = node["node_id"]
     result = {"node": {"node_id": key, "deleted": True}} if operation == "delete" else read_node(con, key)
     con.execute("INSERT INTO study_knowledge_edit(request_id,request_hash,operation,before_json,result_json) VALUES (?,?,?,?,?)",

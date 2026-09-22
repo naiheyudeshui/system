@@ -1,4 +1,4 @@
-import { openConfigManager } from "/3dworkbench/pluginConfigManager.mjs";
+import { addConfigCardControls, confirmWorkbenchAction, openConfigManager } from "/3dworkbench/pluginConfigManager.mjs";
 import { renderTablePreview } from "/3dworkbench/tablePreview.mjs";
 import { attachMarkdownToggle } from "./studyMarkdown.mjs";
 
@@ -134,6 +134,11 @@ export async function renderReviewTablePanel(panel, { api, postApi }) {
         selectedId = entry.id; renderParameters(); renderCards(); refreshControls();
       });
       card.append(choose, make("small", "已保存的 SQL 复习方案"));
+      if (!management.hidden) addConfigCardControls(card, {
+        name: entry.name,
+        onEdit: () => { void openManager(entry.id); },
+        onDelete: () => { void deletePlan(entry); },
+      });
       if (entry.id === selectedId) {
         const actions = make("div", null, "wb-config-actions");
         for (const label of ["预览并筛选", "开始一轮学习"]) {
@@ -156,6 +161,16 @@ export async function renderReviewTablePanel(panel, { api, postApi }) {
     if (selectedId === previous) for (const [key, value] of Object.entries(previousParameters)) if (parameterInputs[key]) parameterInputs[key].value = value;
     refreshControls();
   };
+  const deletePlan = async (entry) => run(async () => {
+    const accepted = await confirmWorkbenchAction({
+      title: `删除复习方案“${entry.name}”？`,
+      message: "只删除这份 SQL 选卡方案。已经开始的复习轮次与评分记录保留，卡片和复习时间不受影响。",
+    });
+    if (!accepted) return;
+    await postApi("/api/plugin/config/delete", { plugin_id: "study.review-table", module_id: "reviews", id: entry.id, revision: entry.revision });
+    await reload();
+    message.textContent = "复习方案已删除。";
+  });
   const render = (next) => {
     state = next; revealed = false; started = Date.now();
     try { localStorage.setItem("study.review.session.v1", JSON.stringify(state.session_id)); } catch {}
@@ -174,6 +189,7 @@ export async function renderReviewTablePanel(panel, { api, postApi }) {
     management.hidden = !management.hidden;
     settings.setAttribute("aria-pressed", String(!management.hidden));
     settings.classList.toggle("active", !management.hidden);
+    renderCards();
   });
   const openManager = (initialId) => run(() => openConfigManager(panel, { api, postApi, pluginId: "study.review-table", moduleId: "reviews", initialId, onBack: () => { void run(reload); } }));
   edit.addEventListener("click", () => { void openManager(selectedId); });

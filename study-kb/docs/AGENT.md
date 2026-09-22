@@ -9,3 +9,5 @@
 - 给人阅读：[system README](../../README.md#知识交互完整使用指南)
 
 2026-09-19：按用户要求合并，未删除操作内容，未改变学习数据库。
+
+2026-09-21：知识图已切换为 `study_knowledge_item` 唯一运行时事实表。章节、主题、卡片均为统一节点；卡片不再称为只读投影。复习调度和复习日志使用 `study_knowledge_schedule`、`study_knowledge_review_log`。旧表仅作为迁移历史快照保留，不得在新代码中读写。

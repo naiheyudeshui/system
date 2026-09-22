@@ -1,5 +1,5 @@
 import { createPluginWorkspace } from "/3dworkbench/pluginWorkspace.mjs";
-import { openConfigManager } from "/3dworkbench/pluginConfigManager.mjs";
+import { confirmWorkbenchAction, openConfigManager } from "/3dworkbench/pluginConfigManager.mjs";
 import { rowMatchesFilter } from "/3dworkbench/tablePreview.mjs";
 let pluginWorkspace;
 import {
@@ -420,18 +420,34 @@ function metricCard(metric) {
     edit.type = "button"; edit.className = "metric-card-edit"; edit.textContent = "⚙"; edit.title = "配置指标";
     edit.addEventListener("click", () => metric.builtin ? openBuiltinMetricDialog(metric.title) : openMetricDialog(metric));
     const remove = document.createElement("button");
-    remove.type = "button"; remove.className = "metric-card-remove"; remove.textContent = "×"; remove.title = "从指标栏移除";
-    remove.addEventListener("click", () => {
-      if (metric.builtin) {
-        state.dashboard.enabledMetrics = state.dashboard.enabledMetrics.filter((id) => id !== metric.title);
-      } else {
-        state.dashboard.customMetrics = state.dashboard.customMetrics.filter((item) => item.id !== metric.title);
-      }
-      void persistDashboard();
-    });
+    remove.type = "button"; remove.className = "metric-card-remove"; remove.textContent = "×"; remove.title = "删除指标";
+    remove.addEventListener("click", () => { void deleteMetric(metric); });
     card.append(edit, remove);
   }
   return card;
+}
+
+async function deleteMetric(metric) {
+  const system = Boolean(metric.builtin && metricByTitle(metric.title)?.system);
+  const accepted = await confirmWorkbenchAction({
+    title: `${system ? "恢复" : "删除"}指标“${metric.label}”？`,
+    message: system ? "系统自带指标不会从程序中移除；此操作会清除自定义名称和 SQL、恢复默认定义，并从当前指标栏隐藏。" : "此操作会删除指标定义并从指标栏移除，不会修改 SQL 查询过的业务数据。",
+    confirmLabel: system ? "恢复默认并隐藏" : "删除指标",
+  });
+  if (!accepted) return;
+  if (metric.custom) {
+    state.dashboard.customMetrics = state.dashboard.customMetrics.filter((item) => item.id !== metric.title);
+    await persistDashboard();
+  } else {
+    const result = await postApi("/api/metric-definition/delete", { id: metric.title });
+    state.metricDefinitions = result.definitions || state.metricDefinitions;
+    const dashboard = result.dashboard;
+    state.dashboard = { metricsVisible: dashboard.metrics_visible, inspectorVisible: dashboard.inspector_visible, enabledMetrics: dashboard.enabled_metrics, customMetrics: dashboard.custom_metrics || [], metricLabels: dashboard.metric_labels || {}, builtinMetricSql: dashboard.builtin_metric_sql || {}, pluginOrder: dashboard.plugin_order || [] };
+    saveDashboardPreferences();
+    renderMetrics(await api("/api/metrics"));
+  }
+  $("#metric-dialog").close();
+  $("#builtin-metric-dialog").close();
 }
 
 function metricFormSourceChanged() {
@@ -467,6 +483,7 @@ function openMetricDialog(metric = null) {
     source.disabled = false; form.elements.id.readOnly = false;
   }
   $("#metric-dialog-title").textContent = metric ? "配置指标" : "新增指标";
+  $("#delete-metric").hidden = !metric;
   $("#metric-dialog-message").textContent = "";
   metricFormSourceChanged();
   $("#metric-dialog").showModal();
@@ -1774,6 +1791,12 @@ document.getElementById("add-record").addEventListener("click", () => { void ope
 $("#close-record-dialog").addEventListener("click", () => $("#record-dialog").close());
 $("#close-metric-dialog").addEventListener("click", () => $("#metric-dialog").close());
 $("#close-builtin-metric-dialog").addEventListener("click", () => $("#builtin-metric-dialog").close());
+$("#delete-metric").addEventListener("click", () => { if (editingMetric) void deleteMetric(editingMetric); });
+$("#delete-builtin-metric").addEventListener("click", () => {
+  const title = $("#builtin-metric-form").elements.source.value;
+  const metric = metricByTitle(title);
+  if (metric) void deleteMetric({ ...metric, builtin: true, value: latestMetrics[title] ?? 0 });
+});
 $("#metric-source").addEventListener("change", () => { $("#metric-form").elements.label.value = ""; metricFormSourceChanged(); });
 $("#builtin-metric-source").addEventListener("change", (event) => loadBuiltinMetricForm(event.target.value));
 $("#preview-builtin-metric-sql").addEventListener("click", async () => {

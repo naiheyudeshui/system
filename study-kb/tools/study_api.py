@@ -50,22 +50,23 @@ def build_node_tree(con: sqlite3.Connection, *, scope_id: str | None = None) -> 
               n.answer_md,
               n.sort_order,
               (
-                SELECT COUNT(*) FROM study_node child WHERE child.parent_id = n.id
+              SELECT COUNT(*) FROM study_knowledge_item child WHERE child.parent_id = n.id AND child.status='active'
               ) AS child_count,
               (
                 SELECT COUNT(*)
-                FROM study_card sc
-                WHERE sc.node_id = n.id AND sc.status = 'active'
+                FROM study_knowledge_item sc
+                WHERE sc.parent_id = n.id AND sc.item_type='card' AND sc.status = 'active'
               ) AS card_count,
               (
                 SELECT COUNT(*)
-                FROM study_card sc
-                JOIN study_card_fsrs f ON f.card_id = sc.id
-                WHERE sc.node_id = n.id
-                  AND sc.status = 'active'
+                FROM study_knowledge_item sc
+                JOIN study_knowledge_schedule f ON f.item_id = sc.id
+                WHERE sc.parent_id = n.id
+                  AND sc.item_type='card' AND sc.status = 'active'
                   AND f.due_at <= datetime('now', 'localtime')
               ) AS due_count
-            FROM study_node n
+            FROM study_knowledge_item n
+            WHERE n.status='active'
             ORDER BY n.sort_order, n.title, n.id
             """
         ).fetchall()
@@ -78,10 +79,10 @@ def build_node_tree(con: sqlite3.Connection, *, scope_id: str | None = None) -> 
         if placeholders:
             for row in con.execute(
                 f"""
-                SELECT node_id, id AS card_id, front, back
-                FROM study_card
-                WHERE node_id IN ({placeholders}) AND status = 'active'
-                ORDER BY node_id, created_at, id
+                SELECT parent_id AS node_id, legacy_card_id AS card_id, title AS front, content_md AS back
+                FROM study_knowledge_item
+                WHERE parent_id IN ({placeholders}) AND item_type='card' AND status = 'active'
+                ORDER BY parent_id, created_at, id
                 """,
                 node_ids,
             ).fetchall():
@@ -110,7 +111,7 @@ def build_node_tree(con: sqlite3.Connection, *, scope_id: str | None = None) -> 
     scopes = [
         _row_dict(row) or {}
         for row in con.execute(
-            "SELECT id, label, is_default FROM study_scope ORDER BY is_default DESC, label"
+            "SELECT id, label, is_default FROM study_knowledge_scope ORDER BY is_default DESC, label"
         ).fetchall()
     ]
     return {
@@ -144,7 +145,7 @@ def build_knowledge_tree(con: sqlite3.Connection, *, scope_id: str | None = None
                              {"column": "source_ref", "label": "来源", "format": "text"}]}})
     result["editing"] = {"provider": "study-knowledge/v1"}
     result["scopes"] = [dict(row) for row in con.execute(
-        "SELECT id, label, is_default FROM study_scope ORDER BY is_default DESC, label")]
+        "SELECT id, label, is_default FROM study_knowledge_scope ORDER BY is_default DESC, label")]
     return result
 
 
@@ -219,13 +220,13 @@ def get_card_detail(card_id: str) -> dict[str, Any]:
     try:
         row = con.execute(
             """
-            SELECT c.id AS card_id, c.node_id, c.front, c.back, c.hint,
-                   n.title AS node_title, n.role AS node_role, n.answer_md,
+            SELECT c.legacy_card_id AS card_id, c.parent_id AS node_id, c.title AS front, c.content_md AS back, c.hint,
+                   n.title AS node_title, n.item_type AS node_role, n.content_md AS answer_md,
                    f.due_at
-            FROM study_card c
-            JOIN study_node n ON n.id = c.node_id
-            LEFT JOIN study_card_fsrs f ON f.card_id = c.id
-            WHERE c.id = ? AND c.status = 'active'
+            FROM study_knowledge_item c
+            JOIN study_knowledge_item n ON n.id = c.parent_id
+            LEFT JOIN study_knowledge_schedule f ON f.item_id = c.id
+            WHERE c.legacy_card_id = ? AND c.status = 'active'
             """,
             (card_id,),
         ).fetchone()
@@ -246,10 +247,10 @@ def get_node_detail(node_id: str) -> dict[str, Any]:
         node = get_node(con, node_id)
         card = con.execute(
             """
-            SELECT c.id AS card_id, c.front, c.back, c.hint, f.due_at
-            FROM study_card c
-            LEFT JOIN study_card_fsrs f ON f.card_id = c.id
-            WHERE c.node_id = ? AND c.status = 'active'
+            SELECT c.id AS card_id, c.title AS front, c.content_md AS back, c.hint, f.due_at
+            FROM study_knowledge_item c
+            LEFT JOIN study_knowledge_schedule f ON f.item_id = c.id
+            WHERE c.parent_id = 'node:' || ? AND c.item_type='card' AND c.status = 'active'
             ORDER BY c.created_at, c.id
             LIMIT 1
             """,
@@ -259,10 +260,10 @@ def get_node_detail(node_id: str) -> dict[str, Any]:
             _row_dict(row) or {}
             for row in con.execute(
                 """
-                SELECT c.id AS card_id, c.front, c.back, c.hint, f.due_at
-                FROM study_card c
-                LEFT JOIN study_card_fsrs f ON f.card_id = c.id
-                WHERE c.node_id = ? AND c.status = 'active'
+                SELECT c.id AS card_id, c.title AS front, c.content_md AS back, c.hint, f.due_at
+                FROM study_knowledge_item c
+                LEFT JOIN study_knowledge_schedule f ON f.item_id = c.id
+                WHERE c.parent_id = 'node:' || ? AND c.item_type='card' AND c.status = 'active'
                 ORDER BY c.created_at, c.id
                 """,
                 (node_id,),
@@ -272,9 +273,9 @@ def get_node_detail(node_id: str) -> dict[str, Any]:
             _row_dict(row) or {}
             for row in con.execute(
                 """
-                SELECT id, title, role, kind, sort_order
-                FROM study_node
-                WHERE parent_id = ?
+                SELECT legacy_node_id AS id, title, item_type AS role, item_type AS kind, sort_order
+                FROM study_knowledge_item
+                WHERE parent_id = 'node:' || ? AND item_type <> 'card' AND status='active'
                 ORDER BY sort_order, title, id
                 """,
                 (node_id,),

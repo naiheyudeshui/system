@@ -1,0 +1,24 @@
+{
+  "batch_id": "structured-analysis-20260921-223139",
+  "database": "study-kb/data/study.sqlite",
+  "parent_id": "node_699df01582b44c709d05b4487e",
+  "parent_title": "1.4 需求工程两大过程",
+  "source_ref": "系统分析师-一本通精华知识点-第二版(OCR).docx#ch11-结构化分析（用户确认归纳）",
+  "created_nodes": [
+    "node:node_05f13ab89abd49ae9cd4adc824",
+    "node:node_be16bef444194e8fa5d5c32785",
+    "node:node_864e5bed91dc4b5db138016697",
+    "node:node_d510e841136244d9bd1c8dcf08",
+    "node:node_7079dc4923b34fb6ba62bd54ee"
+  ],
+  "created_cards": [
+    "card:card_e1eeec3b330e463dbced5005e8",
+    "card:card_bbcdeea485254141852d544143",
+    "card:card_8c221e4ee40a4fd99f4f22676d",
+    "card:card_393656431342460da6cdd16883",
+    "card:card_37f5883bef78451abd3f24b906"
+  ],
+  "backup": "study-kb/data/backups/study-before-structured-analysis-20260921-223139.sqlite",
+  "checks": {"integrity_check": "ok", "foreign_key_check": [], "active_cards_without_schedule": [], "duplicate_sibling_titles": []},
+  "review_history_preserved": true
+}

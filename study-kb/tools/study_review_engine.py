@@ -57,7 +57,7 @@ def review_catalog() -> dict:
             except sqlite3.Error:
                 continue
         return {"views": views, "targets": writable_targets(con), "nodes": [dict(row) for row in con.execute(
-            "SELECT id, parent_id, title FROM study_node ORDER BY sort_order, title, id"
+            "SELECT legacy_node_id AS id, substr(parent_id,6) AS parent_id, title FROM study_knowledge_item WHERE item_type <> 'card' ORDER BY sort_order, title, id"
         )]}
     finally:
         con.close()
@@ -80,7 +80,7 @@ def validate_config(con: sqlite3.Connection, config: dict) -> dict:
     if config.get("mode") not in ("all", "due"):
         raise ValueError("mode must be all or due")
     root = config.get("root_id")
-    if root and (not mapping.get("node") or not con.execute("SELECT 1 FROM study_node WHERE id=?", (root,)).fetchone()):
+    if root and (not mapping.get("node") or not con.execute("SELECT 1 FROM study_knowledge_item WHERE id='node:'||? AND status='active'", (root,)).fetchone()):
         raise ValueError("Node selection requires a valid node field and root")
     limit = config.get("limit", 100)
     if type(limit) is not int or not 1 <= limit <= 5000:
@@ -106,7 +106,7 @@ def validate_config(con: sqlite3.Connection, config: dict) -> dict:
     if not isinstance(scheduler, dict):
         raise ValueError("Invalid scheduler")
     if scheduler.get("kind") == "fsrs":
-        config["scheduler"] = {"kind": "fsrs", "table": "study_card_fsrs", "key": "card_id", "due": "due_at"}
+        config["scheduler"] = {"kind": "fsrs", "table": "study_knowledge_schedule", "key": "item_id", "due": "due_at"}
     elif scheduler.get("kind") == "interval":
         target = next((item for item in writable_targets(con) if item["table"] == scheduler.get("table")), None)
         if not target or scheduler.get("key") not in target["keys"] or scheduler.get("due") not in target["time_columns"]:
@@ -128,14 +128,14 @@ def collection(con: sqlite3.Connection, config: dict) -> tuple[list[dict], int]:
     conditions = [f"{source_key} IS NOT NULL"]
     params: list[Any] = []
     if scheduler["kind"] == "fsrs":
-        conditions.append(f"EXISTS (SELECT 1 FROM study_card c WHERE c.id={source_key} AND c.status='active')")
+        conditions.append(f"EXISTS (SELECT 1 FROM study_knowledge_item c WHERE c.legacy_card_id={source_key} AND c.status='active')")
     if config["mode"] == "due":
         conditions.append(f"datetime(t.{identifier(scheduler['due'])}) <= datetime('now', 'localtime')")
     if config.get("root_id"):
         conditions.append(f'''v.{identifier(mapping['node'])} IN (
             WITH RECURSIVE subtree(id) AS (
-                SELECT id FROM study_node WHERE id=?
-                UNION SELECT n.id FROM study_node n JOIN subtree s ON n.parent_id=s.id
+                SELECT 'node:'||legacy_node_id FROM study_knowledge_item WHERE legacy_node_id=?
+                UNION SELECT n.id FROM study_knowledge_item n JOIN subtree s ON n.parent_id=s.id
             ) SELECT id FROM subtree)''')
         params.append(config["root_id"])
     operators = {"eq": "=", "ne": "!=", "lt": "<", "lte": "<=", "gt": ">", "gte": ">="}
@@ -157,9 +157,11 @@ def collection(con: sqlite3.Connection, config: dict) -> tuple[list[dict], int]:
     select[0] = f"{target_key} AS key"
     if config["view"] in {"v_study_node_cards", "v_study_due_cards"} and mapping["back"] == "back":
         select[2] = "COALESCE(NULLIF(v.back, ''), v.answer_md) AS back"
-    select.append(f't.{identifier(scheduler["due"])} AS due_at')
+    due_expression = "t.due_at" if scheduler["kind"] == "fsrs" else f't.{identifier(scheduler["due"])}'
+    select.append(f'{due_expression} AS due_at')
+    join_condition = f"t.item_id='card:'||{source_key}" if scheduler["kind"] == "fsrs" else f"{target_key}={source_key}"
     query = f'''SELECT {', '.join(select)} FROM {identifier(config['view'])} v
-        JOIN {identifier(scheduler['table'])} t ON {target_key}={source_key}
+        JOIN {identifier(scheduler['table'])} t ON {join_condition}
         WHERE {' AND '.join(conditions)} ORDER BY {', '.join(sort)}'''
     items = []
     seen = set()
@@ -187,8 +189,8 @@ def prepare_review(config: dict, *, preview: bool = False) -> dict:
         if preview:
             return {"matched": total, "selected": len(items), "sample": items[:5]}
         session_id = uuid.uuid4().hex
-        con.execute("INSERT INTO study_review_session (id, config_json) VALUES (?, ?)", (session_id, json.dumps(config)))
-        con.executemany("INSERT INTO study_review_session_item (session_id, position, item_json) VALUES (?, ?, ?)",
+        con.execute("INSERT INTO study_knowledge_review_session (id, config_json) VALUES (?, ?)", (session_id, json.dumps(config)))
+        con.executemany("INSERT INTO study_knowledge_review_session_item (session_id, position, item_json) VALUES (?, ?, ?)",
                         [(session_id, position, json.dumps(item)) for position, item in enumerate(items)])
         con.commit()
         return session_state(con, session_id)
@@ -197,11 +199,11 @@ def prepare_review(config: dict, *, preview: bool = False) -> dict:
 
 
 def session_state(con: sqlite3.Connection, session_id: str) -> dict:
-    session = con.execute("SELECT config_json FROM study_review_session WHERE id=?", (session_id,)).fetchone()
+    session = con.execute("SELECT config_json FROM study_knowledge_review_session WHERE id=?", (session_id,)).fetchone()
     if not session:
         raise ValueError("Unknown review session")
-    counts = con.execute("SELECT COUNT(*) AS total, COUNT(result_json) AS completed FROM study_review_session_item WHERE session_id=?", (session_id,)).fetchone()
-    row = con.execute("SELECT position, item_json FROM study_review_session_item WHERE session_id=? AND result_json IS NULL ORDER BY position LIMIT 1", (session_id,)).fetchone()
+    counts = con.execute("SELECT COUNT(*) AS total, COUNT(result_json) AS completed FROM study_knowledge_review_session_item WHERE session_id=?", (session_id,)).fetchone()
+    row = con.execute("SELECT position, item_json FROM study_knowledge_review_session_item WHERE session_id=? AND result_json IS NULL ORDER BY position LIMIT 1", (session_id,)).fetchone()
     return {"session_id": session_id, "config": json.loads(session["config_json"]), **dict(counts),
             "position": row["position"] if row else None, "card": json.loads(row["item_json"]) if row else None}
 
@@ -223,7 +225,7 @@ def grade_session(*, session_id: str, position: int, rating: int, elapsed_ms: in
     try:
         con.execute("BEGIN IMMEDIATE")
         state = session_state(con, session_id)
-        row = con.execute("SELECT item_json, result_json FROM study_review_session_item WHERE session_id=? AND position=?", (session_id, position)).fetchone()
+        row = con.execute("SELECT item_json, result_json FROM study_knowledge_review_session_item WHERE session_id=? AND position=?", (session_id, position)).fetchone()
         if not row:
             raise ValueError("Unknown session item")
         if row["result_json"]:
@@ -233,7 +235,7 @@ def grade_session(*, session_id: str, position: int, rating: int, elapsed_ms: in
         item = json.loads(row["item_json"])
         scheduler = state["config"]["scheduler"]
         if scheduler["kind"] == "fsrs":
-            active = con.execute("SELECT 1 FROM study_card WHERE id=? AND status='active'", (item["key"],)).fetchone()
+            active = con.execute("SELECT 1 FROM study_knowledge_item WHERE legacy_card_id=? AND status='active'", (item["key"],)).fetchone()
             if not active:
                 raise ValueError("Card was removed or suspended; start a new collection")
             result = grade_card(con, card_id=item["key"], rating=rating, elapsed_ms=elapsed_ms)
@@ -246,7 +248,7 @@ def grade_session(*, session_id: str, position: int, rating: int, elapsed_ms: in
             if cursor.rowcount != 1:
                 raise ValueError("Scheduling target no longer exists")
             result = {"key": item["key"], "due_at": due_at, "rating": rating, "elapsed_ms": elapsed_ms}
-        con.execute("UPDATE study_review_session_item SET result_json=? WHERE session_id=? AND position=?", (json.dumps(result), session_id, position))
+        con.execute("UPDATE study_knowledge_review_session_item SET result_json=? WHERE session_id=? AND position=?", (json.dumps(result), session_id, position))
         next_state = session_state(con, session_id)
         con.commit()
         return {"graded": result, "next": next_state}

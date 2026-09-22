@@ -39,40 +39,60 @@ def create_node(
 ) -> dict[str, Any]:
     if role not in {"outline", "topic"}:
         raise ValueError("role must be outline or topic")
-    node_id = node_id or new_id("node_")
-    con.execute(
-        """
-        INSERT INTO study_node (
-          id, parent_id, kind, title, source_ref, sort_order, metadata_json, role, answer_md
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """,
-        (
-            node_id,
-            parent_id,
-            kind,
-            title,
-            source_ref,
-            sort_order,
-            json.dumps(metadata or {}, ensure_ascii=False),
-            role,
-            answer_md or "",
-        ),
-    )
-    row = con.execute("SELECT * FROM study_node WHERE id = ?", (node_id,)).fetchone()
-    node = _row_dict(row) or {}
     if role == "topic":
-        sync_topic_card(con, node_id)
-        row = con.execute("SELECT * FROM study_node WHERE id = ?", (node_id,)).fetchone()
-        node = _row_dict(row) or node
+        card_id = new_id("card_")
+        parent_key = _resolve_parent_item_id(con, parent_id)
+        item_id = "card:" + card_id
+        con.execute("""INSERT INTO study_knowledge_item
+            (id,item_type,parent_id,sort_order,title,content_md,source_ref,status,card_type,hint,legacy_card_id)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?)""", (item_id, "card", parent_key, sort_order, title, answer_md or "", source_ref, "active", "basic", "", card_id))
+        fsrs = new_card_state()
+        con.execute("""INSERT INTO study_knowledge_schedule
+            (item_id,due_at,stability,difficulty,reps,lapses,state_json) VALUES (?,?,?,?,?,?,?)""",
+            (item_id, fsrs.due_at, fsrs.stability, fsrs.difficulty, fsrs.reps, fsrs.lapses, fsrs.to_json()))
+        return {"id": card_id, "parent_id": parent_id, "kind": kind, "title": title,
+                "source_ref": source_ref, "sort_order": sort_order,
+                "metadata_json": json.dumps(metadata or {}, ensure_ascii=False),
+                "role": "topic", "answer_md": answer_md or "", "card_id": card_id}
+    node_id = node_id or new_id("node_")
+    item_id = "node:" + node_id
+    parent_key = _resolve_parent_item_id(con, parent_id)
+    con.execute("""INSERT INTO study_knowledge_item
+        (id,item_type,parent_id,sort_order,title,content_md,source_ref,status,legacy_node_id)
+        VALUES (?,?,?,?,?,?,?,?,?)""", (item_id, "topic" if role == "topic" else "chapter",
+        parent_key, sort_order, title, answer_md or "", source_ref, "active", node_id))
+    node = {"id": node_id, "parent_id": parent_id, "kind": kind, "title": title,
+            "source_ref": source_ref, "sort_order": sort_order, "metadata_json": json.dumps(metadata or {}, ensure_ascii=False),
+            "role": role, "answer_md": answer_md or ""}
     return node
 
 
+def _resolve_parent_item_id(con: sqlite3.Connection, parent_id: str | None) -> str | None:
+    if not parent_id:
+        return None
+    if parent_id.startswith(("node:", "card:")):
+        key = parent_id
+    else:
+        row = con.execute("SELECT id FROM study_knowledge_item WHERE legacy_node_id=? OR legacy_card_id=?", (parent_id, parent_id)).fetchone()
+        if row is None:
+            raise ValueError(f"Unknown parent: {parent_id}")
+        key = row[0]
+    if con.execute("SELECT 1 FROM study_knowledge_item WHERE id=? AND status!='archived'", (key,)).fetchone() is None:
+        raise ValueError(f"Unknown parent: {parent_id}")
+    return key
+
+
 def get_node(con: sqlite3.Connection, node_id: str) -> dict[str, Any]:
-    row = con.execute("SELECT * FROM study_node WHERE id = ?", (node_id,)).fetchone()
+    key = node_id if node_id.startswith(("node:", "card:")) else None
+    row = con.execute("SELECT * FROM study_knowledge_item WHERE (id = ? OR legacy_node_id = ? OR legacy_card_id = ?) AND status != 'archived'", (key or "node:" + node_id, node_id, node_id)).fetchone()
     if row is None:
         raise ValueError(f"Unknown node: {node_id}")
-    return _row_dict(row) or {}
+    item = _row_dict(row) or {}
+    return {"id": item.get("legacy_node_id") or item.get("legacy_card_id") or item["id"],
+            "parent_id": (item.get("parent_id") or "").removeprefix("node:").removeprefix("card:") or None,
+            "kind": item["item_type"], "title": item["title"], "source_ref": item["source_ref"],
+            "sort_order": item["sort_order"], "role": item["item_type"], "answer_md": item["content_md"],
+            "metadata_json": "{}"}
 
 
 def sync_topic_card(con: sqlite3.Connection, node_id: str) -> dict[str, Any]:
@@ -88,20 +108,20 @@ def sync_topic_card(con: sqlite3.Connection, node_id: str) -> dict[str, Any]:
 
     existing = con.execute(
         """
-        SELECT id FROM study_card
-        WHERE node_id = ? AND status = 'active'
+        SELECT legacy_card_id AS id FROM study_knowledge_item
+        WHERE parent_id = ? AND item_type = 'card' AND status = 'active'
         ORDER BY created_at, id
         LIMIT 1
         """,
-        (node_id,),
+        ("node:" + node_id,),
     ).fetchone()
 
     if existing:
         con.execute(
             """
-            UPDATE study_card
-            SET front = ?, back = ?, updated_at = datetime('now', 'localtime')
-            WHERE id = ?
+            UPDATE study_knowledge_item
+            SET title = ?, content_md = ?, updated_at = datetime('now', 'localtime')
+            WHERE legacy_card_id = ?
             """,
             (front, back, existing["id"]),
         )
@@ -112,10 +132,10 @@ def sync_topic_card(con: sqlite3.Connection, node_id: str) -> dict[str, Any]:
 
     row = con.execute(
         """
-        SELECT c.*, f.due_at, f.stability, f.difficulty, f.reps, f.lapses
-        FROM study_card c
-        JOIN study_card_fsrs f ON f.card_id = c.id
-        WHERE c.id = ?
+        SELECT legacy_card_id AS id, title AS front, content_md AS back, source_ref,
+               hint, card_type, f.due_at, f.stability, f.difficulty, f.reps, f.lapses
+        FROM study_knowledge_item i JOIN study_knowledge_schedule f ON f.item_id=i.id
+        WHERE i.legacy_card_id = ?
         """,
         (card_id,),
     ).fetchone()
@@ -161,15 +181,15 @@ def create_scope(
 ) -> dict[str, Any]:
     scope_id = scope_id or new_id("scope_")
     if is_default:
-        con.execute("UPDATE study_scope SET is_default = 0")
+        con.execute("UPDATE study_knowledge_scope SET is_default = 0")
     con.execute(
         """
-        INSERT INTO study_scope (id, anchor_node_id, label, is_default)
+        INSERT INTO study_knowledge_scope (id, anchor_item_id, label, is_default)
         VALUES (?, ?, ?, ?)
         """,
-        (scope_id, anchor_node_id, label, 1 if is_default else 0),
+        (scope_id, "node:" + anchor_node_id, label, 1 if is_default else 0),
     )
-    row = con.execute("SELECT * FROM study_scope WHERE id = ?", (scope_id,)).fetchone()
+    row = con.execute("SELECT id, substr(anchor_item_id,6) AS anchor_node_id, label, is_default, created_at FROM study_knowledge_scope WHERE id = ?", (scope_id,)).fetchone()
     return _row_dict(row) or {}
 
 
@@ -186,22 +206,21 @@ def create_card(
     due_at: str | None = None,
 ) -> dict[str, Any]:
     card_id = card_id or new_id("card_")
-    con.execute(
-        """
-        INSERT INTO study_card (id, node_id, front, back, hint, card_type, source_ref)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-        """,
-        (card_id, node_id, front, back, hint, card_type, source_ref),
-    )
+    parent_key = _resolve_parent_item_id(con, node_id)
+    con.execute("""INSERT INTO study_knowledge_item
+      (id,item_type,parent_id,sort_order,title,content_md,source_ref,status,card_type,hint,legacy_card_id)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?)""", ("card:" + card_id, "card", parent_key,
+      con.execute("SELECT COALESCE(MAX(sort_order),-1)+1 FROM study_knowledge_item WHERE parent_id=?", (parent_key,)).fetchone()[0],
+      front, back, source_ref, "active", card_type, hint, card_id))
     fsrs = new_card_state(due_at=due_at)
     con.execute(
         """
-        INSERT INTO study_card_fsrs
-          (card_id, due_at, stability, difficulty, reps, lapses, state_json)
+        INSERT INTO study_knowledge_schedule
+          (item_id, due_at, stability, difficulty, reps, lapses, state_json)
         VALUES (?, ?, ?, ?, ?, ?, ?)
         """,
         (
-            card_id,
+            "card:" + card_id,
             fsrs.due_at,
             fsrs.stability,
             fsrs.difficulty,
@@ -212,10 +231,10 @@ def create_card(
     )
     row = con.execute(
         """
-        SELECT c.*, f.due_at, f.stability, f.difficulty, f.reps, f.lapses
-        FROM study_card c
-        JOIN study_card_fsrs f ON f.card_id = c.id
-        WHERE c.id = ?
+        SELECT i.legacy_card_id AS id, i.parent_id AS node_id, i.title AS front, i.content_md AS back,
+               i.hint, i.card_type, i.source_ref, f.due_at, f.stability, f.difficulty, f.reps, f.lapses
+        FROM study_knowledge_item i JOIN study_knowledge_schedule f ON f.item_id=i.id
+        WHERE i.legacy_card_id = ?
         """,
         (card_id,),
     ).fetchone()
@@ -262,8 +281,8 @@ def grade_card(
     row = con.execute(
         """
         SELECT card_id, due_at, stability, difficulty, reps, lapses, state_json
-        FROM study_card_fsrs
-        WHERE card_id = ?
+        FROM study_knowledge_schedule
+        WHERE item_id = 'card:' || ?
         """,
         (card_id,),
     ).fetchone()
@@ -280,10 +299,10 @@ def grade_card(
     after = review(before, rating)
     con.execute(
         """
-        UPDATE study_card_fsrs
+        UPDATE study_knowledge_schedule
         SET due_at = ?, stability = ?, difficulty = ?, reps = ?, lapses = ?,
             state_json = ?, updated_at = datetime('now', 'localtime')
-        WHERE card_id = ?
+        WHERE item_id = 'card:' || ?
         """,
         (
             after.due_at,
@@ -298,13 +317,13 @@ def grade_card(
     log_id = new_id("rev_")
     con.execute(
         """
-        INSERT INTO study_review_log
-          (id, card_id, rating, elapsed_ms, before_state_json, after_state_json)
+        INSERT INTO study_knowledge_review_log
+          (id, item_id, rating, elapsed_ms, before_state_json, after_state_json)
         VALUES (?, ?, ?, ?, ?, ?)
         """,
         (
             log_id,
-            card_id,
+            "card:" + card_id,
             rating,
             elapsed_ms,
             before.to_json(),
@@ -313,10 +332,10 @@ def grade_card(
     )
     updated = con.execute(
         """
-        SELECT c.*, f.due_at, f.stability, f.difficulty, f.reps, f.lapses
-        FROM study_card c
-        JOIN study_card_fsrs f ON f.card_id = c.id
-        WHERE c.id = ?
+        SELECT i.legacy_card_id AS id, i.parent_id AS node_id, i.title AS front, i.content_md AS back,
+               i.hint, i.card_type, i.source_ref, f.due_at, f.stability, f.difficulty, f.reps, f.lapses
+        FROM study_knowledge_item i JOIN study_knowledge_schedule f ON f.item_id=i.id
+        WHERE i.legacy_card_id = ?
         """,
         (card_id,),
     ).fetchone()
@@ -397,9 +416,9 @@ def build_markmap_markdown(
     def children_of(parent_id: str) -> list[sqlite3.Row]:
         return con.execute(
             """
-            SELECT id, title, role
-            FROM study_node
-            WHERE parent_id = ?
+            SELECT id, title, item_type AS role
+            FROM study_knowledge_item
+            WHERE parent_id = ? AND status='active'
             ORDER BY sort_order, title, id
             """,
             (parent_id,),
@@ -417,9 +436,9 @@ def build_markmap_markdown(
     def append_card_leaves(node_id: str, depth: int) -> None:
         cards = con.execute(
             """
-            SELECT id, front
-            FROM study_card
-            WHERE node_id = ? AND status = 'active'
+            SELECT legacy_card_id AS id, title AS front
+            FROM study_knowledge_item
+            WHERE parent_id = ? AND item_type='card' AND status = 'active'
             ORDER BY created_at, id
             """,
             (node_id,),
@@ -440,13 +459,13 @@ def build_markmap_markdown(
 
     if scope_id:
         anchor = con.execute(
-            "SELECT anchor_node_id FROM study_scope WHERE id = ?",
+            "SELECT substr(anchor_item_id,6) AS anchor_node_id FROM study_knowledge_scope WHERE id = ?",
             (scope_id,),
         ).fetchone()
         if not anchor:
             return ""
         root = con.execute(
-            "SELECT id, title, role FROM study_node WHERE id = ?",
+            "SELECT substr(id,6) AS id, title, item_type AS role FROM study_knowledge_item WHERE id = 'node:' || ?",
             (anchor["anchor_node_id"],),
         ).fetchone()
         if not root:
@@ -455,7 +474,7 @@ def build_markmap_markdown(
         walk(root["id"], 2)
     elif root_id:
         root = con.execute(
-            "SELECT id, title, role FROM study_node WHERE id = ?",
+            "SELECT substr(id,6) AS id, title, item_type AS role FROM study_knowledge_item WHERE id = 'node:' || ?",
             (root_id,),
         ).fetchone()
         if not root:
@@ -465,9 +484,9 @@ def build_markmap_markdown(
     else:
         roots = con.execute(
             """
-            SELECT id, title, role
-            FROM study_node
-            WHERE parent_id IS NULL
+            SELECT substr(id,6) AS id, title, item_type AS role
+            FROM study_knowledge_item
+            WHERE parent_id IS NULL AND status='active' AND item_type <> 'card'
             ORDER BY sort_order, title, id
             """
         ).fetchall()

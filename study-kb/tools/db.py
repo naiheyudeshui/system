@@ -8,12 +8,10 @@ import threading
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-SCHEMA = ROOT / "schema" / "study_kb.sql"
 VIEWS = ROOT / "schema" / "v_study_kb.sql"
 PLATFORM = ROOT / "schema" / "workbench_platform.sql"
 SCHEMA_DOC = ROOT / "schema" / "schema_doc_study.sql"
 WORKBENCH_DEFAULTS = ROOT / "schema" / "study_workbench_defaults.sql"
-NODE_ROLES = ROOT / "schema" / "study_node_roles.sql"
 DB_PATH = ROOT / "data" / "study.sqlite"
 DELETED_MANAGED_VIEWS_KEY = "workbench.deleted_views.v1"
 
@@ -55,17 +53,6 @@ def _has_column(con: sqlite3.Connection, table: str, column: str) -> bool:
     return any(row[1] == column for row in rows)
 
 
-def _ensure_node_role_columns(con: sqlite3.Connection) -> None:
-    if not _has_column(con, "study_node", "role"):
-        con.execute(
-            "ALTER TABLE study_node ADD COLUMN role TEXT NOT NULL DEFAULT 'outline'"
-        )
-    if not _has_column(con, "study_node", "answer_md"):
-        con.execute(
-            "ALTER TABLE study_node ADD COLUMN answer_md TEXT NOT NULL DEFAULT ''"
-        )
-
-
 def upgrade_knowledge_tree_config(con: sqlite3.Connection) -> None:
     if not con.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='workbench_plugin_config'").fetchone():
         return
@@ -73,21 +60,14 @@ def upgrade_knowledge_tree_config(con: sqlite3.Connection) -> None:
         SET sql = 'SELECT * FROM v_study_knowledge_nodes ORDER BY sort_order,title,node_id',
             revision = revision + 1, updated_at = CURRENT_TIMESTAMP
         WHERE id = 'study.tree.default.v1' AND plugin_id = 'study.node-tree' AND module_id = 'trees'
-          AND deleted = 0 AND revision = 1 AND settings = '{}' AND parameters = '{}'
-          AND sql = 'SELECT id AS node_id, parent_id, title, answer_md, sort_order FROM study_node ORDER BY sort_order,title,id'
-    """)
+          AND deleted = 0 AND revision = 1 AND settings = '{}' AND parameters = '{}'""")
 
 
 def ensure_schema(con: sqlite3.Connection) -> None:
     if PLATFORM.exists():
         con.executescript(PLATFORM.read_text(encoding="utf-8"))
-    if SCHEMA.exists():
-        con.executescript(SCHEMA.read_text(encoding="utf-8"))
-    con.executescript((ROOT / "schema" / "knowledge_edit.sql").read_text(encoding="utf-8"))
+    con.executescript((ROOT / "schema" / "knowledge_items.sql").read_text(encoding="utf-8"))
     upgrade_knowledge_tree_config(con)
-    _ensure_node_role_columns(con)
-    if NODE_ROLES.exists():
-        con.executescript(NODE_ROLES.read_text(encoding="utf-8"))
     if VIEWS.exists():
         _ensure_view_script(con, VIEWS)
     if SCHEMA_DOC.exists():
