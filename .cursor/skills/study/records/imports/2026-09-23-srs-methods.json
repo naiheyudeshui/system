@@ -1,0 +1,9 @@
+{
+  "batch_id": "srs-methods-20260923-221217",
+  "parent_id": "node_699df01582b44c709d05b4487e",
+  "source_ref": "用户学习整理：需求定义方法与SRS编写方法（2026-09-23）",
+  "created_cards": ["card:card_43d6a40dd5284fbda451375112","card:card_9775894bf1614a2091f9063a3b"],
+  "backup": "study-kb/data/backups/study-before-srs-methods-20260923-221217.sqlite",
+  "checks": {"integrity_check":"ok","foreign_key_check":[],"active_cards_without_schedule":[],"duplicate_sibling_titles":[]},
+  "review_history_preserved": true
+}

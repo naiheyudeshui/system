@@ -1,0 +1,9 @@
+{
+  "batch_id": "validation-review-20260923-223251",
+  "parent_id": "node_699df01582b44c709d05b4487e",
+  "source_ref": "用户学习整理：需求验证与需求评审方法（2026-09-23）",
+  "created_cards": ["card:card_8d200680d100437e9b3f19ba29","card:card_dd39022887d9477db82681c6e5"],
+  "backup": "study-kb/data/backups/study-before-validation-review-20260923-223251.sqlite",
+  "checks": {"integrity_check":"ok","foreign_key_check":[],"active_cards_without_schedule":[],"duplicate_sibling_titles":[]},
+  "review_history_preserved": true
+}

@@ -1,0 +1,20 @@
+{
+  "batch_id": "ch11-bs-20260925-183947",
+  "parent_id": "node:node_a3e1e1b444514d3e889a1eac97",
+  "parent_path": "系统分析师一本通精华知识点（第二版） / 十一 软件架构设计",
+  "source_ref": "用户笔记：B/S架构缺陷及原因（2026-09-25）",
+  "backup": "study-kb/data/backups/study-before-ch11-bs-20260925-183947.sqlite",
+  "created_cards": [
+    {
+      "node_id": "card:card_9a18caffe1cd4591b654b4a5e5",
+      "card_id": "card_9a18caffe1cd4591b654b4a5e5",
+      "title": "教材里B/S相对C/S的四条缺陷，根因分别是什么？",
+      "sort_order": 5
+    }
+  ],
+  "review_history_preserved": true,
+  "checks": {
+    "integrity_check": "ok",
+    "foreign_key_check": []
+  }
+}

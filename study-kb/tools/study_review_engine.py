@@ -12,6 +12,38 @@ from typing import Any
 from study_kb import grade_card, open_db
 
 
+def _resolve_fsrs_card_id(con: sqlite3.Connection, key: str) -> str | None:
+    """Normalize unified item id or legacy card id to an active legacy_card_id."""
+    if key.startswith("card:"):
+        row = con.execute(
+            """
+            SELECT legacy_card_id FROM study_knowledge_item
+            WHERE id=? AND item_type='card' AND status='active'
+            """,
+            (key,),
+        ).fetchone()
+        if row:
+            return row["legacy_card_id"]
+        stripped = key.removeprefix("card:")
+        if con.execute(
+            """
+            SELECT 1 FROM study_knowledge_item
+            WHERE legacy_card_id=? AND item_type='card' AND status='active'
+            """,
+            (stripped,),
+        ).fetchone():
+            return stripped
+        return None
+    row = con.execute(
+        """
+        SELECT legacy_card_id FROM study_knowledge_item
+        WHERE legacy_card_id=? AND item_type='card' AND status='active'
+        """,
+        (key,),
+    ).fetchone()
+    return row["legacy_card_id"] if row else None
+
+
 def identifier(name: str) -> str:
     return '"' + name.replace('"', '""') + '"'
 
@@ -235,10 +267,10 @@ def grade_session(*, session_id: str, position: int, rating: int, elapsed_ms: in
         item = json.loads(row["item_json"])
         scheduler = state["config"]["scheduler"]
         if scheduler["kind"] == "fsrs":
-            active = con.execute("SELECT 1 FROM study_knowledge_item WHERE legacy_card_id=? AND status='active'", (item["key"],)).fetchone()
-            if not active:
+            legacy_id = _resolve_fsrs_card_id(con, item["key"])
+            if not legacy_id:
                 raise ValueError("Card was removed or suspended; start a new collection")
-            result = grade_card(con, card_id=item["key"], rating=rating, elapsed_ms=elapsed_ms)
+            result = grade_card(con, card_id=legacy_id, rating=rating, elapsed_ms=elapsed_ms)
         else:
             target = next((entry for entry in writable_targets(con) if entry["table"] == scheduler["table"]), None)
             if not target or scheduler["key"] not in target["keys"] or scheduler["due"] not in target["time_columns"]:

@@ -8,6 +8,7 @@ readme/
 study-kb/data/*.sqlite
 study-kb/data/*.sqlite-*
 study-kb/data/backups/
+!study-kb/data/study.sqlite
 
 # Debug session logs
 debug-*.log

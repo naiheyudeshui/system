@@ -1,0 +1,9 @@
+{
+  "batch_id": "requirement-change-card-20260923-225834",
+  "operation": "update_existing_card",
+  "card_id": "card:card_eb7e75b07b73457ca4ec122262",
+  "source_ref": "系统分析师-一本通精华知识点-第二版(OCR).docx#需求管理-变更控制；用户学习整理（2026-09-23）",
+  "backup": "study-kb/data/backups/study-before-requirement-change-card-20260923-225834.sqlite",
+  "checks": {"integrity_check":"ok","foreign_key_check":[],"active_cards_without_schedule":[],"duplicate_sibling_titles":[]},
+  "fsrs_and_review_history_preserved": true
+}

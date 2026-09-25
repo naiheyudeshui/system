@@ -1,0 +1,9 @@
+{
+  "batch_id": "requirement-traceability-20260923-230716",
+  "parent_id": "node_699df01582b44c709d05b4487e",
+  "source_ref": "用户学习整理：需求跟踪与需求跟踪矩阵（2026-09-23）",
+  "created_cards": ["card:card_194602a0ae7c454192e3dc9d4b"],
+  "backup": "study-kb/data/backups/study-before-requirement-traceability-20260923-230716.sqlite",
+  "checks": {"integrity_check":"ok","foreign_key_check":[],"active_cards_without_schedule":[],"duplicate_sibling_titles":[]},
+  "review_history_preserved": true
+}

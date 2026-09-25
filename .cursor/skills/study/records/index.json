@@ -26,6 +26,90 @@
           "label": "import-audit"
         }
       ]
+    },
+    {
+      "id": "study-import.uml-artifact-fix.2026-09-25",
+      "path": "imports/2026-09-25-uml-artifact-fix.json",
+      "description": "更正 UML 十四张图/七张静态图：配置文件图改为制品图",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "import-audit"
+        }
+      ]
+    },
+    {
+      "id": "study-import.ch11-data-centered.2026-09-25",
+      "path": "imports/2026-09-25-ch11-data-centered.json",
+      "description": "第十一章追加仓库架构风格、黑板架构风格两张卡",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "import-audit"
+        }
+      ]
+    },
+    {
+      "id": "study-import.ch11-cs.2026-09-25",
+      "path": "imports/2026-09-25-ch11-cs.json",
+      "description": "第十一章追加两层/三层C/S一张卡，与仓库黑板同级",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "import-audit"
+        }
+      ]
+    },
+    {
+      "id": "study-import.ch11-bs.2026-09-25",
+      "path": "imports/2026-09-25-ch11-bs.json",
+      "description": "第十一章追加B/S相对C/S四条缺陷及根因",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "import-audit"
+        }
+      ]
+    },
+    {
+      "id": "study-import.ch11-soa-policy.2026-09-25",
+      "path": "imports/2026-09-25-ch11-soa-policy.json",
+      "description": "第十一章追加SOA互操作性、兼容和策略声明",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "import-audit"
+        }
+      ]
+    },
+    {
+      "id": "study-import.ch11-soa-principles.2026-09-25",
+      "path": "imports/2026-09-25-ch11-soa-principles.json",
+      "description": "原位扩写SOA卡为五条设计原则",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "import-audit"
+        }
+      ]
+    },
+    {
+      "id": "study-import.ch11-soa-tech.2026-09-25",
+      "path": "imports/2026-09-25-ch11-soa-tech.json",
+      "description": "第十一章追加SOA五种技术对照表",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "import-audit"
+        }
+      ]
     }
   ]
 }

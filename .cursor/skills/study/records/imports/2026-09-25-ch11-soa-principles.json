@@ -1,0 +1,18 @@
+{
+  "batch_id": "ch11-soa-principles-expand-20260925-212636",
+  "updated_cards": [
+    {
+      "id": "card:card_bbd6145bd54b447585359c8018",
+      "old_title": "SOA原则里的「互操作性、兼容和策略声明」是什么意思？",
+      "new_title": "SOA的五条设计原则分别是什么？",
+      "change": "由第(5)条单卡扩写为SOA五条设计原则"
+    }
+  ],
+  "fsrs_preserved": {
+    "due_at": "2026-09-25 21:22:57",
+    "reps": 0,
+    "lapses": 0
+  },
+  "backup": "study-kb/data/backups/study-before-soa-principles-expand-20260925-212636.sqlite",
+  "review_history_preserved": true
+}

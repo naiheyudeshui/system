@@ -1,0 +1,9 @@
+{
+  "batch_id": "uml-14-diagrams-20260922-222453",
+  "parent_id": "node_699df01582b44c709d05b4487e",
+  "source_ref": "用户学习整理：UML十四张图及静态/动态/交互分类（2026-09-22）",
+  "created_cards": ["card:card_2c765a730f384c4ba10ca0e99e","card:card_0c460c2ccccb411f9182e2c6c6","card:card_910f77af0dce4cc88d2c550f5b"],
+  "backup": "study-kb/data/backups/study-before-uml-14-diagrams-20260922-222453.sqlite",
+  "checks": {"integrity_check":"ok","foreign_key_check":[],"active_cards_without_schedule":[],"duplicate_sibling_titles":[]},
+  "review_history_preserved": true
+}

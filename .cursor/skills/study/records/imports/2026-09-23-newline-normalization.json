@@ -1,0 +1,8 @@
+{
+  "batch_id": "newline-normalization-20260923-235925",
+  "operation": "replace_literal_backslash_n_with_newlines",
+  "changed_cards": ["card:card_43d6a40dd5284fbda451375112","card:card_9775894bf1614a2091f9063a3b"],
+  "backup": "study-kb/data/backups/study-before-newline-normalization-20260923-235925.sqlite",
+  "checks": {"integrity_check":"ok","foreign_key_check":[],"active_cards_without_schedule":[],"duplicate_sibling_titles":[]},
+  "fsrs_and_review_history_preserved": true
+}

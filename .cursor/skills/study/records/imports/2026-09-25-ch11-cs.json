@@ -1,0 +1,24 @@
+{
+  "batch_id": "ch11-cs-20260925-183144",
+  "parent_id": "node:node_a3e1e1b444514d3e889a1eac97",
+  "parent_path": "系统分析师一本通精华知识点（第二版） / 十一 软件架构设计",
+  "source_ref": "用户对话整理：两层/三层C/S与仓库风格区分（2026-09-25）",
+  "backup": "study-kb/data/backups/study-before-ch11-cs-20260925-183144.sqlite",
+  "created_cards": [
+    {
+      "node_id": "card:card_5748e103e8024001b8786e39b8",
+      "card_id": "card_5748e103e8024001b8786e39b8",
+      "title": "两层C/S和三层C/S各是什么？C、S分别指什么？",
+      "sort_order": 4
+    }
+  ],
+  "sibling_of": [
+    "card:card_0c7a0d4032dc42bc8579eb6f2d",
+    "card:card_fdd50a6e3c41413eaaa91eb0ed"
+  ],
+  "review_history_preserved": true,
+  "checks": {
+    "integrity_check": "ok",
+    "foreign_key_check": []
+  }
+}

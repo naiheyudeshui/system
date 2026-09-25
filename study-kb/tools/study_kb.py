@@ -280,7 +280,7 @@ def grade_card(
 ) -> dict[str, Any]:
     row = con.execute(
         """
-        SELECT card_id, due_at, stability, difficulty, reps, lapses, state_json
+        SELECT item_id, due_at, stability, difficulty, reps, lapses, state_json
         FROM study_knowledge_schedule
         WHERE item_id = 'card:' || ?
         """,

@@ -1,0 +1,20 @@
+{
+  "batch_id": "ch11-soa-tech-20260925-215016",
+  "parent_id": "node:node_a3e1e1b444514d3e889a1eac97",
+  "parent_path": "系统分析师一本通精华知识点（第二版） / 十一 软件架构设计",
+  "source_ref": "用户笔记：SOA相关技术UDDI/WSDL/SOAP/REST与容器QoS（2026-09-25）",
+  "backup": "study-kb/data/backups/study-before-ch11-soa-tech-20260925-215016.sqlite",
+  "created_cards": [
+    {
+      "node_id": "card:card_72d0c738868f4ce7a89858996c",
+      "card_id": "card_72d0c738868f4ce7a89858996c",
+      "title": "和SOA紧密相关的五种技术各干什么？",
+      "sort_order": 8
+    }
+  ],
+  "review_history_preserved": true,
+  "checks": {
+    "integrity_check": "ok",
+    "foreign_key_check": []
+  }
+}

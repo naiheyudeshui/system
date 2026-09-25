@@ -1,0 +1,37 @@
+{
+  "batch_id": "uml-artifact-fix-20260925-181317",
+  "db": "D:/system/study-kb/data/study.sqlite",
+  "backup": "study-kb/data/backups/study-before-uml-artifact-fix-20260925-181317.sqlite",
+  "source_ref": "用户学习整理：UML十四张图及静态/动态/交互分类（2026-09-22）；2026-09-25 更正：结构图第7张为制品图，不是配置文件图",
+  "updated_cards": [
+    {
+      "id": "card:card_2c765a730f384c4ba10ca0e99e",
+      "title": "UML的十四张图如何分类？",
+      "change": "结构图第7张由配置文件图改为制品图；正文改为 Markdown 分节"
+    },
+    {
+      "id": "card:card_0c460c2ccccb411f9182e2c6c6",
+      "title": "UML的七张静态图（结构图）有哪些？",
+      "change": "第7张由配置文件图改为制品图；正文改为 Markdown 表格"
+    }
+  ],
+  "fsrs_preserved": {
+    "card:card_2c765a730f384c4ba10ca0e99e": {
+      "title": "UML的十四张图如何分类？",
+      "due_at": "2026-09-27 14:52:25",
+      "reps": 1,
+      "lapses": 0
+    },
+    "card:card_0c460c2ccccb411f9182e2c6c6": {
+      "title": "UML的七张静态图（结构图）有哪些？",
+      "due_at": "2026-09-27 14:33:27",
+      "reps": 1,
+      "lapses": 0
+    }
+  },
+  "review_history_preserved": true,
+  "checks": {
+    "integrity_check": "ok",
+    "foreign_key_check": []
+  }
+}

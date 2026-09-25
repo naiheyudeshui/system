@@ -1,0 +1,9 @@
+{
+  "batch_id": "uml-public-mechanisms-20260922-215623",
+  "parent_id": "node_699df01582b44c709d05b4487e",
+  "source_ref": "用户学习整理：UML公共机制（2026-09-22）",
+  "created_cards": ["card:card_1a060e2bc84648ec97dd689ca0"],
+  "backup": "study-kb/data/backups/study-before-uml-public-mechanisms-20260922-215623.sqlite",
+  "checks": {"integrity_check":"ok","foreign_key_check":[],"active_cards_without_schedule":[],"duplicate_sibling_titles":[]},
+  "review_history_preserved": true
+}
