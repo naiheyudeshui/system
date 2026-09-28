@@ -15,7 +15,7 @@ import {
   setupWorkbenchSplitters,
   t,
 } from "/3dworkbench/workbenchPlatform.mjs";
-import { renderNodeTreePanel, renderReviewTablePanel } from "./studyPlugins.mjs";
+import { renderNodeTreePanel, renderReviewTablePanel } from "./studyPlugins.mjs?v=20260928-tree-details";
 const layoutStorageKey = "study-workbench-layout";
 const sidebarStorageKey = "study-sidebar-collapsed";
 const favoritesStorageKey = "study-sidebar-favorites";

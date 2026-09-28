@@ -141,8 +141,7 @@ def build_knowledge_tree(con: sqlite3.Connection, *, scope_id: str | None = None
                           "columns": [row[1] for row in con.execute("PRAGMA table_info(v_study_knowledge_nodes)")],
                           "truncated": len(rows) > 5000},
                          {"tree": {"orphans": "root", "details": [
-                             {"column": "content_md", "label": "节点内容", "format": "markdown"},
-                             {"column": "source_ref", "label": "来源", "format": "text"}]}})
+                         {"column": "content_md", "label": "节点内容", "format": "markdown"}]}})
     result["editing"] = {"provider": "study-knowledge/v1"}
     result["scopes"] = [dict(row) for row in con.execute(
         "SELECT id, label, is_default FROM study_knowledge_scope ORDER BY is_default DESC, label")]

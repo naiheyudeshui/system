@@ -1,7 +1,8 @@
 import { addConfigCardControls, confirmWorkbenchAction, openConfigManager } from "/3dworkbench/pluginConfigManager.mjs";
 import { renderTablePreview } from "/3dworkbench/tablePreview.mjs";
-import { createTreeWorkspace, filterTree, indexTree } from "/3dworkbench/treeWorkspace.mjs";
+import { createTreeWorkspace, filterTree, indexTree } from "/3dworkbench/treeWorkspace.mjs?v=20260928-find";
 import { renderMarkdown } from "./studyMarkdown.mjs";
+import { createSearchableCombobox } from "/3dworkbench/searchableCombobox.mjs";
 
 function make(tag, text, className) {
   const node = document.createElement(tag);
@@ -35,12 +36,11 @@ export async function renderNodeTreePanel(panel, { api, postApi }) {
   const report = make("p"); report.setAttribute("role", "status");
   const table = make("div");
   const rootTools = make("div", null, "wb-tree-root-tools");
-  const rootSearch = make("input"); rootSearch.placeholder = "搜索根节点标题"; rootSearch.setAttribute("aria-label", "搜索根节点");
-  const rootPicker = make("select"); rootPicker.setAttribute("aria-label", "根节点");
+  const rootPicker = createSearchableCombobox({ placeholder: "搜索或选择根节点", ariaLabel: "搜索或选择根节点", className: "wb-tree-root-picker" });
   const open = make("button", "打开树图", "primary");
   const selection = make("p");
-  rootTools.append(rootSearch, rootPicker, open);
-  preview.append(previewHeader, report, table, selection, rootTools);
+  rootTools.append(rootPicker, open);
+  preview.append(previewHeader, report, table, selection);
   const viewer = make("section", null, "study-tree-viewer"); viewer.hidden = true;
   const message = make("p"); message.setAttribute("role", "status");
   panel.replaceChildren(home, preview, viewer, message);
@@ -70,24 +70,30 @@ export async function renderNodeTreePanel(panel, { api, postApi }) {
     const roots = payload.roots || [];
     const index = indexTree(roots);
     for (const node of index.values()) {
-      node.data = { answer_md: node.answer_md || "", source_ref: node.source_ref || "" };
+      node.data = { answer_md: node.answer_md || "" };
       node.children = [];
     }
     const normalized = [];
     for (const node of index.values()) (index.get(node.parent_id)?.children || normalized).push(node);
-    return { roots: normalized, rows: [...index.values()].map((node) => ({ node_id: node.id, parent_id: node.parent_id, title: node.title, detail_1: node.answer_md || "", detail_2: node.source_ref || "" })), columns: ["node_id", "parent_id", "title", "detail_1", "detail_2"], detail_fields: [{ column: "answer_md", label: "知识详情", format: "markdown" }, { column: "source_ref", label: "来源", format: "text" }], validation: { kind: normalized.length === 1 ? "tree" : normalized.length ? "forest" : "empty", root_count: normalized.length, max_depth: Math.max(0, ...[...index.values()].map((node) => node.depth)), warnings: [] } };
+    return { roots: normalized, rows: [...index.values()].map((node) => ({ node_id: node.id, parent_id: node.parent_id, title: node.title, detail_1: node.answer_md || "" })), columns: ["node_id", "parent_id", "title", "detail_1"], detail_fields: [{ column: "answer_md", label: "知识详情", format: "markdown" }], validation: { kind: normalized.length === 1 ? "tree" : normalized.length ? "forest" : "empty", root_count: normalized.length, max_depth: Math.max(0, ...[...index.values()].map((node) => node.depth)), warnings: [] } };
   };
   const fetchData = async (request) => request.config_id
     ? api(`/api/study/tree?config_id=${encodeURIComponent(request.config_id)}`)
     : normalizeLegacy(await api(`/api/study/tree?model=knowledge${request.scope ? `&scope=${encodeURIComponent(request.scope)}` : ""}`));
   const fillRoots = () => {
-    const previous = rootPicker.value;
+    const previous = rootPicker.getValue();
     const tree = filterTree(data?.roots || [], filtered.map((row) => row.node_id));
     const options = [...indexTree(tree.roots).values()];
-    rootPicker.replaceChildren(new Option("全部根节点", ""), ...options.filter((node) => node.id === previous || node.title.toLocaleLowerCase().includes(rootSearch.value.toLocaleLowerCase())).map((node) => new Option(`${node.title} · ${node.id}`, node.id)));
-    rootPicker.value = options.some((node) => node.id === previous) ? previous : "";
+    rootPicker.setOptions(options.map((node) => ({ value: node.id, label: `${node.title} · ${node.id}`, node })));
     selection.textContent = `命中 ${filtered.length} 个节点 · 自动保留 ${tree.addedAncestors} 个祖先以维持关系；可选择任一节点作为浏览根。`;
     open.disabled = busy || !filtered.length;
+  };
+  const selectedRootId = () => {
+    const value = rootPicker.getValue();
+    if (!value) return "";
+    const tree = filterTree(data?.roots || [], filtered.map((row) => row.node_id));
+    const options = [...indexTree(tree.roots).values()];
+    return options.find((node) => node.id === value || node.title === value)?.id || value;
   };
   const prepare = () => run(async () => {
     const request = { config_id: selectedId, scope: scopes.value };
@@ -101,14 +107,16 @@ export async function renderNodeTreePanel(panel, { api, postApi }) {
   const renderPreview = (next, initialFilters = []) => {
     const validation = next.validation;
     report.textContent = `校验通过 · ${validation.kind === "forest" ? "多棵树（森林）" : validation.kind === "tree" ? "单棵树" : "空结果"} · ${validation.root_count} 个根 · 最大深度 ${validation.max_depth}${validation.warnings.length ? " · " + validation.warnings.join("；") : " · 无断开的父引用"}`;
-    rootSearch.value = ""; rootPicker.replaceChildren();
+    rootPicker.setValue(""); rootPicker.close();
     previewState = renderTablePreview(table, { rows: next.rows, columns: next.columns.filter((column) => {
+      if (["source_ref", "source_type", "source_id"].includes(column)) return false;
       const detailIndex = /^detail_(\d+)$/.exec(column);
       if (detailIndex && next.columns.includes(next.detail_fields[Number(detailIndex[1]) - 1]?.column)) return false;
       return !(column === "answer_md" && next.columns.includes("content_md"));
     }), initialFilters, ariaLabel: "树节点候选表格",
       labels: { node_id: "节点 ID", parent_id: "父节点 ID", title: "节点标题", content_md: "节点内容", source_type: "来源类型", source_id: "原始 ID", owner_node_id: "归属章节", ...Object.fromEntries(next.detail_fields.map((field, index) => [`detail_${index + 1}`, field.label])) },
       onChange: (rows) => { filtered = rows; fillRoots(); },
+      extraActions: [rootTools],
     });
   };
   const renderCards = () => {
@@ -293,9 +301,8 @@ export async function renderNodeTreePanel(panel, { api, postApi }) {
   open.addEventListener("click", () => {
     if (busy || !filtered.length) return;
     const result = filterTree(data.roots, filtered.map((row) => row.node_id));
-    showTree(result.roots, rootPicker.value);
+    showTree(result.roots, selectedRootId());
   });
-  rootSearch.addEventListener("input", fillRoots);
   returnHome.addEventListener("click", () => page(home));
   const openManager = (initialId) => run(() => openConfigManager(panel, { api, postApi, pluginId: "study.node-tree", moduleId: "trees", initialId, onBack: () => { void run(reload); } }));
   settings.addEventListener("click", () => {
@@ -307,7 +314,7 @@ export async function renderNodeTreePanel(panel, { api, postApi }) {
   edit.addEventListener("click", () => { void openManager(selectedId); });
   add.addEventListener("click", () => { void openManager(""); });
   refresh.addEventListener("click", () => { void run(reload); });
-  panel.dispose = () => { ++editorGeneration; session?.dispose(); };
+  panel.dispose = () => { ++editorGeneration; session?.dispose(); rootPicker.dispose?.(); };
   await run(async () => {
     await reload();
     const payload = await api("/api/study/tree");
