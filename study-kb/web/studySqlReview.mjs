@@ -1,6 +1,6 @@
 import { addConfigCardControls, confirmWorkbenchAction, openConfigManager } from "/3dworkbench/pluginConfigManager.mjs";
 import { renderTablePreview } from "/3dworkbench/tablePreview.mjs";
-import { attachMarkdownToggle } from "./studyMarkdown.mjs";
+import { renderMarkdown } from "./studyMarkdown.mjs";
 
 function make(tag, text, className) {
   const node = document.createElement(tag);
@@ -53,19 +53,17 @@ export async function renderReviewTablePanel(panel, { api, postApi }) {
   const meta = make("p");
   const leave = make("button", "返回方案（保留进度）");
   learningHeader.append(meta, leave);
-  const frontTools = make("div");
   const front = make("div", null, "study-review-question");
   const backSection = make("section");
-  const backTools = make("div");
   const back = make("div");
-  backSection.append(backTools, back);
-  const reveal = make("button", "显示答案");
+  backSection.append(back);
+  const reveal = make("button", "显示答案", "study-answer-toggle is-hidden");
   const ratings = make("div", null, "study-review-ratings");
-  learning.append(learningHeader, frontTools, front, backSection, reveal, ratings);
+  learning.append(learningHeader, front, reveal, backSection, ratings);
   const message = make("p");
   message.setAttribute("role", "status");
   panel.replaceChildren(home, preparation, learning, message);
-  let entries = [], selectedId = "", state = null, busy = false, started = 0, revealed = false, backToggle;
+  let entries = [], selectedId = "", state = null, busy = false, started = 0, revealed = false;
   let parameterInputs = {}, previewResult = null, previewPayload = null, filtered = [];
   const selected = () => entries.find((entry) => entry.id === selectedId);
   const page = (target) => {
@@ -177,11 +175,12 @@ export async function renderReviewTablePanel(panel, { api, postApi }) {
     resume.hidden = false;
     page(learning);
     meta.textContent = `${state.config.view} · 已完成 ${state.completed} / ${state.total}`;
-    frontTools.replaceChildren(); backTools.replaceChildren(); front.replaceChildren(); back.replaceChildren();
+    front.replaceChildren(); back.replaceChildren();
     backSection.hidden = true; ratings.hidden = true; reveal.hidden = !state.card;
+    reveal.textContent = "显示答案"; reveal.classList.add("is-hidden"); reveal.classList.remove("is-visible");
     if (state.card) {
-      attachMarkdownToggle(frontTools, front, () => String(state.card.front ?? "")).refresh();
-      backToggle = attachMarkdownToggle(backTools, back, () => String(state.card.back ?? ""));
+      renderMarkdown(String(state.card.front ?? ""), front);
+      renderMarkdown(String(state.card.back ?? ""), back);
     } else front.textContent = "本轮复习已完成";
     refreshControls();
   };
@@ -208,7 +207,9 @@ export async function renderReviewTablePanel(panel, { api, postApi }) {
   }); });
   reveal.addEventListener("click", () => {
     if (!state?.card || busy) return;
-    revealed = true; backSection.hidden = false; ratings.hidden = false; backToggle.refresh(); refreshControls();
+    revealed = !revealed; backSection.hidden = !revealed; ratings.hidden = !revealed;
+    reveal.textContent = revealed ? "遮蔽答案" : "显示答案";
+    reveal.classList.toggle("is-visible", revealed); reveal.classList.toggle("is-hidden", !revealed); refreshControls();
   });
   ["重来", "困难", "良好", "简单"].forEach((label, index) => {
     const button = make("button", `${index + 1} · ${label}`);

@@ -139,6 +139,13 @@ button.danger { background: var(--danger); color: var(--panel); }
 .study-review-row-toolbar { display: flex; justify-content: flex-end; padding: 0 12px 8px; }
 .study-md-toggle { min-height: 26px; padding: 2px 8px; font-size: 11px; color: var(--text-muted); background: transparent; }
 .study-md { font-size: 14px; line-height: 1.55; color: var(--text); }
+.study-learning-card .study-md { min-width:0; max-width:100%; overflow-wrap:anywhere; word-break:break-word; }
+.study-learning-card .study-md table { width:100%; max-width:100%; table-layout:fixed; border-collapse:collapse; }
+.study-learning-card .study-md th,.study-learning-card .study-md td { min-width:0; max-width:none; white-space:normal; overflow-wrap:anywhere; word-break:break-word; vertical-align:top; }
+.study-learning-card .study-md pre,.study-learning-card .study-md code { max-width:100%; white-space:pre-wrap; overflow-wrap:anywhere; word-break:break-word; }
+.study-answer-toggle { align-self:flex-start; min-width:108px; margin:8px 0 14px; font-weight:650; transition:background-color .16s ease,border-color .16s ease,color .16s ease; }
+.study-answer-toggle.is-hidden { color:var(--accent); border-color:color-mix(in srgb,var(--accent) 45%,var(--border)); background:color-mix(in srgb,var(--accent-soft) 45%,var(--panel)); }
+.study-answer-toggle.is-visible { color:var(--warning, #8a5a00); border-color:color-mix(in srgb,var(--warning, #c48618) 55%,var(--border)); background:color-mix(in srgb,var(--warning, #c48618) 12%,var(--panel)); }
 .study-md :is(h1, h2, h3, h4, h5, h6) { margin: .6em 0 .35em; font-size: 1em; font-weight: 700; color: var(--accent); }
 .study-md p { margin: .45em 0; }
 .study-md ul, .study-md ol { margin: .35em 0; padding-left: 1.25em; }
