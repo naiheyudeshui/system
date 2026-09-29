@@ -12,6 +12,7 @@ const reviewSource = await readFile(new URL("../web/studySqlReview.mjs", import.
 const previewSource = await readFile(new URL("tablePreview.mjs", shared), "utf8");
 const platformSource = await readFile(new URL("workbenchPlatform.mjs", shared), "utf8");
 const treeSource = await readFile(new URL("treeWorkspace.mjs", shared), "utf8");
+const searchableComboboxSource = await readFile(new URL("searchableCombobox.mjs", shared), "utf8");
 const treeAdapterSource = await readFile(new URL("../web/studyTreeWorkspace.mjs", import.meta.url), "utf8");
 const workspaceCss = await readFile(new URL("pluginWorkspace.css", shared), "utf8");
 const settle = () => new Promise((resolve) => setImmediate(resolve));
@@ -46,8 +47,10 @@ async function setup() {
   await review.link((specifier) => specifier.includes("pluginConfigManager") ? manager : specifier.includes("tablePreview") ? preview : markdown); await review.evaluate();
   const tree = new vm.SourceTextModule(treeSource, { context });
   await tree.link(() => {}); await tree.evaluate();
+  const searchableCombobox = new vm.SourceTextModule(searchableComboboxSource, { context });
+  await searchableCombobox.link(() => {}); await searchableCombobox.evaluate();
   const treeAdapter = new vm.SourceTextModule(treeAdapterSource, { context });
-  await treeAdapter.link((specifier) => specifier.includes("pluginConfigManager") ? manager : specifier.includes("tablePreview") ? preview : specifier.includes("treeWorkspace") ? tree : markdown); await treeAdapter.evaluate();
+  await treeAdapter.link((specifier) => specifier.includes("pluginConfigManager") ? manager : specifier.includes("tablePreview") ? preview : specifier.includes("treeWorkspace") ? tree : specifier.includes("searchableCombobox") ? searchableCombobox : markdown); await treeAdapter.evaluate();
   return { tree: tree.namespace, treeAdapter: treeAdapter.namespace, dom, document: dom.window.document, workspace: workspace.namespace, manager: manager.namespace, review: review.namespace, preview: preview.namespace };
 }
 
@@ -334,21 +337,32 @@ test("tree browser replaces graph with outline and returns from nested details w
     root.querySelector('[aria-label="展开或收起子树 Root"]').dispatchEvent(new ui.dom.window.Event("click"));
     assert.equal(root.querySelectorAll(".wb-tree-graph-node").length, 2);
     assert.equal(root.querySelector("img"), null);
-    button("大纲").click();
+    root.querySelector('[aria-label="切换到大纲"]').click();
     assert.equal(root.querySelector(".wb-tree-canvas").hidden, true);
     assert.equal(root.querySelector(".wb-tree-outline").hidden, false);
-    root.querySelector('.wb-tree-outline [data-node-id="child"]').click();
+    assert.equal(root.querySelector('[aria-label="切换到大纲"]').getAttribute("aria-pressed"), "true");
+    assert.equal(root.querySelector('[aria-label="切换到树图"]').getAttribute("aria-pressed"), "false");
+    const outlineTitle = root.querySelector('.wb-tree-outline [data-node-id="child"]');
+    outlineTitle.click();
+    assert.equal(root.querySelectorAll(".wb-tree-outline-row").length, 2);
+    assert.equal(root.querySelectorAll(".wb-tree-outline-row button").length, 4);
+    assert.equal(root.querySelector(".wb-tree-radial-menu"), null);
+    assert.match(root.querySelector(".wb-tree-inline-content").textContent, /Detail/);
+    root.querySelector('[aria-label="切换到树图"]').click();
+    root.querySelector('.wb-tree-graph-node[data-node-id="child"]').click();
+    root.querySelector('.wb-tree-radial-item[aria-label="节点详情"]').click();
     assert.equal(root.querySelector(".wb-tree-browser").hidden, true);
     assert.equal(root.querySelectorAll(".wb-tree-detail-module").length, 2);
     button("返回树页面").click();
-    assert.equal(host.getState().mode, "outline");
-    root.querySelector('.wb-tree-outline [data-node-id="child"]').click();
+    assert.equal(host.getState().mode, "graph");
+    root.querySelector('.wb-tree-graph-node[data-node-id="child"]').click();
+    root.querySelector('.wb-tree-radial-item[aria-label="节点详情"]').click();
     button("以此节点为根").click();
     assert.equal(host.getState().root, "child");
     assert.equal(root.querySelectorAll(".wb-tree-outline-row").length, 1);
     button("恢复全图").click();
     assert.equal(root.querySelectorAll(".wb-tree-outline-row").length, 2);
-    button("树图").click();
+    root.querySelector('[aria-label="切换到树图"]').click();
     button("刷新").click(); await settle();
     assert.match(root.textContent, /刷新失败：offline/);
     assert.equal(root.querySelectorAll(".wb-tree-graph-node").length, 2);
@@ -688,6 +702,86 @@ test("tree drag preview distinguishes parent drop from sibling insertion", async
     pointer("pointerup", 30, 105); await settle();
     assert.equal(reorders.length, 1);
     assert.deepEqual(reorders[0], ["first", "second", "before"]);
+    host.dispose();
+  } finally { ui.dom.window.close(); }
+});
+
+test("tree node actions use an accessible radial menu instead of header buttons", async () => {
+  const ui = await setup();
+  try {
+    const root = ui.document.createElement("section"); ui.document.body.append(root);
+    const edits = []; const deletions = [];
+    const host = ui.tree.createTreeWorkspace(root, {
+      roots: [{ id: "root", title: "Root", data: { back: "Answer" }, children: [{ id: "child", title: "Child", children: [] }] }, { id: "second", title: "Second", children: [] }],
+      detailFields: [{ column: "back" }],
+      onEdit: async (operation) => edits.push(operation),
+      onDelete: async (node) => deletions.push(node.id),
+    });
+    const headerText = root.querySelector(".wb-tree-header").textContent;
+    for (const label of ["新增子主题", "新增同级主题", "编辑内容", "节点详情", "以此节点为根", "删除节点"]) assert.equal(headerText.includes(label), false);
+    let card = root.querySelector('[data-node-id="root"]');
+    root.querySelector(".wb-tree-canvas").getBoundingClientRect = () => ({ left: 0, right: 900, top: 0, bottom: 600, width: 900, height: 600 });
+    card.getBoundingClientRect = () => ({ left: 120, right: 420, top: 180, bottom: 260, width: 300, height: 80 });
+    card.dispatchEvent(new ui.dom.window.MouseEvent("click", { bubbles: true }));
+    let menu = root.querySelector('.wb-tree-radial-menu[role="menu"]');
+    assert.ok(menu);
+    assert.equal(menu.dataset.side, "right");
+    assert.equal(card.getAttribute("aria-haspopup"), "menu");
+    assert.equal(root.querySelectorAll('.wb-tree-radial-item[role="menuitem"]').length, 6);
+    assert.ok([...menu.querySelectorAll(".wb-tree-radial-item")].every((item) => item.style.clipPath.startsWith("polygon(")));
+    assert.ok(menu.querySelector(".wb-tree-radial-item.is-danger .wb-tree-radial-item-icon"));
+    const items = [...menu.querySelectorAll('[role="menuitem"]')];
+    items[0].focus();
+    assert.match(menu.querySelector(".wb-tree-radial-center-label").textContent, /新增子主题/);
+    items[0].dispatchEvent(new ui.dom.window.KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true, cancelable: true }));
+    assert.equal(ui.document.activeElement, items[1]);
+    items[1].dispatchEvent(new ui.dom.window.KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
+    assert.equal(root.querySelector(".wb-tree-radial-menu"), null);
+    card = root.querySelector('[data-node-id="root"]');
+    card.dispatchEvent(new ui.dom.window.MouseEvent("click", { bubbles: true }));
+    root.querySelector('.wb-tree-radial-item[aria-label="以此节点为根"]').click(); await settle();
+    assert.equal(host.getState().root, "root");
+    assert.equal(root.querySelectorAll(".wb-tree-graph-node").length, 2);
+    [...root.querySelectorAll("button")].find((button) => button.textContent === "恢复全图").click();
+    assert.equal(host.getState().root, "");
+    assert.equal(root.querySelectorAll(".wb-tree-graph-node").length, 3);
+    card = root.querySelector('[data-node-id="root"]');
+    card.dispatchEvent(new ui.dom.window.KeyboardEvent("keydown", { key: " ", bubbles: true, cancelable: true }));
+    menu = root.querySelector(".wb-tree-radial-menu");
+    menu.querySelector('[aria-label^="新增子主题"]').click(); await settle();
+    assert.deepEqual(edits, ["child"]);
+    card = root.querySelector('[data-node-id="root"]');
+    card.dispatchEvent(new ui.dom.window.MouseEvent("click", { bubbles: true }));
+    root.querySelector('.wb-tree-radial-item[aria-label^="删除节点"]').click(); await settle();
+    assert.deepEqual(deletions, ["root"]);
+    host.dispose();
+  } finally { ui.dom.window.close(); }
+});
+
+test("outline rows use child toggle and title content toggle with themed view state", async () => {
+  const ui = await setup();
+  try {
+    const root = ui.document.createElement("section"); ui.document.body.append(root);
+    const host = ui.tree.createTreeWorkspace(root, {
+      roots: [{ id: "root", title: "Root", data: { back: "Root answer" }, children: [{ id: "child", title: "Child", data: { back: "Child answer" }, children: [] }] }],
+      detailFields: [{ column: "back", format: "text" }],
+      initialMode: "outline",
+    });
+    const graphButton = root.querySelector('[aria-label="切换到树图"]');
+    const outlineButton = root.querySelector('[aria-label="切换到大纲"]');
+    assert.equal(graphButton.getAttribute("aria-pressed"), "false");
+    assert.equal(outlineButton.getAttribute("aria-pressed"), "true");
+    assert.equal(root.querySelectorAll(".wb-tree-outline-row").length, 2);
+    assert.equal(root.querySelectorAll(".wb-tree-outline-row button").length, 4);
+    const title = root.querySelector('.wb-tree-outline-title[data-node-id="child"]');
+    title.click();
+    assert.equal(root.querySelector(".wb-tree-radial-menu"), null);
+    assert.equal(title.getAttribute("aria-expanded"), "false");
+    assert.match(root.querySelector(".wb-tree-inline-content").textContent, /Child answer/);
+    assert.equal(root.querySelector('.wb-tree-outline-title[data-node-id="child"]').getAttribute("aria-expanded"), "true");
+    graphButton.click();
+    assert.equal(root.querySelector('[aria-label="切换到树图"]').getAttribute("aria-pressed"), "true");
+    assert.equal(root.querySelector('[aria-label="切换到大纲"]').getAttribute("aria-pressed"), "false");
     host.dispose();
   } finally { ui.dom.window.close(); }
 });

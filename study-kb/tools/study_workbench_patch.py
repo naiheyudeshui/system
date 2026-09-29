@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import urllib.parse
 from pathlib import Path
 
@@ -38,6 +39,11 @@ def install() -> None:
         BaseHandler = original_make(web_root, api_token)
 
         class Handler(BaseHandler):
+            def require_external_write_auth(self) -> None:
+                if os.environ.get("STUDY_TRUSTED_LAN_WRITE") == "1":
+                    return
+                super().require_external_write_auth()
+
             def _study_query(self) -> dict[str, str]:
                 parsed = urllib.parse.urlparse(self.path)
                 return {key: values[0] for key, values in urllib.parse.parse_qs(parsed.query).items() if values}

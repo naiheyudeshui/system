@@ -164,7 +164,9 @@ export async function renderNodeTreePanel(panel, { api, postApi }) {
     const editorHeader = make("header", null, "wb-tree-header");
     const cancel = make("button", "取消并返回");
     const save = make("button", "保存", "primary"); save.disabled = true;
-    editorHeader.append(make("h3", operation === "content" ? "编辑节点内容" : operation === "child" ? "新增子主题" : "新增同级主题"), cancel, save);
+    const editorActions = make("div", null, "wb-config-actions study-tree-editor-actions");
+    editorActions.append(cancel, save);
+    editorHeader.append(make("h3", operation === "content" ? "编辑节点内容" : operation === "child" ? "新增子主题" : "新增同级主题"), editorActions);
     const hint = make("p", "保存后写入当前数据库。新增主题不会自动生成复习卡；已有卡片只修改正文，不改变复习进度。");
     const titleLabel = make("label", "节点标题");
     const titleInput = make("input"); titleInput.maxLength = 500; titleInput.setAttribute("aria-label", "编辑节点标题");

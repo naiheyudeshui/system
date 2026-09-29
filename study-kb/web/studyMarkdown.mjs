@@ -19,6 +19,16 @@ export function renderMarkdown(text, targetEl, { mode = "render" } = {}) {
   const html = DOMPurify.sanitize(marked.parse(raw), { USE_PROFILES: { html: true } });
   targetEl.innerHTML = html;
   targetEl.classList.add("study-md");
+  for (const table of targetEl.querySelectorAll("table")) {
+    if (table.parentElement?.classList.contains("study-table-scroll")) continue;
+    const scroll = document.createElement("div");
+    scroll.className = "study-table-scroll";
+    scroll.tabIndex = 0;
+    scroll.setAttribute("role", "region");
+    scroll.setAttribute("aria-label", "可横向滚动的表格");
+    table.before(scroll);
+    scroll.append(table);
+  }
 }
 
 export function attachMarkdownToggle(toolbar, valueEl, getText) {

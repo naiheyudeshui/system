@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import socket
 import sys
 import types
 import webbrowser
@@ -16,6 +17,16 @@ STUDIO_TOOLS = STUDIO_ROOT / "tools"
 STUDY_TOOLS = Path(__file__).resolve().parent
 STUDY_WEB = Path(__file__).resolve().parents[1] / "web"
 STUDY_DB = Path(__file__).resolve().parents[1] / "data" / "study.sqlite"
+
+
+def _lan_ipv4() -> str | None:
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+            sock.connect(("8.8.8.8", 80))
+            address = sock.getsockname()[0]
+            return address if not address.startswith(("127.", "169.254.")) else None
+    except OSError:
+        return None
 
 
 def _install_db_shim() -> None:
@@ -77,20 +88,27 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8033)
     parser.add_argument("--no-open", action="store_true")
+    parser.add_argument(
+        "--trusted-lan-write",
+        action="store_true",
+        help="allow LAN clients full write access without authentication",
+    )
     args = parser.parse_args(argv)
 
     if not STUDIO_ROOT.exists():
-        print(f"未找到 3dStudio 软链接: {STUDIO_ROOT}", file=sys.stderr)
+        print(f"未找到 3dStudio 软链接：{STUDIO_ROOT}", file=sys.stderr)
         return 1
     if not STUDY_DB.exists():
-        print(f"未找到学习库: {STUDY_DB}", file=sys.stderr)
+        print(f"未找到学习库：{STUDY_DB}", file=sys.stderr)
         return 1
     if not STUDY_WEB.is_dir():
-        print(f"未找到学习库前端: {STUDY_WEB}", file=sys.stderr)
+        print(f"未找到学习库前端：{STUDY_WEB}", file=sys.stderr)
         return 1
 
     os.environ.setdefault("PYTHONUTF8", "1")
     os.environ.setdefault("PYTHONIOENCODING", "utf-8")
+    if args.trusted_lan_write:
+        os.environ["STUDY_TRUSTED_LAN_WRITE"] = "1"
     _install_db_shim()
     _install_workbench_study_shim()
 
@@ -109,11 +127,20 @@ def main(argv: list[str] | None = None) -> int:
 
     _free_port(args.port)
 
-    url = f"http://{args.host}:{args.port}"
+    url = f"http://127.0.0.1:{args.port}"
+    lan_ip = _lan_ipv4() if args.host in {"0.0.0.0", "::"} else None
+    lan_url = f"http://{lan_ip}:{args.port}" if lan_ip else None
     if not args.no_open:
         webbrowser.open(url)
-    print(f"学习库 3dworkbench: {url}")
-    print("推荐视图: v_study_due_cards, v_study_node_cards, v_study_scope_tree")
+    print("正在打开学习库 3dworkbench")
+    print()
+    print(f"本机访问：{url}")
+    print(f"局域网访问：{lan_url or '未检测到可用的局域网 IPv4 地址'}")
+    permission = "完整操作（可信局域网模式，无鉴权）" if args.trusted_lan_write else "写操作需要令牌"
+    print(f"局域网权限：{permission}")
+    print("推荐视图：v_study_due_cards, v_study_node_cards, v_study_scope_tree")
+    print()
+    print("按 Ctrl+C 停止服务", flush=True)
     serve(args.host, args.port, web_root=STUDY_WEB)
     return 0
 
