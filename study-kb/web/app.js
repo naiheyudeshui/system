@@ -1,4 +1,5 @@
 import { createPluginWorkspace } from "/3dworkbench/pluginWorkspace.mjs";
+import { renderTimerPanel } from "./studyTimers.mjs";
 import { confirmWorkbenchAction, openConfigManager } from "/3dworkbench/pluginConfigManager.mjs";
 import { rowMatchesFilter } from "/3dworkbench/tablePreview.mjs";
 let pluginWorkspace;
@@ -370,7 +371,8 @@ function renderMetrics(payload) {
     ...metricDefinitions().filter((metric) => enabled.has(metric.title)).map((metric) => ({ ...metric, label: labels[metric.title] || metric.label, value: payload[metric.title] ?? 0, builtin: true })),
     ...(state.dashboard.customMetrics || []).filter((metric) => metric.enabled).map((metric) => ({ id: `metric-custom-${metric.id}`, label: metric.label, value: payload[`custom_${metric.id}`] ?? 0, title: metric.id, format: metric.format, custom: true })),
   ];
-  const strip = $("#metric-strip");
+  const strip = document.querySelector(".study-metrics-panel");
+  if (!strip) return;
   strip.style.setProperty("--metric-count", String(Math.max(1, items.length + (managingMetrics ? 2 : 0))));
   strip.replaceChildren(...items.map(metricCard));
   if (managingMetrics) {
@@ -1024,6 +1026,21 @@ function renderPluginInspector() {
 
 async function loadPluginPanel(panel, pluginId, contributionId, context = createPluginContext()) {
   try {
+    if (pluginId === "study.metrics") {
+      panel.classList.add("study-metrics-panel");
+      renderMetrics(latestMetrics);
+      return;
+    }
+    if (pluginId === "study.pomodoro") {
+      if (!localStorage.getItem("studio-metrics-collapsed:handleOffset")) $("#metric-strip-toggle").style.removeProperty("--metric-toggle-left");
+      await renderTimerPanel(panel, { api, postApi, kind: "pomodoro", mode: context.presentationMode || "compact" });
+      return;
+    }
+    if (pluginId === "study.stopwatch") {
+      if (!localStorage.getItem("studio-metrics-collapsed:handleOffset")) $("#metric-strip-toggle").style.removeProperty("--metric-toggle-left");
+      await renderTimerPanel(panel, { api, postApi, kind: "stopwatch", mode: context.presentationMode || "compact" });
+      return;
+    }
     if (pluginId === "study.node-tree") {
       await renderNodeTreePanel(panel, { api, postApi });
       return;

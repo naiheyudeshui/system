@@ -110,6 +110,114 @@
           "label": "import-audit"
         }
       ]
+    },
+    {
+      "id": "study-import.ch11-ms-map.2026-09-25",
+      "path": "imports/2026-09-25-ch11-ms-map.json",
+      "description": "第十一章：SOA五种技术与微服务对应，紧挨SOA技术卡之后",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "import-audit"
+        }
+      ]
+    },
+    {
+      "id": "study-import.ch11-ws-roles.2026-09-26",
+      "path": "imports/2026-09-26-ch11-ws-roles.json",
+      "description": "第十一章追加Web Service三种工作角色",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "import-audit"
+        }
+      ]
+    },
+    {
+      "id": "study-import.ch11-ws-layers.2026-09-26",
+      "path": "imports/2026-09-26-ch11-ws-layers.json",
+      "description": "第十一章追加Web Service模型六层",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "import-audit"
+        }
+      ]
+    },
+    {
+      "id": "study-import.ch11-esb.2026-09-26",
+      "path": "imports/2026-09-26-ch11-esb.json",
+      "description": "第十一章追加ESB六点功能",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "import-audit"
+        }
+      ]
+    },
+    {
+      "id": "study-import.ch11-esb-advantages.2026-09-26",
+      "path": "imports/2026-09-26-ch11-esb-advantages.json",
+      "description": "ESB卡原位补四项EAI优势",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "import-audit"
+        }
+      ]
+    },
+    {
+      "id": "study-import.ch11-ieee1471.2026-09-27",
+      "path": "imports/2026-09-27-ch11-ieee1471.json",
+      "description": "第十一章追加IEEE 1471五要素",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "import-audit"
+        }
+      ]
+    },
+    {
+      "id": "study-import.ch11-absdm.2026-09-27",
+      "path": "imports/2026-09-27-ch11-absdm.json",
+      "description": "第十一章追加ABSDM总览及需求设计实现演化四张分卡",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "import-audit"
+        }
+      ]
+    },
+    {
+      "id": "study-import.ch11-quality.2026-09-27",
+      "path": "imports/2026-09-27-ch11-quality.json",
+      "description": "第十一章追加质量属性三张对照表卡",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "import-audit"
+        }
+      ]
+    },
+    {
+      "id": "study-import.ch11-qas.2026-09-27",
+      "path": "imports/2026-09-27-ch11-qas.json",
+      "description": "第十一章追加质量属性场景与用例区别",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "import-audit"
+        }
+      ]
     }
   ]
 }

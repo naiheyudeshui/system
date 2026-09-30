@@ -56,6 +56,12 @@ def install() -> None:
 
                         self.send_json(review_catalog())
                         return
+                    if parsed.path == "/api/study/time":
+                        from study_time_service import time_state
+
+                        params = self._study_query()
+                        self.send_json(time_state(str(params.get("kind") or "")))
+                        return
                     if parsed.path.startswith("/api/study/review/session/"):
                         from study_review_engine import get_review_session
 
@@ -130,6 +136,18 @@ def install() -> None:
             def do_POST(self) -> None:  # noqa: N802
                 parsed = urllib.parse.urlparse(self.path)
                 try:
+                    if parsed.path == "/api/study/time":
+                        from study_time_service import time_action
+
+                        self.require_external_write_auth()
+                        self.send_json(time_action(self.read_json()))
+                        return
+                    if parsed.path == "/api/study/time/project":
+                        from study_time_service import project_action
+
+                        self.require_external_write_auth()
+                        self.send_json(project_action(self.read_json()))
+                        return
                     if parsed.path in {"/api/study/knowledge/read", "/api/study/knowledge/save"}:
                         from study_knowledge_edit import read_knowledge_node, save_knowledge_node
 

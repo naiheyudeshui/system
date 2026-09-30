@@ -1,0 +1,20 @@
+{
+  "batch_id": "ch11-ws-roles-20260926-194053",
+  "parent_id": "node:node_a3e1e1b444514d3e889a1eac97",
+  "parent_path": "系统分析师一本通精华知识点（第二版） / 十一 软件架构设计",
+  "source_ref": "用户笔记：Web Service三种工作角色（2026-09-26）",
+  "backup": "study-kb/data/backups/study-before-ch11-ws-roles-20260926-194053.sqlite",
+  "created_cards": [
+    {
+      "node_id": "card:card_12b6de0261d440978e8e9d89da",
+      "card_id": "card_12b6de0261d440978e8e9d89da",
+      "title": "Web Service的三种工作角色分别是什么？",
+      "sort_order": 9
+    }
+  ],
+  "review_history_preserved": true,
+  "checks": {
+    "integrity_check": "ok",
+    "foreign_key_check": []
+  }
+}

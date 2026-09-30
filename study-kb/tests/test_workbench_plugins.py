@@ -17,7 +17,12 @@ class WorkbenchPluginsTest(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory()
         self.con = open_db(Path(self.tmp.name) / "test.sqlite")
         ensure_storage(self.con)
-        self.plugins = [{"id": "study.review-table", "state": "enabled"}, {"id": "official.table-print", "state": "enabled"}]
+        self.plugins = [
+            {"id": "study.review-table", "state": "enabled", "contributes": {"panels": [{"location": "inspector"}]}},
+            {"id": "official.table-print", "state": "enabled", "contributes": {"panels": [{"location": "inspector"}]}},
+            {"id": "study.metrics", "state": "enabled", "contributes": {"panels": [{"location": "upper"}]}},
+            {"id": "study.pomodoro", "state": "enabled", "contributes": {"panels": [{"location": "upper"}]}},
+        ]
         for plugin in self.plugins:
             self.con.execute("INSERT INTO workbench_plugin(plugin_id,version,manifest_json,root_path,state) VALUES (?, '1.0.0','{}','.',?)", (plugin["id"], plugin["state"]))
         self.con.commit()
@@ -29,13 +34,17 @@ class WorkbenchPluginsTest(unittest.TestCase):
     def test_layout_single_placement_revision_and_atomic_validation(self):
         state = layout_state(self.con, self.plugins)
         self.assertEqual(state["groups"]["top"], ["study.review-table"])
-        state["groups"] = {"top": ["official.table-print"], "bottom": [], "disabled": ["study.review-table"]}
+        self.assertEqual(state["groups"]["upper"], ["study.metrics"])
+        self.assertIn("study.pomodoro", state["groups"]["disabled"])
+        state["groups"] = {"top": ["official.table-print"], "upper": ["study.pomodoro"], "bottom": [], "disabled": ["study.review-table", "study.metrics"]}
         updated = apply_layout(self.con, self.plugins, state)
         self.assertEqual(updated["revision"], 1)
         with self.assertRaises(ConflictError):
             apply_layout(self.con, self.plugins, state)
         with self.assertRaises(ValueError):
-            apply_layout(self.con, self.plugins, {"revision": 1, "groups": {"top": ["official.table-print"], "bottom": ["official.table-print"], "disabled": []}})
+            apply_layout(self.con, self.plugins, {"revision": 1, "groups": {"top": ["official.table-print"], "upper": ["study.metrics"], "bottom": ["official.table-print"], "disabled": ["study.review-table", "study.pomodoro"]}})
+        moved = {"revision": updated["revision"], "groups": {"top": ["study.metrics"], "upper": [], "bottom": ["official.table-print"], "disabled": ["study.review-table", "study.pomodoro"]}}
+        self.assertEqual(apply_layout(self.con, self.plugins, moved)["groups"]["top"], ["study.metrics"])
 
     def test_queries_reject_writes_multiple_statements_and_dangerous_functions(self):
         for sql in ["DELETE FROM study_card", "SELECT 1; SELECT 2", "PRAGMA user_version", "ATTACH ':memory:' AS other", "SELECT load_extension('bad')", "CREATE TABLE injected (id)"]:

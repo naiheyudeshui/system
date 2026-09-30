@@ -1,0 +1,18 @@
+{
+  "batch_id": "ch11-esb-advantages-20260926-224802",
+  "updated_cards": [
+    {
+      "id": "card:card_2162e85965254a6494ca4c24eb",
+      "old_title": "ESB的六个功能各是什么？第4、5点是否等于注册中心和路由？",
+      "new_title": "ESB的六个功能和四项集成优势分别是什么？",
+      "change": "原位补上ESB相对专有集成的四项优势，并区分缓冲与协议转换"
+    }
+  ],
+  "fsrs_preserved": {
+    "due_at": "2026-09-26 22:41:33",
+    "reps": 0,
+    "lapses": 0
+  },
+  "backup": "study-kb/data/backups/study-before-esb-advantages-20260926-224802.sqlite",
+  "review_history_preserved": true
+}

@@ -6,8 +6,8 @@
   "activation": ["onStartupFinished"],
   "contributes": {
     "sqlModules": [{"id": "reviews", "label": "复习方案", "contract": "review-cards/v1"}],
-    "panels": [
-      {"id": "review-table", "location": "inspector", "label": "表格复习"}
+    "presentations": [
+      {"id": "default", "renderer": "review-table", "label": "表格复习", "default": true}
     ],
     "commands": [
       {"id": "review.next", "label": "下一张到期卡"},

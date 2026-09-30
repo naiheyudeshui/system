@@ -15,6 +15,7 @@ const treeSource = await readFile(new URL("treeWorkspace.mjs", shared), "utf8");
 const searchableComboboxSource = await readFile(new URL("searchableCombobox.mjs", shared), "utf8");
 const treeAdapterSource = await readFile(new URL("../web/studyTreeWorkspace.mjs", import.meta.url), "utf8");
 const workspaceCss = await readFile(new URL("pluginWorkspace.css", shared), "utf8");
+const workbenchCss = await readFile(new URL("workbench.css", shared), "utf8");
 const settle = () => new Promise((resolve) => setImmediate(resolve));
 
 function drop(ui, id, target) {
@@ -24,10 +25,12 @@ function drop(ui, id, target) {
 }
 
 async function setup() {
-  const dom = new JSDOM('<header class="topbar"><div class="toolbar"></div></header><section class="data-pane"><div class="table-frame">Table</div></section><section class="inspector-pane"><div class="tabs"><button class="tab" data-tab="fields">Fields</button><button class="tab" data-tab="plugins">Plugins</button></div><div id="inspector-fields" class="inspector-panel active"></div><div id="inspector-plugin-panels"></div></section>', { url: "http://localhost" });
+  const dom = new JSDOM('<header class="topbar"><div class="topbar-primary"><div class="brand-block">KB</div><div class="toolbar"></div></div></header><section id="metric-area"><section id="metric-strip"></section></section><section class="data-pane"><div class="table-frame">Table</div></section><section class="inspector-pane"><div class="tabs"><button class="tab" data-tab="fields">Fields</button><button class="tab" data-tab="plugins">Plugins</button></div><div id="inspector-fields" class="inspector-panel active"></div><div id="inspector-plugin-panels"></div></section>', { url: "http://localhost" });
   dom.window.confirm = () => true;
   dom.window.HTMLDialogElement.prototype.showModal = function () { this.open = true; };
   dom.window.HTMLDialogElement.prototype.close = function (value = "") { this.returnValue = value; this.open = false; this.dispatchEvent(new dom.window.Event("close")); };
+  const resizeObservers = [];
+  dom.window.ResizeObserver = class { constructor(callback) { this.callback = callback; resizeObservers.push(this); } observe(target) { this.target = target; } disconnect() { this.disconnected = true; } emit(width, height) { this.callback([{ target: this.target, contentRect: { width, height } }]); } };
   const context = vm.createContext({ document: dom.window.document, window: dom.window, localStorage: dom.window.localStorage, Event: dom.window.Event, Option: dom.window.Option, structuredClone, console, requestAnimationFrame: (callback) => callback() });
   const workspace = new vm.SourceTextModule(workspaceSource, { context });
   const manager = new vm.SourceTextModule(managerSource, { context });
@@ -51,26 +54,28 @@ async function setup() {
   await searchableCombobox.link(() => {}); await searchableCombobox.evaluate();
   const treeAdapter = new vm.SourceTextModule(treeAdapterSource, { context });
   await treeAdapter.link((specifier) => specifier.includes("pluginConfigManager") ? manager : specifier.includes("tablePreview") ? preview : specifier.includes("treeWorkspace") ? tree : specifier.includes("searchableCombobox") ? searchableCombobox : markdown); await treeAdapter.evaluate();
-  return { tree: tree.namespace, treeAdapter: treeAdapter.namespace, dom, document: dom.window.document, workspace: workspace.namespace, manager: manager.namespace, review: review.namespace, preview: preview.namespace };
+  return { tree: tree.namespace, treeAdapter: treeAdapter.namespace, dom, document: dom.window.document, workspace: workspace.namespace, manager: manager.namespace, review: review.namespace, preview: preview.namespace, resizeObservers };
 }
 
-test("workspace mounts once, changes placement without losing state and keeps table context", async () => {
+test("workspace remounts the matching presentation when placement changes", async () => {
   const ui = await setup();
   try {
     const plugins = [
-      { id: "study.review-table", state: "enabled", contributes: { panels: [{ id: "review", label: "Review", location: "inspector" }] } },
+      { id: "study.review-table", state: "enabled", contributes: { presentations: [{ id: "full", label: "Review", slots: ["top"], renderer: "review" }, { id: "inspector", label: "Review", slots: ["bottom"], renderer: "review" }] } },
       { id: "official.table-print", state: "enabled", contributes: { panels: [{ id: "print", label: "Print", location: "inspector" }] } },
     ];
-    let layout = { revision: 0, groups: { top: [plugins[0].id], bottom: [plugins[1].id], disabled: [] } };
+    let layout = { revision: 0, groups: { top: [plugins[0].id], upper: [], bottom: [plugins[1].id], disabled: [] } };
     const mounts = [];
     const host = ui.workspace.createPluginWorkspace({
       api: async () => structuredClone(layout),
       postApi: async (url, payload) => { layout = { ...payload, revision: payload.revision + 1 }; return layout; },
-      loadPanel: (panel, id, contribution, context) => { mounts.push(id); panel.textContent = `state:${id}:${context.currentObject().name}`; },
+      loadPanel: (panel, id, contribution, context) => { mounts.push(`${id}:${context.presentationId}:${context.slot}`); panel.textContent = `state:${id}:${context.currentObject().name}`; },
       context: () => ({ currentObject: () => ({ name: "selected_view" }) }),
     });
     await host.update(plugins);
-    assert.equal(mounts.length, 2);
+    assert.equal(ui.document.querySelector(".topbar").lastElementChild.className, "wb-plugin-navigation");
+    assert.ok(ui.document.querySelector(".topbar-primary > .toolbar"));
+    assert.deepEqual(mounts, ["study.review-table:full:top", "official.table-print:print:bottom"]);
     assert.equal(ui.document.querySelectorAll('.wb-plugin-navigation [data-workspace="manager"]').length, 0);
     assert.ok(ui.document.querySelector('[data-workspace="table"] svg'));
     assert.equal(ui.document.querySelectorAll('.wb-plugin-card select,.wb-plugin-card button').length, 0);
@@ -82,16 +87,17 @@ test("workspace mounts once, changes placement without losing state and keeps ta
     assert.equal(ui.document.querySelector(".table-frame").hidden, true);
     drop(ui, plugins[0].id, '[data-zone="bottom"]');
     await settle();
-    assert.equal(mounts.length, 2);
-    assert.equal(reviewPanel.parentElement.id, "inspector-plugin-panels");
-    assert.match(reviewPanel.textContent, /selected_view/);
-    assert.equal(ui.document.querySelectorAll(".wb-plugin-zone").length, 3);
+    assert.equal(mounts.length, 3);
+    const movedReviewPanel = ui.document.querySelector('#inspector-plugin-panels [data-presentation-id="inspector"]');
+    assert.equal(reviewPanel.isConnected, false);
+    assert.match(movedReviewPanel.textContent, /selected_view/);
+    assert.equal(ui.document.querySelectorAll(".wb-plugin-zone").length, 4);
     drop(ui, plugins[0].id, '[data-zone="bottom"] [data-plugin-id="official.table-print"]');
     await settle();
     assert.deepEqual(layout.groups.bottom, [plugins[0].id, plugins[1].id]);
-    assert.equal(mounts.length, 2);
+    assert.equal(mounts.length, 3);
     await host.update(plugins);
-    assert.equal(mounts.length, 2);
+    assert.equal(mounts.length, 3);
     host.show("table");
     assert.equal(ui.document.querySelector(".table-frame").hidden, false);
   } finally { ui.dom.window.close(); }
@@ -101,7 +107,7 @@ test("ordinary and official plugins share disabled placement and icon fallback",
   const ui = await setup();
   try {
     const plugin = { id: "official.sqlite-triggers", state: "enabled", builtin: true, icon: "icon.svg", contributes: { panels: [{ id: "triggers", label: "Triggers", location: "inspector" }] } };
-    let layout = { revision: 0, groups: { top: [plugin.id], bottom: [], disabled: [] } };
+    let layout = { revision: 0, groups: { top: [plugin.id], upper: [], bottom: [], disabled: [] } };
     const host = ui.workspace.createPluginWorkspace({ api: async () => layout, postApi: async (url, payload) => { layout = { ...payload, revision: 1 }; return layout; }, loadPanel: () => {}, context: () => ({}) });
     await host.update([plugin]);
     const image = ui.document.querySelector(".wb-plugin-navigation img");
@@ -114,6 +120,96 @@ test("ordinary and official plugins share disabled placement and icon fallback",
     host.show("table");
     assert.equal(ui.document.querySelector(".table-frame").hidden, false);
     assert.equal(ui.document.querySelectorAll(".wb-plugin-zone-disabled article").length, 1);
+  } finally { ui.dom.window.close(); }
+});
+
+test("empty upper slot remains visible with a stable placeholder", async () => {
+  const ui = await setup();
+  try {
+    const plugin = { id: "study.review-table", state: "enabled", contributes: { presentations: [{ id: "full", slots: ["top"], renderer: "review" }] } };
+    const layout = { revision: 0, groups: { top: [plugin.id], upper: [], bottom: [], disabled: [] } };
+    const host = ui.workspace.createPluginWorkspace({ api: async () => layout, postApi: async () => layout, loadPanel: () => {}, context: () => ({}) });
+    await host.update([plugin]);
+    assert.equal(ui.document.querySelector("#metric-area").hidden, false);
+    assert.match(ui.document.querySelector("#metric-strip").textContent, /上栏暂无插件/);
+    assert.ok(ui.document.querySelector(".wb-plugin-upper-empty[role=status]"));
+    host.dispose();
+  } finally { ui.dom.window.close(); }
+});
+
+test("mobile density is owned by the host and removes nested plugin shell padding", () => {
+  assert.match(workbenchCss, /--wb-plugin-workspace-padding:4px/);
+  assert.match(workbenchCss, /--wb-plugin-instance-padding:0px/);
+  assert.equal(workspaceCss.includes("padding:var(--wb-plugin-workspace-padding,16px);"), true);
+  assert.equal(workspaceCss.includes("padding:var(--wb-plugin-instance-padding,10px);"), true);
+});
+
+test("adaptive grid selects variants from container cells instead of slot names", async () => {
+  const ui = await setup();
+  try {
+    assert.deepEqual({ ...ui.workspace.gridMetrics(360, 600).cells }, { cols: 5, rows: 20 });
+    const plugin = { id: "study.timer", contributes: { presentations: [
+      { id: "micro", renderer: "timer", mode: "micro", when: { maxCols: 5, maxRows: 4 }, priority: 40 },
+      { id: "strip", renderer: "timer", mode: "compact", when: { minCols: 6, maxRows: 4 }, priority: 30 },
+      { id: "phone", renderer: "timer", mode: "phone", when: { maxCols: 7, minRows: 5 }, priority: 20 },
+      { id: "full", renderer: "timer", mode: "full", when: { minCols: 8, minRows: 5 }, priority: 10 },
+      { id: "default", renderer: "timer", mode: "compact", default: true },
+    ] } };
+    assert.equal(ui.workspace.presentationFor(plugin, "top", ui.workspace.gridMetrics(360, 600)).mode, "phone");
+    assert.equal(ui.workspace.presentationFor(plugin, "upper", ui.workspace.gridMetrics(1440, 90)).mode, "compact");
+    assert.equal(ui.workspace.presentationFor(plugin, "bottom", ui.workspace.gridMetrics(1200, 720)).mode, "full");
+    assert.equal(ui.workspace.presentationFor(plugin, "upper", ui.workspace.gridMetrics(300, 90)).mode, "micro");
+  } finally { ui.dom.window.close(); }
+});
+
+test("adaptive workspace remounts only when a resize crosses variant boundaries", async () => {
+  const ui = await setup();
+  try {
+    const plugin = { id: "study.timer", state: "enabled", contributes: { presentations: [
+      { id: "phone", renderer: "timer", mode: "phone", when: { maxCols: 7, minRows: 5 }, priority: 20 },
+      { id: "full", renderer: "timer", mode: "full", when: { minCols: 8, minRows: 5 }, priority: 10 },
+      { id: "default", renderer: "timer", mode: "compact", default: true },
+    ] } };
+    const layout = { revision: 0, groups: { top: [plugin.id], upper: [], bottom: [], disabled: [] } };
+    const modes = [];
+    const host = ui.workspace.createPluginWorkspace({ api: async () => layout, postApi: async () => layout, loadPanel: (_panel, _id, _renderer, context) => modes.push(context.presentationMode), context: () => ({}) });
+    await host.update([plugin]);
+    assert.equal(modes.at(-1), "full");
+    const observer = ui.resizeObservers.find((item) => item.target?.dataset.pluginId === undefined && item.target?.dataset.slot === "top");
+    observer.emit(360, 600);
+    assert.equal(modes.at(-1), "phone");
+    const count = modes.length;
+    observer.emit(400, 620);
+    assert.equal(modes.length, count);
+    observer.emit(1000, 700);
+    assert.equal(modes.at(-1), "full");
+    host.dispose();
+    assert.equal(observer.disconnected, true);
+  } finally { ui.dom.window.close(); }
+});
+
+test("upper bar accepts one lightweight plugin and displaces the previous plugin", async () => {
+  const ui = await setup();
+  try {
+    const upper = (id) => ({ id, state: "enabled", contributes: { panels: [{ id, label: id, location: "upper" }] } });
+    const plugins = [upper("study.metrics"), upper("study.pomodoro"), upper("study.stopwatch")];
+    let layout = { revision: 0, groups: { top: [], upper: ["study.metrics"], bottom: [], disabled: ["study.pomodoro", "study.stopwatch"] } };
+    const host = ui.workspace.createPluginWorkspace({
+      api: async () => structuredClone(layout),
+      postApi: async (_url, payload) => { layout = { ...payload, revision: payload.revision + 1 }; return layout; },
+      loadPanel: (panel, id) => { panel.textContent = id; },
+      context: () => ({}),
+    });
+    await host.update(plugins);
+    assert.match(ui.document.querySelector("#metric-strip").textContent, /study.metrics/);
+    host.show("manager");
+    drop(ui, "study.pomodoro", '[data-zone="upper"]'); await settle();
+    assert.equal(JSON.stringify(layout.groups.upper), JSON.stringify(["study.pomodoro"]));
+    assert.ok(layout.groups.disabled.includes("study.metrics"));
+    assert.match(ui.document.querySelector("#metric-strip").textContent, /study.pomodoro/);
+    assert.doesNotMatch(ui.document.querySelector("#metric-strip").textContent, /study.metrics/);
+    assert.equal(ui.document.querySelectorAll('[data-zone="upper"] .wb-plugin-card').length, 1);
+    host.dispose();
   } finally { ui.dom.window.close(); }
 });
 
@@ -140,7 +236,7 @@ test("layout save failure restores placement and reports the error", async () =>
   const ui = await setup();
   try {
     const plugin = { id: "test.print", state: "enabled", contributes: { panels: [{ id: "print", location: "inspector" }] } };
-    const layout = { revision: 0, groups: { top: [], bottom: [plugin.id], disabled: [] } };
+    const layout = { revision: 0, groups: { top: [], upper: [], bottom: [plugin.id], disabled: [] } };
     const host = ui.workspace.createPluginWorkspace({ api: async () => structuredClone(layout), postApi: async () => { throw new Error("conflict"); }, loadPanel: () => {}, context: () => ({}) });
     await host.update([plugin]); host.show("manager");
     drop(ui, plugin.id, '[data-zone="top"]'); await settle();

@@ -1,0 +1,20 @@
+{
+  "batch_id": "ch11-ieee1471-20260927-122714",
+  "parent_id": "node:node_a3e1e1b444514d3e889a1eac97",
+  "parent_path": "系统分析师一本通精华知识点（第二版） / 十一 软件架构设计",
+  "source_ref": "用户笔记：IEEE 1471-2000软件架构标准五要素（2026-09-27）",
+  "backup": "study-kb/data/backups/study-before-ch11-ieee1471-20260927-122714.sqlite",
+  "created_cards": [
+    {
+      "node_id": "card:card_e498e685a38f49e78cbe0d0d31",
+      "card_id": "card_e498e685a38f49e78cbe0d0d31",
+      "title": "IEEE 1471里软件架构标准的五个要素各是什么？",
+      "sort_order": 12
+    }
+  ],
+  "review_history_preserved": true,
+  "checks": {
+    "integrity_check": "ok",
+    "foreign_key_check": []
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "id": "study.stopwatch",
+  "icon": "icon.svg",
+  "version": "1.0.0",
+  "api": {"host": ">=1.0 <2.0"},
+  "activation": ["onStartupFinished"],
+  "contributes": {
+    "presentations": [
+      {"id": "micro", "label": "计时器", "renderer": "timer", "mode": "micro", "when": {"maxCols": 5, "maxRows": 4}, "priority": 40},
+      {"id": "strip", "label": "计时器", "renderer": "timer", "mode": "compact", "when": {"minCols": 6, "maxRows": 4}, "priority": 30},
+      {"id": "phone", "label": "计时器", "renderer": "timer", "mode": "phone", "when": {"maxCols": 7, "minRows": 5}, "priority": 20},
+      {"id": "full", "label": "计时器", "renderer": "timer", "mode": "full", "when": {"minCols": 8, "minRows": 5}, "priority": 10},
+      {"id": "default", "label": "计时器", "renderer": "timer", "mode": "compact", "default": true}
+    ]
+  },
+  "permissions": ["data.read:study_time_session", "data.write:study_time_session"]
+}

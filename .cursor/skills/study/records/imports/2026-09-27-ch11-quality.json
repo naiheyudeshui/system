@@ -1,0 +1,32 @@
+{
+  "batch_id": "ch11-quality-20260927-144908",
+  "parent_id": "node:node_a3e1e1b444514d3e889a1eac97",
+  "parent_path": "系统分析师一本通精华知识点（第二版） / 十一 软件架构设计",
+  "source_ref": "用户笔记：软件质量属性开发期/运行期/架构评估及易混对比（2026-09-27）",
+  "backup": "study-kb/data/backups/study-before-ch11-quality-20260927-144908.sqlite",
+  "created_cards": [
+    {
+      "node_id": "card:card_4221a0e94b2e4a4db3168be5ae",
+      "card_id": "card_4221a0e94b2e4a4db3168be5ae",
+      "title": "开发期、运行期和面向架构评估的质量属性是什么关系？",
+      "sort_order": 18
+    },
+    {
+      "node_id": "card:card_057c8f9efc8f4adcaa3dc8a3a9",
+      "card_id": "card_057c8f9efc8f4adcaa3dc8a3a9",
+      "title": "可变性是不是就是可移植性？和可扩展有何不同？",
+      "sort_order": 19
+    },
+    {
+      "node_id": "card:card_ee8d6840ee3b42f9b698a49704",
+      "card_id": "card_ee8d6840ee3b42f9b698a49704",
+      "title": "可靠性和可用性有什么区别？鲁棒性算哪边？",
+      "sort_order": 20
+    }
+  ],
+  "review_history_preserved": true,
+  "checks": {
+    "integrity_check": "ok",
+    "foreign_key_check": []
+  }
+}

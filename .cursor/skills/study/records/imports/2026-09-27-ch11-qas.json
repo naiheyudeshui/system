@@ -1,0 +1,20 @@
+{
+  "batch_id": "ch11-qas-20260927-162218",
+  "parent_id": "node:node_a3e1e1b444514d3e889a1eac97",
+  "parent_path": "系统分析师一本通精华知识点（第二版） / 十一 软件架构设计",
+  "source_ref": "用户对话整理：质量属性场景与用例区别及为何在架构章（2026-09-27）",
+  "backup": "study-kb/data/backups/study-before-ch11-qas-20260927-162218.sqlite",
+  "created_cards": [
+    {
+      "node_id": "card:card_c3b41cfee4df48fdb8445af70e",
+      "card_id": "card_c3b41cfee4df48fdb8445af70e",
+      "title": "质量属性场景和用例有何区别？为什么放在架构章？",
+      "sort_order": 21
+    }
+  ],
+  "review_history_preserved": true,
+  "checks": {
+    "integrity_check": "ok",
+    "foreign_key_check": []
+  }
+}

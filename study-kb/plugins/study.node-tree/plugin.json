@@ -6,8 +6,8 @@
   "activation": ["onStartupFinished"],
   "contributes": {
     "sqlModules": [{"id": "trees", "label": "章节树方案", "contract": "tree-nodes/v1"}],
-    "panels": [
-      {"id": "node-tree", "location": "inspector", "label": "章节树图"}
+    "presentations": [
+      {"id": "default", "renderer": "node-tree", "label": "章节树图", "default": true}
     ],
     "commands": [
       {"id": "tree.refresh", "label": "刷新章节树"}

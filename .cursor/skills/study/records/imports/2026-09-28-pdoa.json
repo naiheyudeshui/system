@@ -1,0 +1,11 @@
+{
+  "batch_id": "pdoa-20260928-204052",
+  "parent_id": "card:card_c5f11b80d8334248bef43c1841",
+  "placement": "与结构化分析、面向对象分析同级",
+  "source_ref": "系统分析师-一本通精华知识点-第二版(OCR).docx#需求分析-PDOA；用户归纳（2026-09-28）",
+  "created_cards": ["card:card_04ce7a8c32aa43f4a81d03c5d4"],
+  "backup": "study-kb/data/backups/study-before-pdoa-20260928-204052.sqlite",
+  "checks": {"integrity_check":"ok","foreign_key_check":[],"active_cards_without_schedule":[],"duplicate_sibling_titles":[]},
+  "markdown_newlines_verified": true,
+  "review_history_preserved": true
+}

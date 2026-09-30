@@ -1,0 +1,11 @@
+{
+  "batch_id": "service-registry-20260928-200059",
+  "parent_id": "card:card_12b6de0261d440978e8e9d89da",
+  "parent_title": "Web Service的三种工作角色分别是什么？",
+  "source_ref": "用户笔记：服务注册表三项功能（2026-09-28）",
+  "created_cards": ["card:card_2b6135048b2d4448977b7ee420"],
+  "backup": "study-kb/data/backups/study-before-service-registry-20260928-200059.sqlite",
+  "checks": {"integrity_check":"ok","foreign_key_check":[],"active_cards_without_schedule":[],"duplicate_sibling_titles":[]},
+  "markdown_newlines_verified": true,
+  "review_history_preserved": true
+}

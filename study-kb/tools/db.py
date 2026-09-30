@@ -12,6 +12,7 @@ VIEWS = ROOT / "schema" / "v_study_kb.sql"
 PLATFORM = ROOT / "schema" / "workbench_platform.sql"
 SCHEMA_DOC = ROOT / "schema" / "schema_doc_study.sql"
 WORKBENCH_DEFAULTS = ROOT / "schema" / "study_workbench_defaults.sql"
+STUDY_TIME = ROOT / "schema" / "study_time.sql"
 DB_PATH = ROOT / "data" / "study.sqlite"
 DELETED_MANAGED_VIEWS_KEY = "workbench.deleted_views.v1"
 
@@ -63,10 +64,25 @@ def upgrade_knowledge_tree_config(con: sqlite3.Connection) -> None:
           AND deleted = 0 AND revision = 1 AND settings = '{}' AND parameters = '{}'""")
 
 
+def upgrade_study_time(con: sqlite3.Connection) -> None:
+    con.execute("""CREATE TABLE IF NOT EXISTS study_time_project (
+        id TEXT PRIMARY KEY, name TEXT NOT NULL COLLATE NOCASE CHECK (length(trim(name)) BETWEEN 1 AND 100),
+        color TEXT NOT NULL DEFAULT '#4f7cac' CHECK (length(color) BETWEEN 4 AND 32),
+        status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active','archived')), created_at TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now','localtime')))""")
+    has_sessions = con.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='study_time_session'").fetchone()
+    if has_sessions and not _has_column(con, "study_time_session", "project_id"):
+        con.execute("ALTER TABLE study_time_session ADD COLUMN project_id TEXT REFERENCES study_time_project(id) ON UPDATE CASCADE ON DELETE SET NULL")
+    if has_sessions:
+        con.execute("CREATE INDEX IF NOT EXISTS idx_study_time_session_project ON study_time_session(project_id, started_at DESC)")
+
+
 def ensure_schema(con: sqlite3.Connection) -> None:
     if PLATFORM.exists():
         con.executescript(PLATFORM.read_text(encoding="utf-8"))
     con.executescript((ROOT / "schema" / "knowledge_items.sql").read_text(encoding="utf-8"))
+    upgrade_study_time(con)
+    con.executescript(STUDY_TIME.read_text(encoding="utf-8"))
     upgrade_knowledge_tree_config(con)
     if VIEWS.exists():
         _ensure_view_script(con, VIEWS)

@@ -1,0 +1,11 @@
+{
+  "id": "study.metrics",
+  "icon": "icon.svg",
+  "version": "1.0.0",
+  "api": {"host": ">=1.0 <2.0"},
+  "activation": ["onStartupFinished"],
+  "contributes": {
+    "presentations": [{"id": "default", "label": "指标栏", "renderer": "metrics", "default": true}]
+  },
+  "permissions": ["data.read:metrics"]
+}

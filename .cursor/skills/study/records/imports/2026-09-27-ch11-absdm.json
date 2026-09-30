@@ -1,0 +1,44 @@
+{
+  "batch_id": "ch11-absdm-20260927-141839",
+  "parent_id": "node:node_a3e1e1b444514d3e889a1eac97",
+  "parent_path": "系统分析师一本通精华知识点（第二版） / 十一 软件架构设计",
+  "source_ref": "用户笔记+一本通：基于架构的软件开发模型ABSDM（2026-09-27）",
+  "backup": "study-kb/data/backups/study-before-ch11-absdm-20260927-141839.sqlite",
+  "created_cards": [
+    {
+      "node_id": "card:card_58cce8ea393c4261b617a4d463",
+      "card_id": "card_58cce8ea393c4261b617a4d463",
+      "title": "ABSDM把基于体系结构的软件过程分成哪六个子过程？回路怎么走？",
+      "sort_order": 13
+    },
+    {
+      "node_id": "card:card_28e9f445c4b644f990207997e8",
+      "card_id": "card_28e9f445c4b644f990207997e8",
+      "title": "架构需求阶段做什么？标识构件的三步是什么？",
+      "sort_order": 14
+    },
+    {
+      "node_id": "card:card_5c2058bd51cf47689eb0edc16b",
+      "card_id": "card_5c2058bd51cf47689eb0edc16b",
+      "title": "架构设计如何把需求阶段的构件变成体系结构？",
+      "sort_order": 15
+    },
+    {
+      "node_id": "card:card_eff277d8e1804832a2ef6ee00e",
+      "card_id": "card_eff277d8e1804832a2ef6ee00e",
+      "title": "架构实现如何用实体把架构做出来？",
+      "sort_order": 16
+    },
+    {
+      "node_id": "card:card_2159451aa3bd4bdbbbf390854e",
+      "card_id": "card_2159451aa3bd4bdbbbf390854e",
+      "title": "架构演化按什么步骤改架构？和需求变更有何对应？",
+      "sort_order": 17
+    }
+  ],
+  "review_history_preserved": true,
+  "checks": {
+    "integrity_check": "ok",
+    "foreign_key_check": []
+  }
+}
