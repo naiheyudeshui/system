@@ -1,6 +1,6 @@
 import { addConfigCardControls, confirmWorkbenchAction, openConfigManager } from "/3dworkbench/pluginConfigManager.mjs";
 import { renderTablePreview } from "/3dworkbench/tablePreview.mjs";
-import { createTreeWorkspace, filterTree, indexTree } from "/3dworkbench/treeWorkspace.mjs?v=20260928-find";
+import { createTreeWorkspace, filterTree, indexTree } from "/3dworkbench/treeWorkspace.mjs?v=20261005-toolbar";
 import { renderMarkdown } from "./studyMarkdown.mjs";
 import { createSearchableCombobox } from "/3dworkbench/searchableCombobox.mjs";
 

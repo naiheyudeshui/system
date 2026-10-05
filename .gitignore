@@ -31,6 +31,14 @@ __pycache__/
 *.pyc
 study-kb/tests/node_modules/
 
+# Android study app: generated runtime snapshot and local build output
+study-kb/android/.gradle/
+study-kb/android/build/
+study-kb/android/app/build/
+study-kb/android/local.properties
+study-kb/android/app/src/main/assets/runtime/
+study-kb/android/.idea/
+
 # IDE / OS
 .idea/
 .vscode/

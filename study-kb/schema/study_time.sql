@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS study_time_session (
   id TEXT PRIMARY KEY,
   timer_kind TEXT NOT NULL CHECK (timer_kind IN ('pomodoro', 'stopwatch')),
   task_text TEXT NOT NULL CHECK (length(trim(task_text)) BETWEEN 1 AND 500),
+  note_text TEXT NOT NULL DEFAULT '' CHECK (length(note_text) <= 4000),
   project_id TEXT REFERENCES study_time_project(id) ON UPDATE CASCADE ON DELETE SET NULL,
   status TEXT NOT NULL CHECK (status IN ('running', 'paused', 'completed', 'abandoned')),
   planned_seconds INTEGER CHECK (planned_seconds IS NULL OR planned_seconds BETWEEN 60 AND 43200),
@@ -35,3 +36,16 @@ CREATE INDEX IF NOT EXISTS idx_study_time_session_project
 CREATE UNIQUE INDEX IF NOT EXISTS uq_study_time_active_kind
   ON study_time_session(timer_kind)
   WHERE status IN ('running', 'paused');
+
+CREATE TABLE IF NOT EXISTS study_stopwatch_lap (
+  id TEXT PRIMARY KEY,
+  session_id TEXT NOT NULL REFERENCES study_time_session(id) ON DELETE CASCADE,
+  lap_number INTEGER NOT NULL CHECK (lap_number > 0),
+  split_seconds INTEGER NOT NULL CHECK (split_seconds >= 0),
+  total_seconds INTEGER NOT NULL CHECK (total_seconds >= 0),
+  recorded_at TEXT NOT NULL,
+  UNIQUE(session_id, lap_number)
+);
+
+CREATE INDEX IF NOT EXISTS idx_study_stopwatch_lap_session
+  ON study_stopwatch_lap(session_id, lap_number DESC);

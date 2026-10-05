@@ -2,6 +2,7 @@ import { createPluginWorkspace } from "/3dworkbench/pluginWorkspace.mjs";
 import { renderTimerPanel } from "./studyTimers.mjs";
 import { confirmWorkbenchAction, openConfigManager } from "/3dworkbench/pluginConfigManager.mjs";
 import { rowMatchesFilter } from "/3dworkbench/tablePreview.mjs";
+import { editCellInline } from "/3dworkbench/inlineCellEditor.mjs";
 let pluginWorkspace;
 import {
   applyIconButtons,
@@ -15,7 +16,7 @@ import {
   setupThemeToggle,
   setupWorkbenchSplitters,
   t,
-} from "/3dworkbench/workbenchPlatform.mjs";
+} from "/3dworkbench/workbenchPlatform.mjs?v=20261005-drawer";
 import { renderNodeTreePanel, renderReviewTablePanel } from "./studyPlugins.mjs?v=20260928-tree-details";
 const layoutStorageKey = "study-workbench-layout";
 const sidebarStorageKey = "study-sidebar-collapsed";
@@ -656,50 +657,23 @@ async function openCellEditor(cell, row, viewColumn) {
   const mappedChoices = displayChoices(context.values);
   const statusOptions = mappedChoices || statusOptionsFor(context.contract.table, context.baseColumn);
   const numeric = /int|real|float|double|numeric|decimal/i.test(column?.type || "");
-  const input = statusOptions
-    ? document.createElement("select")
-    : numeric ? document.createElement("input") : document.createElement("textarea");
-  input.className = "cell-editor";
-  if (statusOptions) {
-    for (const option of statusOptions) {
-      input.append(new Option(option, option));
-    }
-    input.value = statusOptions.includes(original) ? original : "";
-  } else {
-    if (numeric) input.type = "number";
-    else { input.rows = 2; input.wrap = "soft"; }
-    input.value = original;
-    if (numeric) input.step = "any";
-  }
-  cell.classList.add("cell-editing");
-  cell.replaceChildren(input);
-  input.focus();
-  if (input.select) input.select();
-  let finished = false;
-  const cancel = () => { if (finished) return; finished = true; cell.classList.remove("cell-editing"); cell.textContent = original; };
-  const commit = async () => {
-    if (finished) return;
-    const next = input.value;
-    if (next === original) { cancel(); return; }
-    finished = true; cell.classList.add("cell-saving"); input.disabled = true;
+  editCellInline(cell, {
+    value: statusOptions && !statusOptions.includes(original) ? "" : original,
+    editor: statusOptions ? "select" : numeric ? "number" : "textarea",
+    options: statusOptions || [],
+    save: async (next) => {
     const request = context.crossTable
       ? { view: state.active.name, row, column: viewColumn, value: next }
       : { operation: "update", table: context.contract.table, key: context.key, values: { [context.baseColumn]: next } };
-    try {
-      const preview = await postApi(context.crossTable ? "/api/view-cell/preview" : "/api/record/preview", request);
-      $("#inspector-command").textContent = JSON.stringify(preview, null, 2);
-      await postApi(context.crossTable ? "/api/view-cell/apply" : "/api/record/apply", { ...request, client_id: "studio-workbench", idempotency_key: crypto.randomUUID() });
-      await selectObject(state.active);
-    } catch (error) {
-      cell.classList.remove("cell-editing", "cell-saving"); cell.textContent = original;
+    const preview = await postApi(context.crossTable ? "/api/view-cell/preview" : "/api/record/preview", request);
+    $("#inspector-command").textContent = JSON.stringify(preview, null, 2);
+    await postApi(context.crossTable ? "/api/view-cell/apply" : "/api/record/apply", { ...request, client_id: "studio-workbench", idempotency_key: crypto.randomUUID() });
+    await selectObject(state.active);
+    },
+    onError: (error) => {
       $("#inspector-command").textContent = error.message;
-    }
-  };
-  input.addEventListener("keydown", (event) => {
-    if (event.key === "Enter" && (input.tagName !== "TEXTAREA" || event.ctrlKey || event.metaKey)) { event.preventDefault(); void commit(); }
-    if (event.key === "Escape") { event.preventDefault(); cancel(); }
+    },
   });
-  input.addEventListener("blur", () => { void commit(); }, { once: true });
 }
 
 function applyColumnFilter(rows) {

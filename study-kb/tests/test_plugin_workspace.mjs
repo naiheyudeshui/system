@@ -456,10 +456,10 @@ test("tree browser replaces graph with outline and returns from nested details w
     button("以此节点为根").click();
     assert.equal(host.getState().root, "child");
     assert.equal(root.querySelectorAll(".wb-tree-outline-row").length, 1);
-    button("恢复全图").click();
+    root.querySelector('[aria-label="恢复全图"]').click();
     assert.equal(root.querySelectorAll(".wb-tree-outline-row").length, 2);
     root.querySelector('[aria-label="切换到树图"]').click();
-    button("刷新").click(); await settle();
+    root.querySelector('[aria-label="刷新"]').click(); await settle();
     assert.match(root.textContent, /刷新失败：offline/);
     assert.equal(root.querySelectorAll(".wb-tree-graph-node").length, 2);
     host.dispose();
@@ -628,6 +628,36 @@ test("canvas prevents drag selection and wheel zoom keeps the pointer anchored",
   } finally { ui.dom.window.close(); }
 });
 
+test("two touch pointers pinch-zoom the tree", async () => {
+  const ui = await setup();
+  try {
+    const root = ui.document.createElement("section"); ui.document.body.append(root);
+    const host = ui.tree.createTreeWorkspace(root, { roots: [{ id: "root", title: "Root", children: [] }] });
+    const canvas = root.querySelector(".wb-tree-canvas");
+    const svg = canvas.querySelector("svg");
+    svg.getBoundingClientRect = () => {
+      const position = svg.style.transform.match(/translate\(([-+.\deE]+)px, ([-+.\deE]+)px\)/);
+      const width = parseFloat(svg.style.width);
+      return { left: (800 - width) / 2 + Number(position?.[1] || 0), top: Number(position?.[2] || 0), width, height: parseFloat(svg.style.height) };
+    };
+    const pointer = (type, pointerId, clientX, clientY) => {
+      const event = new ui.dom.window.MouseEvent(type, { button: 0, clientX, clientY, bubbles: true, cancelable: true });
+      Object.defineProperty(event, "pointerId", { value: pointerId });
+      Object.defineProperty(event, "pointerType", { value: "touch" });
+      canvas.dispatchEvent(event);
+    };
+    const before = svg.getBoundingClientRect().width;
+    pointer("pointerdown", 1, 200, 200);
+    pointer("pointerdown", 2, 280, 200);
+    pointer("pointermove", 1, 120, 200);
+    pointer("pointermove", 2, 360, 200);
+    assert.ok(svg.getBoundingClientRect().width > before * 2);
+    pointer("pointerup", 1, 120, 200);
+    pointer("pointerup", 2, 360, 200);
+    host.dispose();
+  } finally { ui.dom.window.close(); }
+});
+
 test("tree plan preview retains ancestors and allows a selected browsing root", async () => {
   const ui = await setup();
   try {
@@ -650,7 +680,7 @@ test("tree plan preview retains ancestors and allows a selected browsing root", 
     button("节点详情").click();
     assert.match(root.querySelector(".wb-tree-detail").textContent, /Card answer/);
     button("返回树页面").click();
-    button("返回方案").click();
+    root.querySelector('[aria-label="返回方案"]').click();
     root.dispose();
   } finally { ui.dom.window.close(); }
 });
@@ -731,7 +761,7 @@ test("unified tree content toggles independently from descendants and supports f
     canvas.dispatchEvent(new ui.dom.window.MouseEvent("pointermove", { clientX: 1210, clientY: -790 }));
     canvas.dispatchEvent(new ui.dom.window.MouseEvent("pointerup"));
     assert.equal(canvas.querySelector("svg").style.transform, "translate(1200px, -800px)");
-    [...root.querySelectorAll("button")].find((button) => button.textContent === "适应画布").click();
+    root.querySelector('[aria-label="适应画布"]').click();
     assert.equal(canvas.querySelector("svg").style.transform, "translate(0px, 0px)");
     const selected = ui.tree.filterTree(trees, ["card:question"]);
     assert.equal(selected.addedAncestors, 1);
@@ -838,7 +868,7 @@ test("tree node actions use an accessible radial menu instead of header buttons"
     root.querySelector('.wb-tree-radial-item[aria-label="以此节点为根"]').click(); await settle();
     assert.equal(host.getState().root, "root");
     assert.equal(root.querySelectorAll(".wb-tree-graph-node").length, 2);
-    [...root.querySelectorAll("button")].find((button) => button.textContent === "恢复全图").click();
+    root.querySelector('[aria-label="恢复全图"]').click();
     assert.equal(host.getState().root, "");
     assert.equal(root.querySelectorAll(".wb-tree-graph-node").length, 3);
     card = root.querySelector('[data-node-id="root"]');

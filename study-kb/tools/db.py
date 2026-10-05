@@ -73,6 +73,8 @@ def upgrade_study_time(con: sqlite3.Connection) -> None:
     has_sessions = con.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='study_time_session'").fetchone()
     if has_sessions and not _has_column(con, "study_time_session", "project_id"):
         con.execute("ALTER TABLE study_time_session ADD COLUMN project_id TEXT REFERENCES study_time_project(id) ON UPDATE CASCADE ON DELETE SET NULL")
+    if has_sessions and not _has_column(con, "study_time_session", "note_text"):
+        con.execute("ALTER TABLE study_time_session ADD COLUMN note_text TEXT NOT NULL DEFAULT '' CHECK (length(note_text) <= 4000)")
     if has_sessions:
         con.execute("CREATE INDEX IF NOT EXISTS idx_study_time_session_project ON study_time_session(project_id, started_at DESC)")
 

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- domain-config does not match the 127.0.0.1 literal. Cleartext is
+         permitted for the embedded server; MainActivity still refuses any
+         non-local navigation. -->
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

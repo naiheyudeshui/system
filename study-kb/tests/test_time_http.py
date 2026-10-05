@@ -52,14 +52,16 @@ class StudyTimeHttpTests(unittest.TestCase):
                 assert plugins['study.pomodoro']['state'] == 'disabled'
                 assert plugins['study.stopwatch']['state'] == 'disabled'
                 assert request('/api/study/time?kind=stopwatch')['current'] is None
-                running = request('/api/study/time', {'kind': 'stopwatch', 'action': 'start', 'task_text': 'HTTP timer'})
+                running = request('/api/study/time', {'kind': 'stopwatch', 'action': 'start'})
                 assert running['current']['status'] == 'running'
+                lap = request('/api/study/time', {'kind': 'stopwatch', 'action': 'lap'})
+                assert lap['laps'][0]['lap_number'] == 1
                 assert request('/api/study/time', {'kind': 'stopwatch', 'action': 'pause'})['current']['status'] == 'paused'
                 assert request('/api/study/time', {'kind': 'stopwatch', 'action': 'resume'})['current']['status'] == 'running'
-                completed = request('/api/study/time', {'kind': 'stopwatch', 'action': 'complete'})
-                assert completed['current'] is None
-                assert completed['history'][0]['task_text'] == 'HTTP timer'
-                assert completed['history'][0]['status'] == 'completed'
+                assert request('/api/study/time', {'kind': 'stopwatch', 'action': 'pause'})['current']['status'] == 'paused'
+                reset = request('/api/study/time', {'kind': 'stopwatch', 'action': 'reset'})
+                assert reset['current'] is None
+                assert reset['laps'] == []
                 print('Timer HTTP integration passed')
             finally:
                 server.shutdown()

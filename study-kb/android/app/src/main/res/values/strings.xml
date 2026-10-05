@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">学习库</string>
+    <string name="starting">正在启动学习库</string>
+    <string name="running">学习库正在运行中</string>
+    <string name="no_lan">未检测到局域网地址</string>
+    <string name="server_failed">学习库启动失败</string>
+    <string name="channel_name">学习库服务</string>
+</resources>
