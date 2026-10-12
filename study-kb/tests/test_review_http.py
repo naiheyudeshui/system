@@ -103,6 +103,9 @@ class ReviewHttpTests(unittest.TestCase):
                 tree = request('/api/study/tree?config_id=' + tree_configs[0]['id'])
                 assert tree['node_count'] == 2
                 unified = request('/api/study/tree?model=knowledge')
+                plain = request('/api/study/tree')
+                assert plain['editing']['provider'] == 'study-knowledge/v1'
+                assert plain['node_count'] == unified['node_count']
                 assert unified['node_count'] == 2
                 assert any(row['title'] == 'HTTP question' and row['content_md'] == 'HTTP answer' for row in unified['rows'])
                 assert tree['validation']['valid']

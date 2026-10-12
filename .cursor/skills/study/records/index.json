@@ -218,6 +218,366 @@
           "label": "import-audit"
         }
       ]
+    },
+    {
+      "id": "study-import.ch12-persist.2026-09-30",
+      "path": "imports/2026-09-30-ch12-persist.json",
+      "description": "第十二章追加对象持久化三张卡",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "import-audit"
+        }
+      ]
+    },
+    {
+      "id": "study-import.ch12-oop-principles.2026-09-30",
+      "path": "imports/2026-09-30-ch12-oop-principles.json",
+      "description": "第十二章追加面向对象设计六原则一张总览卡",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "import-audit"
+        }
+      ]
+    },
+    {
+      "id": "study-import.ch12-design-patterns.2026-09-30",
+      "path": "imports/2026-09-30-ch12-design-patterns.json",
+      "description": "第十二章追加GoF设计模式四类总览+创建/结构/行为三张明细卡",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "import-audit"
+        }
+      ]
+    },
+    {
+      "id": "study-import.ch12-input-factors.2026-10-01",
+      "path": "imports/2026-10-01-ch12-input-factors.json",
+      "description": "第十二章追加系统设计输入设计八因素一张卡",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "import-audit"
+        }
+      ]
+    },
+    {
+      "id": "study-import.ch12-input-update.2026-10-01",
+      "path": "imports/2026-10-01-ch12-input-update.json",
+      "description": "第十二章输入设计卡原位更新：追加七步设计清单",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "import-audit"
+        }
+      ]
+    },
+    {
+      "id": "study-import.ch12-output-design.2026-10-01",
+      "path": "imports/2026-10-01-ch12-output-design.json",
+      "description": "第十二章追加系统输出设计三方面与七原则一张卡",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "import-audit"
+        }
+      ]
+    },
+    {
+      "id": "study-import.ch12-hci.2026-10-01",
+      "path": "imports/2026-10-01-ch12-hci.json",
+      "description": "第十二章追加人机交互设计目标/五层模型/设计要点一张卡",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "import-audit"
+        }
+      ]
+    },
+    {
+      "id": "study-import.ch12-hci.2026-10-05",
+      "path": "imports/2026-10-05-ch12-hci.json",
+      "description": "第十二章追加人机交互设计目标/五层模型/设计要点一张卡",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "import-audit"
+        }
+      ]
+    },
+    {
+      "id": "study-import.ch13-software-reuse.2026-10-05",
+      "path": "imports/2026-10-05-ch13-software-reuse.json",
+      "description": "创建第十三章空节点并追加软件重用三个层次一张卡",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "import-audit"
+        }
+      ]
+    },
+    {
+      "id": "study-import.ch13-rename.2026-10-05",
+      "path": "imports/2026-10-05-ch13-rename.json",
+      "description": "第十三章节点标题更正为软件实现和测试",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "import-audit"
+        }
+      ]
+    },
+    {
+      "id": "study-import.ch13-program-style.2026-10-05",
+      "path": "imports/2026-10-05-ch13-program-style.json",
+      "description": "第十三章追加程序语言选择与四种程序设计风格共五张卡",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "import-audit"
+        }
+      ]
+    },
+    {
+      "id": "study-import.ch13-test-definition.2026-10-05",
+      "path": "imports/2026-10-05-ch13-test-definition.json",
+      "description": "第十三章追加软件测试定义/基本问题/测试对象一张卡",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "import-audit"
+        }
+      ]
+    },
+    {
+      "id": "study-import.ch13-test-purpose.2026-10-05",
+      "path": "imports/2026-10-05-ch13-test-purpose.json",
+      "description": "第十三章追加软件测试目的三视角一张卡",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "import-audit"
+        }
+      ]
+    },
+    {
+      "id": "study-import.ch13-test-principles.2026-10-05",
+      "path": "imports/2026-10-05-ch13-test-principles.json",
+      "description": "第十三章追加软件测试十原则一张卡",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "import-audit"
+        }
+      ]
+    },
+    {
+      "id": "study-import.ch13-blackbox-methods.2026-10-05",
+      "path": "imports/2026-10-05-ch13-blackbox-methods.json",
+      "description": "第十三章追加黑盒测试用例设计方法八法一张卡",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "import-audit"
+        }
+      ]
+    },
+    {
+      "id": "study-import.ch13-whitebox-methods.2026-10-05",
+      "path": "imports/2026-10-05-ch13-whitebox-methods.json",
+      "description": "第十三章追加白盒测试定义与九种方法一张卡",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "import-audit"
+        }
+      ]
+    },
+    {
+      "id": "study-import.ch13-coverage-standards.2026-10-05",
+      "path": "imports/2026-10-05-ch13-coverage-standards.json",
+      "description": "第十三章追加白盒覆盖标准与逻辑覆盖六类一张卡",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "import-audit"
+        }
+      ]
+    },
+    {
+      "id": "study-import.ch13-whitebox-three-steps.2026-10-05",
+      "path": "imports/2026-10-05-ch13-whitebox-three-steps.json",
+      "description": "第十三章追加白盒测试三步法及二三步区别一张卡",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "import-audit"
+        }
+      ]
+    },
+    {
+      "id": "study-import.ch13-blackbox-expand.2026-10-05",
+      "path": "imports/2026-10-05-ch13-blackbox-expand.json",
+      "description": "第十三章黑盒测试方法卡原位扩充",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "import-audit"
+        }
+      ]
+    },
+    {
+      "id": "study-import.ch13-causal-graph.2026-10-05",
+      "path": "imports/2026-10-05-ch13-causal-graph.json",
+      "description": "新增因果图专卡并完善黑盒方法卡因果图段落",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "import-audit"
+        }
+      ]
+    },
+    {
+      "id": "study-import.ch13-static-dynamic.2026-10-05",
+      "path": "imports/2026-10-05-ch13-static-dynamic.json",
+      "description": "第十三章追加静态/动态/自动化测试三张卡",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "import-audit"
+        }
+      ]
+    },
+    {
+      "id": "study-import.ch13-blackbox-table-only.2026-10-05",
+      "path": "imports/2026-10-05-ch13-blackbox-table-only.json",
+      "description": "黑盒测试方法卡改为表格内详述",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "import-audit"
+        }
+      ]
+    },
+    {
+      "id": "study-import.ch13-software-deploy.2026-10-06",
+      "path": "imports/2026-10-06-ch13-software-deploy.json",
+      "description": "第十三章软件测试下新增软件部署定义/目标与步骤两张卡",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "import-audit"
+        }
+      ]
+    },
+    {
+      "id": "study-import.ch14-ops-maintenance.2026-10-06",
+      "path": "imports/2026-10-06-ch14-ops-maintenance.json",
+      "description": "第十四章系统运行与维护：11 节目录 + 23 张复习卡（运维指标/运行管理/故障/维护/评价/遗留/转换）",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "import-audit"
+        }
+      ]
+    },
+    {
+      "id": "study-import.ch01-09-outline-plan.2026-10-06",
+      "path": "imports/2026-10-06-ch01-09-outline-plan.json",
+      "description": "第一至九章导入详细计划（OCR边界、大纲节点、预估卡量、交叉引用）",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "import-audit"
+        }
+      ]
+    },
+    {
+      "id": "study-import.ch01-09.2026-10-06",
+      "path": "imports/2026-10-06-ch01-09-import.json",
+      "description": "第一至九章初稿（后经 realign 按一本通目录改正章界）",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "import-audit"
+        }
+      ]
+    },
+    {
+      "id": "study-import.ch01-09-realign.2026-10-06",
+      "path": "imports/2026-10-06-ch01-09-realign.json",
+      "description": "按一本通目录改正一至九章归属，并补十五数学与工程基础、知识产权",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "import-audit"
+        }
+      ]
+    },
+    {
+      "id": "study-import.ch01-09-double.2026-10-06",
+      "path": "imports/2026-10-06-ch01-09-double.json",
+      "description": "按一本通密度把前九章拆成更细的可背诵卡片，第一批 80 张",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "import-audit"
+        }
+      ]
+    },
+    {
+      "id": "study-import.chapter-reviews.2026-10-06",
+      "path": "imports/2026-10-06-chapter-reviews.json",
+      "description": "表格复习为尚缺方案的十二章各增加一份按章筛选的复习方案",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "import-audit"
+        }
+      ]
+    },
+    {
+      "id": "study-import.ch01-09-double-part2.2026-10-06",
+      "path": "imports/2026-10-06-ch01-09-double-part2.json",
+      "description": "前九章第二批 54 张细卡，使一至九章节点从 129 增至 263",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "import-audit"
+        }
+      ]
     }
   ]
 }

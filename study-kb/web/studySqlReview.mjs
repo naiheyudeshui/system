@@ -1,4 +1,5 @@
 import { addConfigCardControls, confirmWorkbenchAction, openConfigManager } from "/3dworkbench/pluginConfigManager.mjs";
+import { createSearchableCombobox } from "/3dworkbench/searchableCombobox.mjs";
 import { renderTablePreview } from "/3dworkbench/tablePreview.mjs";
 import { renderMarkdown } from "./studyMarkdown.mjs";
 
@@ -46,7 +47,7 @@ export async function renderReviewTablePanel(panel, { api, postApi }) {
   const previewSummary = make("p");
   const confirmStart = make("button", "开始一轮学习", "primary");
   confirmStart.dataset.action = "confirm-start";
-  preparation.append(previewHeader, make("p", "点击列标题搜索或选择条件后应用；筛选作用于全部候选，不只是当前页。", "action-hint"), previewTable, previewSummary, confirmStart);
+  preparation.append(previewHeader, make("p", "点击列标题搜索或选择条件后应用；筛选作用于全部候选，不只是当前页。搜索根节点后，只保留该节点及其后面整棵子树里的卡片。", "action-hint"), previewTable, previewSummary);
   const learning = make("section", null, "study-learning-card");
   learning.hidden = true;
   const learningHeader = make("header", null, "study-review-header");
@@ -64,7 +65,23 @@ export async function renderReviewTablePanel(panel, { api, postApi }) {
   message.setAttribute("role", "status");
   panel.replaceChildren(home, preparation, learning, message);
   let entries = [], selectedId = "", state = null, busy = false, started = 0, revealed = false;
-  let parameterInputs = {}, previewResult = null, previewPayload = null, filtered = [];
+  let parameterInputs = {}, previewResult = null, previewPayload = null, previewState = null, filtered = [], reviewOptions = [];
+  const rootTools = make("div", null, "wb-tree-root-tools");
+  const rootPicker = createSearchableCombobox({
+    placeholder: "搜索或选择根节点",
+    ariaLabel: "搜索或选择根节点",
+    className: "wb-tree-root-picker",
+    onSelect: (option) => { rootPicker.setValue(option.label); void prepare({ keepRoot: true }); },
+    onInput: (value) => { if (!value.trim()) void prepare({ keepRoot: true }); },
+  });
+  rootTools.append(rootPicker, confirmStart);
+  const selectedRootId = () => {
+    const value = rootPicker.getValue().trim();
+    if (!value) return null;
+    const match = reviewOptions.find((option) => option.value === value || option.label === value);
+    if (!match) throw new Error("请从列表里选择一个节点，或清空后复习全部");
+    return match.value;
+  };
   const selected = () => entries.find((entry) => entry.id === selectedId);
   const page = (target) => {
     for (const section of [home, preparation, learning]) section.hidden = section !== target;
@@ -83,7 +100,11 @@ export async function renderReviewTablePanel(panel, { api, postApi }) {
     }
     parameters.hidden = !parameters.childElementCount;
   };
-  const payload = () => ({ config_id: selectedId, parameters: { ...selected()?.parameters, ...Object.fromEntries(Object.entries(parameterInputs).map(([key, input]) => [key, input.value === "" ? null : input.dataset.valueType === "number" ? Number(input.value) : input.value])) } });
+  const payload = () => {
+    const parameters = { ...selected()?.parameters, ...Object.fromEntries(Object.entries(parameterInputs).map(([key, input]) => [key, input.value === "" ? null : input.dataset.valueType === "number" ? Number(input.value) : input.value])) };
+    if (Object.prototype.hasOwnProperty.call(selected()?.parameters || {}, "node_id")) parameters.node_id = selectedRootId();
+    return { config_id: selectedId, parameters };
+  };
   const refreshControls = () => {
     edit.disabled = busy || !selected();
     confirmStart.disabled = busy || !filtered.length || !previewResult;
@@ -103,15 +124,17 @@ export async function renderReviewTablePanel(panel, { api, postApi }) {
       refreshControls();
     }
   };
-  const prepare = () => run(async () => {
+  const prepare = ({ keepRoot = false } = {}) => run(async () => {
     if (!selected()) throw new Error("请先选择方案");
+    const keptFilters = keepRoot ? (previewState?.filters() || []) : [];
+    if (!keepRoot) rootPicker.setValue("");
     const request = payload();
     const result = await postApi("/api/study/review/sql-preview", request);
     if (!Array.isArray(result.rows) || !result.preview_hash) throw new Error("服务尚未更新，请重启学习库后刷新");
     previewPayload = request; previewResult = result;
     previewTitle.textContent = `${selected().name} · 预览与筛选`;
     page(preparation);
-    renderTablePreview(previewTable, { rows: result.rows, columns: result.columns,
+    previewState = renderTablePreview(previewTable, { rows: result.rows, columns: result.columns, initialFilters: keptFilters, extraActions: [rootTools],
       labels: { card_id: "卡片 ID", question: "问题", answer: "答案", hint: "提示", node_id: "章节 ID", node_path: "章节路径", due_at: "到期时间" },
       onChange: (rows) => {
         filtered = rows;
@@ -223,8 +246,28 @@ export async function renderReviewTablePanel(panel, { api, postApi }) {
     ratings.append(button);
   });
   panel.refreshContext = () => {};
+  const nodePath = (rows, node) => {
+    const byId = new Map(rows.map((row) => [row.node_id, row]));
+    const labels = [];
+    const seen = new Set();
+    let current = node;
+    while (current && !seen.has(current.node_id)) {
+      seen.add(current.node_id);
+      labels.unshift(current.title || current.node_id);
+      current = byId.get(current.parent_id);
+    }
+    return labels.join(" / ");
+  };
   await run(async () => {
     await reload();
+    try {
+      const tree = await api("/api/study/tree?model=knowledge");
+      const rows = Array.isArray(tree.rows) ? tree.rows : [];
+      reviewOptions = rows.map((row) => ({ value: row.node_id, label: `${row.title || nodePath(rows, row)} · ${row.node_id}` }));
+      rootPicker.setOptions(reviewOptions);
+    } catch (error) {
+      message.textContent = `节点列表加载失败：${error.message}`;
+    }
     try { resume.hidden = !JSON.parse(localStorage.getItem("study.review.session.v1")); } catch {}
     message.textContent = "请选择方案。上次进度通过“继续上次复习”进入，不与当前方案混在一起。";
   });

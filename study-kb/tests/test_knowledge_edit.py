@@ -48,6 +48,14 @@ class KnowledgeEditTests(unittest.TestCase):
         self.assertEqual(self.con.execute("SELECT COUNT(*) FROM study_card").fetchone()[0], 1)
         self.assertFalse(self.con.execute("PRAGMA foreign_key_check").fetchall())
 
+    def test_content_renames_the_node_title(self):
+        payload = self.payload("card:" + self.card["id"], "content", title="Renamed question", content_md="Next")
+        result = save_knowledge_node(payload)
+        self.assertEqual(result["node"]["title"], "Renamed question")
+        self.assertEqual(result["node"]["content_md"], "Next")
+        stored = self.con.execute("SELECT title, content_md FROM study_knowledge_item WHERE legacy_card_id=?", (self.card["id"],)).fetchone()
+        self.assertEqual(tuple(stored), ("Renamed question", "Next"))
+
     def test_content_idempotency_conflict_and_history(self):
         grade_card(self.con, card_id=self.card["id"], rating=3)
         self.con.commit()
@@ -56,6 +64,7 @@ class KnowledgeEditTests(unittest.TestCase):
         payload = self.payload("card:" + self.card["id"], "content", content_md="")
         result = save_knowledge_node(payload)
         self.assertEqual(result["node"]["content_md"], "")
+        self.assertEqual(result["node"]["title"], "New topic")
         self.assertEqual(save_knowledge_node(payload), result)
         with self.assertRaises(KnowledgeConflict):
             save_knowledge_node({**payload, "request_id": str(uuid.uuid4()), "content_md": "stale"})
@@ -67,6 +76,8 @@ class KnowledgeEditTests(unittest.TestCase):
 
     def test_invalid_input_and_suspended_card_do_not_write(self):
         payload = self.payload("node:" + self.root["id"], "child", title=" ")
+        with self.assertRaises(ValueError): save_knowledge_node(payload)
+        payload = self.payload("node:" + self.root["id"], "content", title=" ")
         with self.assertRaises(ValueError): save_knowledge_node(payload)
         payload = self.payload("card:" + self.card["id"], "child")
         self.con.execute("UPDATE study_card SET status='suspended' WHERE id=?", (self.card["id"],))

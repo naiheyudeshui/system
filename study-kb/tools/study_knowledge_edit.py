@@ -78,7 +78,12 @@ def edit_knowledge(con, payload):
             parent_row = con.execute("SELECT parent_id FROM v_study_knowledge_nodes WHERE node_id=?", (cursor,)).fetchone()
             cursor = parent_row[0] if parent_row else None
     if operation == "content":
-        con.execute("UPDATE study_knowledge_item SET content_md=?,updated_at=datetime('now','localtime') WHERE id=?", (content, node["node_id"]))
+        next_title = node["title"]
+        if "title" in payload:
+            if not isinstance(title, str) or not title.strip() or len(title) > 500:
+                raise ValueError("标题必填且不超过 500 字符")
+            next_title = title.strip()
+        con.execute("UPDATE study_knowledge_item SET title=?,content_md=?,updated_at=datetime('now','localtime') WHERE id=?", (next_title, content, node["node_id"]))
         key = node["node_id"]
     elif operation in {"child", "sibling"}:
         parent_key = node["node_id"] if operation == "child" else node["parent_id"]

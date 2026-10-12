@@ -1,6 +1,6 @@
 ---
 name: study
-description: 将书本、OCR、笔记或对话归纳为通俗可背诵的知识卡，维护 system/study-kb 已有章节树并安全入库；用户要求整理资料、插入或修改卡片、调整知识树、阅读 Markdown 节点详情、按章节复习或查看今日到期时使用。
+description: 将书本、OCR、笔记或对话归纳为通俗可背诵的知识卡，维护已有章节树并安全入库；默认以手机端 8033 workbench 为主库，本地 study.sqlite 为备份；用户要求整理资料、插入或修改卡片、调整知识树、阅读 Markdown 节点详情、按章节复习或查看今日到期时使用。
 metadata:
   scope: system
   tags: study, flashcard, fsrs, spaced-repetition, knowledge-base
@@ -45,22 +45,84 @@ metadata:
 | 移动/拆分/合并树 | 计划逐个 ID 的归属和学习视角，验无环 | 直接删父节点或级联清理 |
 | 开始复习 | 选择已有方案与范围，用户回答后评分 | 为检查入库成功给正式卡评分 |
 
-## 2. 事实来源和目录边界
+## 2. 主库、备份与目录边界
 
 所有命令从 **system 仓库根目录** 执行，示例环境为 `D:\system`。
 
+### 2.1 默认：手机 workbench 为主库，本地文件为备份
+
+| 层级 | 位置 | 角色 |
+| --- | --- | --- |
+| **主库（读写）** | 手机/Android 内嵌服务，默认 `http://<手机局域网IP>:8033` | 日常学习、Agent 入库、复习打分、计时 |
+| **备份镜像** | `study-kb/data/study.sqlite` | 从主库 `export` 下来的副本，供 Git 跟踪、离线只读盘点 |
+| **禁止默认** | 未探测主库时直接改本地 sqlite | 会与手机主库分叉 |
+
+主库地址按优先级解析：
+
+1. 环境变量 `STUDY_SERVER_URL`（例：`http://192.168.1.53:8033`）
+2. `.cursor/skills/study/server.url`（可从 `server.url.example` 复制）
+3. 回退 `http://127.0.0.1:8033`（本机 `serve_workbench.py`）
+
+手机端由 `bootstrap.py` 启动，带 `--host 0.0.0.0 --port 8033 --trusted-lan-write`：同一局域网内 POST 写操作**可无令牌**（仅限可信 WiFi）。
+
+### 2.2 写入前必须探测主库
+
+任何**会改知识**的操作之前，先运行 probe；**probe 失败则不得写入**，向用户说明原因（服务未开、不在同一网段、写权限关闭等）：
+
+```powershell
+python .cursor/skills/study/scripts/study_server.py --server http://192.168.2.8:8033 probe
+# 或设置环境变量 STUDY_SERVER_URL 后直接 probe
+python .cursor/skills/study/scripts/study_server.py probe
+```
+
+**Agent 终端代理**：若 shell 设置了 `HTTP_PROXY`（常见 `127.0.0.1:7888`）而 `NO_PROXY` 未含局域网，Python 默认 `urlopen` 会把 `192.168.x.x` 也走代理 → 报 `WinError 10061`（**不是网速慢**）。浏览器常自动绕过局域网代理，所以浏览器能开、脚本连不上。`study_server.py` 已强制直连；手工脚本需 `ProxyHandler({})` 或把 `192.168.0.0/16,10.0.0.0/8` 加入 `NO_PROXY`。
+
+probe 检查项：
+
+| 检查 | 通过条件 |
+| --- | --- |
+| 连通 | `GET /` 返回 200 |
+| 可读 | `GET /api/study/tree?model=knowledge` 返回节点列表 |
+| 可写 | `POST /api/study/knowledge/save` 对探测节点返回 **409**（版本冲突，说明写通道已开）或 **403**（需令牌/未开 trusted-lan-write） |
+
+probe 输出 `writable: true` 且 `errors` 为空，才允许后续 `knowledge/save` 或批量入库脚本走 HTTP。
+
+只读盘点可：`study_server.py read --node <id>`，或 probe 通过后 `export-backup` 拉镜像再用 `study_agent.py doctor`（只读，不迁移）。
+
+### 2.3 Schema 版本（如何理解，不等于“手机 APK 旧”）
+
+本库有两层“版本”，不要混为一谈：
+
+**A. 数据库结构（统一知识模型，2026-09 起）**
+
+- 主表：`study_knowledge_item`（字段含 `item_type`、`content_md`，**没有**旧表 `study_node` 的 `kind` / `role` / `answer_md`）
+- `item_type`：`chapter` / `topic` / `card`
+- 调度：`study_knowledge_schedule`；评分：`study_knowledge_review_log`
+- 树视图：`v_study_knowledge_nodes`；scope：`study_knowledge_scope`
+
+**B. HTTP 树 API（只有统一模型）**
+
+`GET /api/study/tree` 与 `GET /api/study/tree?model=knowledge` 都读 `v_study_knowledge_nodes`。`scope` 只缩小子树，`config_id` 只跑已保存的 SQL 方案。不再存在按 `study_knowledge_item.kind` 查询的旧树函数。
+
+**C. 代码与 APK runtime**
+
+- `study-kb/tools/` 为 PC 与 Android assets 的源；二者不一致时，表现为 API 行为不同，而非数据库 alone 的问题。
+- 整库同步：`GET /api/study/library/export` → 覆盖本地备份 → Git；方向固定为**主库 → 备份**，避免双写。
+
+### 2.4 资产路径
+
 | 资产 | 路径 | 责任 |
 | --- | --- | --- |
-| 真实学习数据 | `study-kb/data/study.sqlite` | 章节、卡片、scope、FSRS、日志、方案 |
-| 学习业务 helper | `study-kb/tools/study_kb.py` | 建节点/卡、同步 topic、导入、评分 |
-| 迁移与视图 | `study-kb/tools/db.py`、`study-kb/schema/` | 数据结构和查询投影 |
-| 前端 | `study-kb/web/` | 树详情、Markdown、SQL 复习 |
-| Agent 工具 | `.cursor/skills/study/scripts/` | 大纲和卡片导入包装 |
-| 审计 | `.cursor/skills/study/records/` | 记录批次、来源、ID 与验收 |
-| 共享 UI | `3dStudio/` | 指向 Rsim_helper，不在 ops.sqlite 存学习数据 |
-| 中央文档池 | `readme/` | 指向 Rsim_helper；本项目人的手册放根 README.md |
+| 主库 HTTP | `STUDY_SERVER_URL` / `server.url` | 真实读写来源 |
+| 备份 sqlite | `study-kb/data/study.sqlite` | export 镜像，Git 同步用 |
+| 学习业务 helper | `study-kb/tools/study_kb.py` | 本地脚本入库（仅 probe 失败且用户明确允许时用） |
+| 知识 HTTP 编辑 | `study-kb/tools/study_knowledge_edit.py` | 与 `knowledge/read|save` 同逻辑 |
+| Agent 服务端工具 | `.cursor/skills/study/scripts/study_server.py` | probe、read、save、export-backup |
+| Agent 只读盘点 | `.cursor/skills/study/scripts/study_agent.py` | 对**备份文件**只读，不迁移 |
+| 审计 | `.cursor/skills/study/records/` | 记录批次、来源、ID、所用主库 URL |
+| 共享 UI | `3dStudio/` | 不在 ops.sqlite 存学习数据 |
 
-只读盘点用 `sqlite3.connect(path.as_uri() + "?mode=ro", uri=True)`。不要用 `study_kb.open_db` 冒充只读：它调用迁移，可能补字段、更新视图或回填节点角色。先确认文件存在，防止错误路径产生空库。
+备份文件只读盘点用 `sqlite3.connect(path.as_uri() + "?mode=ro", uri=True)`。不要用 `study_kb.open_db` 冒充只读：它调用迁移，可能改备份文件。先确认文件存在，防止错误路径产生空库。
 
 ## 3. 知识树、卡片与图之间的真实关系
 
@@ -180,15 +242,47 @@ python .cursor/skills/study/scripts/import_outline_md.py `
 
 示例文件名只是模板，先创建并预览内容；正式批次用唯一文件名。Markdown 导入没有 dry-run，也没有父节点追加参数；不得杜撰 `--parent/--update/--dry-run`。JSON 整书导入会设新 scope 为默认；Markdown 整书导入不设为默认。
 
-## 6. 写已有数据库：可执行范式与危险边界
+## 6. 写入主库：HTTP 优先与本地兜底
 
-### 6.1 盘点与备份
+### 6.1 标准流程（手机主库）
 
-先只读查询真实父 ID、role、已有直属子节点、active 卡和 scope。按完整路径与 ID 向用户展示拟挂载位置；标题相同不是同一个节点。
+1. **`study_server.py probe`**：必须 `readable`；要写则必须 `writable`。
+2. **只读盘点**：`GET /api/study/tree?model=knowledge` 或 `knowledge/read` 确认父 ID、同级标题、已有卡。
+3. **写入**：`POST /api/study/knowledge/save`（见 §6.2）；每次带 `version`（来自 read）和唯一 `request_id`；409 则重新 read 再 save，不盲目覆盖。
+4. **验收**：再 read 目标节点；必要时 `export-backup` 更新本地镜像。
+5. **同步 Git**（用户要求时）：覆盖 `study-kb/data/study.sqlite` 后 commit；审计记录主库 URL 与 export 时间。
 
-正式写入前使用 SQLite backup API 生成一致性副本；不只复制正在写入的 `.sqlite` 主文件而漏 WAL。备份应在库外唯一目录，不覆盖已有文件。停止写入/恢复备份前还需确认用户的服务和并发活动；不能用旧备份覆盖其间新增的复习记录。
+批量新增多张卡：多次 `save`（`operation: child|sibling|content`），或用户确认后整库 `library/import`（风险高，需先 export 备份）。
 
-### 6.2 在已确认父节点下新增一个原子 topic
+**禁止**：probe 失败仍写本地 sqlite 并声称已入库；PC 与手机各改一份再手工合并。
+
+### 6.2 HTTP 写入合同（与前端一致）
+
+```powershell
+# 读节点（取 version）
+python .cursor/skills/study/scripts/study_server.py read --node node:node_xxx
+
+# 改正文（JSON 请求体示例见 imports 审计；save 子命令读文件）
+```
+
+| 字段 | 要求 |
+| --- | --- |
+| `node_id` | `node:…` 或 `card:…` |
+| `version` | 来自 read 的指纹；冲突返回 409 |
+| `request_id` | UUID；同 ID 同内容幂等，不同内容拒绝 |
+| `operation` | `content` / `child` / `sibling` / `move` / `reorder` / `delete` |
+| `title` | child/sibling 必填；content 可选改标题 |
+| `content_md` | Markdown 正文 |
+
+新主题 `operation: child` 在已确认父节点下创建；**不**自动再生成第二张复习卡（与 `create_node(role=topic)` 本地行为不同，以 HTTP 合同为准）。
+
+### 6.3 本地 sqlite 兜底（仅当用户明确允许且 probe 失败）
+
+先只读查询真实父 ID、item_type、已有直属子节点、active 卡和 scope。按完整路径与 ID 向用户展示拟挂载位置；标题相同不是同一个节点。
+
+正式写入前使用 SQLite backup API 生成一致性副本；不只复制正在写入的 `.sqlite` 主文件而漏 WAL。备份应在库外唯一目录，不覆盖已有文件。停止写入/恢复备份前还需确认用户的服务和并发活动；不能用旧备份覆盖其间新增的复习记录。兜底写入完成后，应在主库恢复后 **export → 覆盖手机** 或让用户在手机导入，避免长期双源。
+
+### 6.4 在已确认父节点下新增一个原子 topic（本地脚本模板，非默认）
 
 下面是 **Python 脚本模板**，不是直接在 PowerShell 提示符逐行执行的命令。保存为已审阅脚本，从 system 根运行。先把 db_path 指向临时副本，替换父 ID 与已确认内容；验证通过后再对确认的正式路径执行。
 
@@ -246,7 +340,7 @@ finally:
 
 该脚本仅对“相同父 ID + 完全相同标题”做阻止重复；不能代替语义去重，也不是通用同步器。运行成功后必须保存输出 ID；中途失去输出先查库确认，不能盲目重试。`open_db` 的迁移发生在业务 BEGIN 前，因此整套行为也应先在副本验证。
 
-### 6.3 更新旧内容、移动、拆分
+### 6.5 更新旧内容、移动、拆分
 
 - **单卡 topic 改措辞**：先查 active 卡列表且确认恰好一张，以及它就是目标卡；事务内按 node ID 更新 title/answer_md/source_ref/updated_at，再调用 `sync_topic_card`。需要卡来源同步时按 card ID 更新 source_ref。验证卡 ID、FSRS 状态和历史未变。
 - **多卡节点改一张卡**：按 card ID 参数化 UPDATE front/back/hint/source_ref，不调用 sync_topic_card 覆盖第一张卡；节点总说明是否修改由用户需求决定。先断言该卡 node_id 属于确认的目标。
@@ -257,7 +351,7 @@ finally:
 - **删除/合并**：父节点删除有级联风险，会影响子节点、scope、卡、FSRS 和日志。优先提出迁移归属和旧卡 archived 方案；不是为了去重直接 DELETE。
 - `status` 为 active/suspended/archived，非 active 不进常规复习集合；保留旧卡 ID 和历史比删除更安全。
 
-### 6.4 cardize.py 的实际行为（不可忽略）
+### 6.6 cardize.py 的实际行为（不可忽略）
 
 | 输入 | 实际行为 | 使用限制 |
 | --- | --- | --- |
@@ -301,7 +395,7 @@ WHERE status='active' GROUP BY node_id,front HAVING COUNT(*)>1;
 
 每批保存草稿及唯一审计文件到 `.cursor/skills/study/records/imports/`，索引登记到 `records/index.json`。记录至少：
 
-- batch id、时间、真实 DB 路径、来源文件/版本/页码、确认范围。
+- batch id、时间、**主库 URL**（或注明本地兜底路径）、来源文件/版本/页码、确认范围、probe 结果摘要。
 - 复用父 ID、新增/修改/移动/归档的 node/card ID 与数量。
 - 执行命令/脚本位置、备份路径、数据库/前端验收结果、未完成项。
 - 旧卡历史保留策略、疑点与后续待补内容。
@@ -328,7 +422,7 @@ WHERE status='active' GROUP BY node_id,front HAVING COUNT(*)>1;
 | 复习协议和旧兼容 API | `docs/REVIEW.md`、skill references/workbench-api.md |
 | 行为测试 | `tests/test_import_outline_md.py`、`tests/test_study_kb.py`、`tests/test_study_api.py`、`tests/test_review_http.py` |
 
-路径除特别标注外相对 `study-kb/`。未提供通用知识内容新增 HTTP API 的承诺；Agent 写知识走 helper/导入工具，不能杜撰 POST /api/study/node。SQL 方案管理编辑的是查询，不是自动创建知识内容。
+路径除特别标注外相对 `study-kb/`。知识内容写入走 **`POST /api/study/knowledge/read|save`**（§6.2），不是杜撰的 `/api/study/node`。读树用 `GET /api/study/tree`（可带 `model=knowledge` 或 `scope`）。SQL 方案管理编辑的是查询，不是自动创建知识内容。
 
 回归命令（临时数据库测试，不对正式卡评分）：
 
@@ -340,23 +434,33 @@ npm --prefix study-kb/tests test
 
 这些测试验证已有业务行为，不能替代逐批内容正确性和真实浏览器的视觉验收。
 
-## 9. Agent 快捷接口（只读盘点与草稿验证）
+## 9. Agent 快捷接口
 
-为减少 Agent 手写 SQL，提供 scripts/study_agent.py。它默认使用 study-kb/data/study.sqlite，通过 SQLite mode=ro 连接，不执行迁移、不写入知识库、不评分。所有输出均为 UTF-8 JSON。
+### 9.1 主库 HTTP：`study_server.py`（默认入口）
 
-从 system 根目录调用：
+从 system 根目录调用；写入前**必须先** `probe`：
+
+    python .cursor/skills/study/scripts/study_server.py probe
+    python .cursor/skills/study/scripts/study_server.py read --node node:xxx
+    python .cursor/skills/study/scripts/study_server.py save --input .cursor/skills/study/records/imports/save-payload.json
+    python .cursor/skills/study/scripts/study_server.py export-backup
+    python .cursor/skills/study/scripts/study_server.py sync-mirror
+
+- **probe**：连通、树 API、写通道。
+- **read / save**：与 workbench 前端相同合同；save 遇 409 重新 read。
+- **export-backup**：从主库下载 sqlite 到 `study-kb/data/backups/`，不覆盖 `study.sqlite`。
+- **sync-mirror**：先 probe，再 export，归档到 backups，并覆盖 `study-kb/data/study.sqlite`（旧镜像另存 `study-before-mirror-*.sqlite`）。也可双击 `study-kb/同步主库.bat`。
+
+### 9.2 备份只读：`study_agent.py`
+
+对 **export 下来的备份文件** 做只读盘点（`--db` 可指向 backups 内文件）。不执行迁移、不写入、不评分。
 
     python .cursor/skills/study/scripts/study_agent.py doctor
-    python .cursor/skills/study/scripts/study_agent.py inspect --node <study_node_id>
-    python .cursor/skills/study/scripts/study_agent.py validate-draft --parent <study_node_id> --input draft.json
-    python .cursor/skills/study/scripts/study_agent.py coverage --root <study_node_id>
+    python .cursor/skills/study/scripts/study_agent.py inspect --node <node_id>
+    python .cursor/skills/study/scripts/study_agent.py validate-draft --parent <node_id> --input draft.json
+    python .cursor/skills/study/scripts/study_agent.py coverage --root <node_id>
 
-- doctor 返回 integrity、外键、active 卡缺失 FSRS、同级重复标题。
-- inspect 返回节点完整路径、子节点、卡片及调度状态、scope 和最近评分历史。
-- validate-draft 检查标题/答案、同级标题重复、上下文依赖问题和来源缺失，并返回规范化草稿与 hash；它只验证，不创建节点或卡片。
-- coverage 统计范围内 topic、没有 active 卡的 topic，以及没有来源的 active 卡。
-
-这些命令不能替代“提议 → 确认 → 写入”。正式写入仍应使用已确认的父 ID、SQLite backup、事务、helper/知识编辑接口和批次审计；不要把 node:<id> 或 card:<id> 投影 ID 当作原表外键。cardize.py 仍保留兼容用途，但不作为已有章节增量写入的默认入口。
+这些命令不能替代“提议 → 确认 → 写入”。正式写入默认走 **probe + HTTP save**；本地 helper 仅作兜底。cardize.py 仍保留兼容用途，但不作为已有章节增量写入的默认入口。
 
 ### 本次文档核验记录（2026-09-19）
 
@@ -383,7 +487,13 @@ npm --prefix study-kb/tests test
 
 前端图改为共享原生 SVG，不再通过六级 Markdown 标题生成；旧 markmap HTTP 接口/大纲导入解析规则仍保留兼容，不能混为新版图限制。节点标签按文本绘制；详情 Markdown 继续经过安全渲染。预览筛选会补齐命中节点的祖先并计数，刷新重新应用列条件；方案编辑不等于源表正文编辑。
 
-实现与用户流程详见 system 的 study-kb/docs/WORKBENCH-UPGRADE.md“通用树方案与整页浏览”。Agent 仍按本文事务流程修改知识，不能将方案设置当作知识增删接口。
+实现与用户流程详见 system 的 study-kb/docs/WORKBENCH-UPGRADE.md“通用树方案与整页浏览”。Agent 默认经主库 HTTP 修改知识，不能将方案设置当作知识增删接口。
+
+## 2026-10-05 手机主库与 schema 说明
+
+- 默认主库改为手机/Android `8033` workbench；`study-kb/data/study.sqlite` 降为 export 备份与 Git 镜像。
+- 新增 `study_server.py`（probe/read/save/export-backup）与 `server.url.example`；写入前必须 probe。
+- 删除按 `study_knowledge_item.kind` 查询的旧树函数。`GET /api/study/tree` 与 `?model=knowledge` 都返回统一知识树。
 
 
 ## 统一节点合同（2026-09-21，新结构唯一事实来源）
@@ -403,7 +513,7 @@ npm --prefix study-kb/tests test
 - 所有 active 卡片都参与预览，不以“归属节点是否叶子”为条件；停用/归档卡默认不参与。scope 按 owner_node_id 限定章节子树。筛中卡片时自动补祖先，正文展开不等于子树展开。
 - 不为图上可见而创建重复 study_node，不自动合并同标题、相同正文或旧同步过的 topic/card，不清理旧回填 answer_md。空正文合法，无内容时箭头禁用。
 - 通用 SQL 树保留全部结果列用于筛选，自动识别 content_md、answer_md、back（按此顺序）；显式配置的详情模块优先。内容使用已有安全 Markdown 渲染，不自行拼未净化 HTML。
-- 默认未经修改的旧内置树 SQL 精确升级；用户已改过的方案不覆盖。旧 `/api/study/tree` 保留兼容，工作区使用 `?model=knowledge`。
+- 默认未经修改的旧内置树 SQL 精确升级；用户已改过的方案不覆盖。默认树接口只返回统一知识树。
 - 验证真实库变更前用 SQLite backup 保留一致性副本；只升级视图/必要内置配置并核对所有学习表逐行哈希、外键与卡片数量。恢复备份前确认没有新评分，不用整库回滚抹掉后续学习。
 
 

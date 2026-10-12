@@ -15,7 +15,15 @@ from workbench_plugins import configs, query_rows, seed_configs, validate_result
 from study_kb import open_db
 
 
-NODE_FILTER = """(:node_id IS NULL OR node_id IN (
+NODE_SUBTREE = """WITH RECURSIVE subtree(id) AS (
+      SELECT id FROM study_knowledge_item
+      WHERE id=:node_id OR legacy_node_id=:node_id OR legacy_card_id=:node_id
+      UNION SELECT child.id FROM study_knowledge_item child JOIN subtree ON child.parent_id=subtree.id
+    )"""
+NODE_FILTER = f"""(:node_id IS NULL OR EXISTS (
+    {NODE_SUBTREE}
+    SELECT 1 FROM subtree WHERE id = node_id OR id = 'card:' || card_id))"""
+PREVIOUS_NODE_FILTER = """(:node_id IS NULL OR node_id IN (
     WITH RECURSIVE subtree(id) AS (
       SELECT id FROM study_knowledge_item
       WHERE id=:node_id OR legacy_node_id=:node_id OR legacy_card_id=:node_id
@@ -48,9 +56,34 @@ def register_study_modules():
 register_study_modules()
 
 
+def _compact(sql: str) -> str:
+    return " ".join(sql.split())
+
+
+def _upgrade_builtin_review_sql(con, item):
+    if not item:
+        return item
+    default = next((entry for entry in DEFAULTS if entry["id"] == item["id"]), None)
+    if not default:
+        return item
+    current = _compact(item["sql"])
+    target = _compact(default["sql"])
+    previous = _compact(default["sql"].replace(NODE_FILTER, PREVIOUS_NODE_FILTER))
+    if current == target or current != previous:
+        return item
+    con.execute(
+        "UPDATE workbench_plugin_config SET sql=?, revision=revision+1, updated_at=CURRENT_TIMESTAMP WHERE id=? AND sql=?",
+        (default["sql"], item["id"], item["sql"]),
+    )
+    item["sql"] = default["sql"]
+    item["revision"] = item.get("revision", 0) + 1
+    return item
+
+
 def read_config(con, key):
     seed_configs(con, "study.review-table", "reviews", DEFAULTS)
     item = next((entry for entry in configs(con, "study.review-table", "reviews") if entry["id"] == key), None)
+    item = _upgrade_builtin_review_sql(con, item)
     if not item:
         raise ValueError("复习方案不存在或已删除")
     return item

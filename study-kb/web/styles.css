@@ -1,4 +1,4 @@
-@import url("/3dworkbench/workbench.css?v=20261005-drawer80");
+@import url("/3dworkbench/workbench.css?v=20261005-handle");
 
 /* Study reading theme — forest/phosphor greens (Glean + Forest Walk inspired). */
 
@@ -288,6 +288,8 @@ button.danger { background: var(--danger); color: var(--panel); }
   .study-time-history-table { width:760px; min-width:760px; }
 }
 .study-sql-review { width:100%; min-width:0; max-width:100%; overflow-x:hidden; box-sizing:border-box; padding:min(8px,var(--wb-plugin-workspace-padding,8px)); }
+.study-sql-review .wb-config-actions { flex-wrap:wrap; }
+.study-sql-review .wb-tree-root-tools { flex:1 1 220px; }
 .study-sql-review > section,.study-learning-card > section,.study-review-question { min-width:0; max-width:100%; }
 .study-review-header { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:16px; }
 .study-review-header h3,.study-review-header p { margin:0; }
@@ -327,4 +329,8 @@ button.danger { background: var(--danger); color: var(--panel); }
 .study-tree-delete-dialog { position:fixed; z-index:200; inset:50% auto auto 50%; width:min(420px,calc(100vw - 32px)); transform:translate(-50%,-50%); padding:22px; border:1px solid var(--border-strong); border-radius:12px; background:var(--panel-raised); box-shadow:0 22px 60px color-mix(in srgb,var(--text) 28%,transparent); }
 .study-tree-delete-dialog h3 { margin:0 0 10px; }
 .study-tree-delete-dialog p { margin:0; color:var(--text-muted); line-height:1.6; }
+.study-library-sync { display:grid; gap:12px; padding:8px 4px 16px; max-width:720px; }
+.study-library-sync h3 { margin:0; }
+.study-library-sync .action-group { flex-wrap:wrap; margin-left:0; }
+.study-library-sync .action-hint { margin:0; line-height:1.6; }
 .study-tree-delete-actions { display:flex; justify-content:flex-end; flex-wrap:wrap; gap:8px; margin-top:20px; }

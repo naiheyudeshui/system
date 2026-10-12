@@ -6,7 +6,7 @@ from pathlib import Path
 
 import db
 
-from study_api import build_node_tree, get_markmap, get_node_detail, grade_review_card, next_review_card
+from study_api import build_knowledge_tree, get_markmap, get_node_detail, grade_review_card, next_review_card
 from study_kb import create_card, create_node, create_scope, open_db
 
 
@@ -61,8 +61,21 @@ class StudyApiTests(unittest.TestCase):
         db.upgrade_knowledge_tree_config(self.con)
         self.assertEqual(self.con.execute("SELECT sql FROM workbench_plugin_config WHERE id='study.tree.default.v1'").fetchone()[0], old_sql)
 
+    def test_compact_previous_review_filter_includes_the_selected_subtree(self) -> None:
+        from study_sql_configs import DEFAULTS, NODE_FILTER, PREVIOUS_NODE_FILTER, read_config
+        from workbench_plugins import seed_configs
+
+        default = DEFAULTS[0]
+        seed_configs(self.con, "study.review-table", "reviews", DEFAULTS)
+        old_sql = default["sql"].replace(NODE_FILTER, " ".join(PREVIOUS_NODE_FILTER.split()))
+        self.con.execute("UPDATE workbench_plugin_config SET sql=? WHERE id=?", (old_sql, default["id"]))
+        self.con.commit()
+        item = read_config(self.con, default["id"])
+        self.assertIn("card:' || card_id", item["sql"])
+        self.assertEqual(read_config(self.con, default["id"])["revision"], item["revision"])
+
     def test_tree_and_review_flow(self) -> None:
-        tree = build_node_tree(self.con)
+        tree = build_knowledge_tree(self.con)
         self.assertGreaterEqual(tree["node_count"], 2)
         self.assertTrue(tree["roots"])
 
@@ -74,16 +87,16 @@ class StudyApiTests(unittest.TestCase):
         self.assertEqual(graded["next"]["card"]["card_id"], self.card_b["id"])
 
     def test_tree_role_fields_and_markmap(self) -> None:
-        tree = build_node_tree(self.con)
-        chapter = next(node for node in tree["roots"][0]["children"] if node["title"] == "Chapter 1")
-        self.assertIn("role", chapter)
-        self.assertIn("answer_md", chapter)
+        tree = build_knowledge_tree(self.con)
+        chapter = next(row for row in tree["rows"] if row["title"] == "Chapter 1")
+        self.assertEqual(chapter["item_type"], "chapter")
+        self.assertIn("content_md", chapter)
 
         markmap = get_markmap()
         self.assertIn("markdown", markmap)
         self.assertIn("Chapter 1", markmap["markdown"])
 
-        detail = get_node_detail(chapter["id"])
+        detail = get_node_detail(chapter["source_id"])
         self.assertEqual(detail["node"]["title"], "Chapter 1")
         self.assertGreaterEqual(len(detail["children"]), 0)
 

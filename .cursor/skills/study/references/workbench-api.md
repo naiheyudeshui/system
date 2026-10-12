@@ -10,17 +10,15 @@
 
 ## 数据关系
 
-- study_node.parent_id → study_node.id：树；scope.anchor_node_id：观看起点。
-- study_card.node_id → study_node.id：多卡可归属同一节点。
-- study_card_fsrs.card_id → study_card.id：每卡调度；study_review_log：评分历史。
-- v_study_mindmap_nodes、v_study_scope_tree：节点/子树投影。
-- v_study_node_cards、v_study_due_cards：active 卡，以及其中到期卡。
+- `study_knowledge_item` 是章节、主题和卡片的同一张表；`parent_id` 表示父子，`item_type='card'` 表示可复习节点。
+- 调度在 `study_knowledge_schedule`，评分在 `study_knowledge_review_log`。
+- 读树用 `v_study_knowledge_nodes`；scope 用 `v_study_scope_tree`。到期卡用 `v_study_due_cards`。
 
 ## 学习 HTTP 接口
 
 | 方法与路径 | 实际用途 |
 | --- | --- |
-| GET /api/study/tree?scope= | 默认章节树、scopes、节点与卡片数据 |
+| GET /api/study/tree | 统一知识树。`scope` 缩小子树；`model=knowledge` 与省略 model 相同 |
 | GET /api/study/tree?config_id= | 保存的 SQL 树配置查询结果 |
 | GET /api/study/markmap?scope= | 默认树的标题层级 Markdown 投影 |
 | GET /api/study/node/:id | 节点详情和子节点 |

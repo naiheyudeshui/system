@@ -12,6 +12,17 @@ function make(tag, text, className) {
   return node;
 }
 
+function requestId() {
+  const cryptoApi = globalThis.crypto;
+  if (typeof cryptoApi?.randomUUID === "function") return cryptoApi.randomUUID();
+  const bytes = new Uint8Array(16);
+  cryptoApi.getRandomValues(bytes);
+  bytes[6] = (bytes[6] & 15) | 64;
+  bytes[8] = (bytes[8] & 63) | 128;
+  const hex = [...bytes].map((value) => value.toString(16).padStart(2, "0")).join("");
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+
 export async function renderNodeTreePanel(panel, { api, postApi }) {
   panel.classList.add("study-tree-panel", "study-tree-workspace");
   const home = make("section");
@@ -81,7 +92,6 @@ export async function renderNodeTreePanel(panel, { api, postApi }) {
     ? api(`/api/study/tree?config_id=${encodeURIComponent(request.config_id)}`)
     : normalizeLegacy(await api(`/api/study/tree?model=knowledge${request.scope ? `&scope=${encodeURIComponent(request.scope)}` : ""}`));
   const fillRoots = () => {
-    const previous = rootPicker.getValue();
     const tree = filterTree(data?.roots || [], filtered.map((row) => row.node_id));
     const options = [...indexTree(tree.roots).values()];
     rootPicker.setOptions(options.map((node) => ({ value: node.id, label: `${node.title} · ${node.id}`, node })));
@@ -160,14 +170,15 @@ export async function renderNodeTreePanel(panel, { api, postApi }) {
     const generation = ++editorGeneration;
     const originalSession = session;
     const state = session.getState();
-    const editor = make("section", null, "study-tree-editor");
+    const editor = make("form", null, "study-tree-editor");
     const editorHeader = make("header", null, "wb-tree-header");
     const cancel = make("button", "取消并返回");
-    const save = make("button", "保存", "primary"); save.disabled = true;
+    cancel.type = "button";
+    const save = make("button", "保存", "primary"); save.type = "submit"; save.disabled = true;
     const editorActions = make("div", null, "wb-config-actions study-tree-editor-actions");
     editorActions.append(cancel, save);
     editorHeader.append(make("h3", operation === "content" ? "编辑节点内容" : operation === "child" ? "新增子主题" : "新增同级主题"), editorActions);
-    const hint = make("p", "保存后写入当前数据库。新增主题不会自动生成复习卡；已有卡片只修改正文，不改变复习进度。");
+    const hint = make("p", "保存后写入当前数据库。新增主题不会自动生成复习卡；已有卡片会同步标题和正文，不改变复习进度。");
     const titleLabel = make("label", "节点标题");
     const titleInput = make("input"); titleInput.maxLength = 500; titleInput.setAttribute("aria-label", "编辑节点标题");
     titleLabel.append(titleInput);
@@ -185,51 +196,103 @@ export async function renderNodeTreePanel(panel, { api, postApi }) {
     const valid = () => generation === editorGeneration && originalSession === session && !viewer.hidden;
     const close = () => {
       if (saving) return;
-      const changed = baseline && (contentInput.value !== (operation === "content" ? baseline.node.content_md : "") || (operation !== "content" && titleInput.value));
+      const changed = baseline && (contentInput.value !== (operation === "content" ? baseline.node.content_md : "") || titleInput.value !== (operation === "content" ? baseline.node.title : ""));
       if ((payload || changed) && !window.confirm(saved ? "修改已保存，返回旧画面后请刷新。继续返回？" : "放弃当前草稿并返回？若刚才网络中断，保存可能已完成，可重试确认。")) return;
       ++editorGeneration; editor.remove();
       const browser = viewer.querySelector(".wb-tree-browser"); if (browser) browser.hidden = false;
       [...viewer.querySelectorAll(".wb-tree-graph-node")].find((element) => element.dataset.nodeId === node.id)?.focus();
     };
+    const postWithTimeout = async (path, body, ms = 45000) => {
+      const controller = new AbortController();
+      const timer = window.setTimeout(() => controller.abort(), ms);
+      try {
+        const response = await fetch(path, {
+          method: "POST",
+          headers: { Accept: "application/json", "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+          signal: controller.signal,
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.detail || `HTTP ${response.status}`);
+        return data;
+      } catch (error) {
+        if (error.name === "AbortError") throw new Error("请求超过 45 秒，请检查网络或稍后重试。");
+        throw error;
+      } finally {
+        window.clearTimeout(timer);
+      }
+    };
+    const finishEditor = () => {
+      ++editorGeneration;
+      editor.remove();
+      const browser = viewer.querySelector(".wb-tree-browser");
+      if (browser) browser.hidden = false;
+    };
+    const refreshTreeAfterSave = async (target) => {
+      const next = await fetchData({ ...source });
+      data = next;
+      renderPreview(next, previewState?.filters() || []);
+      const newTree = filterTree(next.roots, [...filtered.map((row) => row.node_id), target]);
+      const newIndex = indexTree(newTree.roots);
+      const ancestors = new Set();
+      let parent = newIndex.get(target);
+      while (parent) { ancestors.add(parent.id); parent = newIndex.get(parent.parent_id); }
+      state.selectedId = target;
+      state.collapsed = state.collapsed.filter((key) => !ancestors.has(key));
+      if (operation === "content") state.expandedContent = [...new Set([...state.expandedContent, target])];
+      if (state.root && !ancestors.has(state.root)) state.root = "";
+      showTree(newTree.roots, state.root, state);
+      message.textContent = filtered.some((row) => row.node_id === target) ? "已保存。" : "已保存，并临时显示新节点及其祖先；原预览筛选条件未改变。";
+    };
     cancel.addEventListener("click", close);
     editor.addEventListener("keydown", (event) => { if (event.key === "Escape" && !event.isComposing) { event.preventDefault(); close(); } });
-    save.addEventListener("click", async () => {
+    const runSave = async () => {
       if (saving || !baseline) return;
-      if (operation !== "content" && !titleInput.value.trim()) { notice.textContent = "请填写主题标题。"; titleInput.focus(); return; }
+      if (!titleInput.value.trim()) { notice.textContent = "请填写主题标题。"; titleInput.focus(); return; }
+      if (saved) {
+        notice.textContent = "正在刷新树图…";
+        saving = true; save.disabled = true; cancel.disabled = true;
+        try {
+          await refreshTreeAfterSave(saved.node.node_id);
+          finishEditor();
+        } catch (error) {
+          notice.textContent = `已保存，但树图刷新失败：${error.message}`;
+          save.textContent = "重新加载树";
+        } finally {
+          saving = false; save.disabled = false; cancel.disabled = false;
+          titleInput.readOnly = false; contentInput.readOnly = false;
+        }
+        return;
+      }
       saving = true; save.disabled = true; cancel.disabled = true;
       titleInput.readOnly = true; contentInput.readOnly = true;
-      payload ||= { operation, node_id: baseline.node.node_id, version: baseline.version, request_id: window.crypto.randomUUID(), title: titleInput.value, content_md: contentInput.value };
       try {
-        saved ||= await postApi("/api/study/knowledge/save", payload);
-        notice.textContent = "已保存，正在刷新树图…";
-        const next = await fetchData({ ...source });
-        if (!valid()) return;
-        data = next; renderPreview(next, previewState?.filters() || []);
+        payload ||= { operation, node_id: baseline.node.node_id, version: baseline.version, request_id: requestId(), title: titleInput.value.trim(), content_md: contentInput.value };
+        saved = await postWithTimeout("/api/study/knowledge/save", payload);
         const target = saved.node.node_id;
-        const newTree = filterTree(next.roots, [...filtered.map((row) => row.node_id), target]);
-        const newIndex = indexTree(newTree.roots);
-        const ancestors = new Set();
-        let parent = newIndex.get(target);
-        while (parent) { ancestors.add(parent.id); parent = newIndex.get(parent.parent_id); }
-        state.selectedId = target;
-        state.collapsed = state.collapsed.filter((key) => !ancestors.has(key));
-        if (operation === "content") state.expandedContent = [...new Set([...state.expandedContent, target])];
-        if (state.root && !ancestors.has(state.root)) state.root = "";
-        ++editorGeneration;
-        showTree(newTree.roots, state.root, state);
-        message.textContent = filtered.some((row) => row.node_id === target) ? "已保存。" : "已保存，并临时显示修改的节点及其祖先；原预览筛选条件未改变。";
+        notice.textContent = "已保存，正在返回树图…";
+        finishEditor();
+        try {
+          await refreshTreeAfterSave(target);
+        } catch (error) {
+          message.textContent = `节点已保存，但树图刷新失败：${error.message}。请点工具栏「刷新」。`;
+        }
       } catch (error) {
-        notice.textContent = `${saved ? "已保存，但树图刷新失败" : "保存未确认，草稿已保留"}：${error.message}`;
-        save.textContent = saved ? "重新加载树" : "重试保存";
-      } finally { saving = false; save.disabled = false; cancel.disabled = false; }
-    });
+        notice.textContent = `保存未确认，草稿已保留：${error.message}`;
+        save.textContent = "重试保存";
+      } finally {
+        saving = false; save.disabled = false; cancel.disabled = false;
+        titleInput.readOnly = false; contentInput.readOnly = false;
+      }
+    };
+    save.addEventListener("click", () => { void runSave(); });
+    editor.addEventListener("submit", (event) => { event.preventDefault(); void runSave(); });
     try {
       baseline = await postApi("/api/study/knowledge/read", { node_id: node.id });
       if (!valid()) return;
       titleInput.value = operation === "content" ? baseline.node.title : "";
-      titleInput.readOnly = operation === "content";
       contentInput.value = operation === "content" ? baseline.node.content_md : "";
-      notice.textContent = `当前节点：${baseline.node.title}；${operation === "child" ? "新增在此节点下" : operation === "sibling" ? "新增到此节点的真实父级下（不是临时浏览根）" : "保存正文，允许空内容"}。`;
+      notice.textContent = `当前节点：${baseline.node.title}；${operation === "child" ? "新增在此节点下" : operation === "sibling" ? "新增到此节点的真实父级下（不是临时浏览根）" : "保存标题和正文，允许空内容"}。`;
       save.disabled = false;
       (operation === "content" ? contentInput : titleInput).focus();
     } catch (error) { if (valid()) notice.textContent = `读取失败：${error.message}`; }
@@ -243,7 +306,7 @@ export async function renderNodeTreePanel(panel, { api, postApi }) {
       onMove: canEditKnowledge ? async (sourceId, targetId) => {
         if (String(sourceId) === String(targetId)) throw new Error("不能移动到自身");
         const sourceNode = await postApi("/api/study/knowledge/read", { node_id: sourceId });
-        const payload = { operation: "move", node_id: sourceId, target_node_id: targetId, version: sourceNode.version, request_id: window.crypto.randomUUID(), content_md: "" };
+        const payload = { operation: "move", node_id: sourceId, target_node_id: targetId, version: sourceNode.version, request_id: requestId(), content_md: "" };
         await postApi("/api/study/knowledge/save", payload);
         const next = await fetchData({ ...source });
         data = next; renderPreview(next, previewState?.filters() || []);
@@ -259,7 +322,7 @@ export async function renderNodeTreePanel(panel, { api, postApi }) {
       } : null,
       onReorder: canEditKnowledge ? async (sourceId, targetId, position) => {
         const sourceNode = await postApi("/api/study/knowledge/read", { node_id: sourceId });
-        await postApi("/api/study/knowledge/save", { operation: "reorder", position, node_id: sourceId, target_node_id: targetId, version: sourceNode.version, request_id: window.crypto.randomUUID(), content_md: "" });
+        await postApi("/api/study/knowledge/save", { operation: "reorder", position, node_id: sourceId, target_node_id: targetId, version: sourceNode.version, request_id: requestId(), content_md: "" });
         const next = await fetchData({ ...source });
         data = next; renderPreview(next, previewState?.filters() || []);
         const refreshed = filterTree(next.roots, filtered.map((row) => row.node_id));
@@ -278,11 +341,24 @@ export async function renderNodeTreePanel(panel, { api, postApi }) {
         actions.append(cancel, self, recursive); dialog.append(actions); document.body.append(dialog);
         const choice = await new Promise((resolve) => { cancel.addEventListener("click", () => resolve(null)); self.addEventListener("click", () => resolve("self")); recursive.addEventListener("click", () => resolve("recursive")); });
         dialog.remove(); if (!choice) return;
-        const baseline = await postApi("/api/study/knowledge/read", { node_id: node.id });
-        await postApi("/api/study/knowledge/save", { operation: "delete", delete_mode: choice, node_id: node.id, version: baseline.version, request_id: window.crypto.randomUUID(), content_md: "" });
-        const next = await fetchData({ ...source });
-        data = next; renderPreview(next, previewState?.filters() || []);
-        page(preview);
+        try {
+          const baseline = await postApi("/api/study/knowledge/read", { node_id: node.id });
+          await postApi("/api/study/knowledge/save", { operation: "delete", delete_mode: choice, node_id: node.id, version: baseline.version, request_id: requestId(), content_md: "" });
+          const next = await fetchData({ ...source });
+          data = next; renderPreview(next, previewState?.filters() || []);
+          const current = session?.getState?.() || { mode: "graph", collapsed: [], expandedContent: [], zoom: 1, pan: { x: 0, y: 0 } };
+          const refreshed = filterTree(next.roots, filtered.map((row) => row.node_id));
+          const refreshedIndex = indexTree(refreshed.roots);
+          const parentId = node.parent_id && refreshedIndex.has(String(node.parent_id)) ? String(node.parent_id) : "";
+          if (current.root && !refreshedIndex.has(String(current.root))) current.root = parentId;
+          current.selectedId = parentId;
+          current.collapsed = (current.collapsed || []).map(String).filter((id) => refreshedIndex.has(id));
+          current.expandedContent = (current.expandedContent || []).map(String).filter((id) => refreshedIndex.has(id));
+          showTree(refreshed.roots, current.root || "", current);
+          message.textContent = "节点已删除。";
+        } catch (error) {
+          message.textContent = `删除未完成：${error.message}`;
+        }
       } : null,
       onBack: () => page(preview),
       onRefresh: async () => {
@@ -319,7 +395,7 @@ export async function renderNodeTreePanel(panel, { api, postApi }) {
   panel.dispose = () => { ++editorGeneration; session?.dispose(); rootPicker.dispose?.(); };
   await run(async () => {
     await reload();
-    const payload = await api("/api/study/tree");
+    const payload = await api("/api/study/tree?model=knowledge");
     scopes.append(...(payload.scopes || []).map((scope) => new Option(scope.label, scope.id)));
   });
 }

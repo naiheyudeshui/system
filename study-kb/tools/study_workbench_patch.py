@@ -75,17 +75,12 @@ def install() -> None:
 
                             self.send_json(sql_tree(params["config_id"]))
                             return
-                        from study_api import build_node_tree  # noqa: WPS433
+                        from study_api import build_knowledge_tree  # noqa: WPS433
                         from study_kb import open_db  # noqa: WPS433
 
-                        params = self._study_query()
                         con = open_db()
                         try:
-                            if params.get("model") == "knowledge":
-                                from study_api import build_knowledge_tree
-                                payload = build_knowledge_tree(con, scope_id=params.get("scope") or None)
-                            else:
-                                payload = build_node_tree(con, scope_id=params.get("scope") or None)
+                            payload = build_knowledge_tree(con, scope_id=params.get("scope") or None)
                         finally:
                             con.close()
                         self.send_json(payload)
@@ -117,6 +112,18 @@ def install() -> None:
                             raise ValueError("node id is required")
                         self.send_json(get_node_detail(node_id))
                         return
+                    if parsed.path == "/api/study/library/export":
+                        from study_library_sync import export_library
+
+                        payload, filename = export_library()
+                        self.send_response(200)
+                        self.send_header("Content-Type", "application/vnd.sqlite3")
+                        self.send_header("Content-Length", str(len(payload)))
+                        self.send_header("Content-Disposition", f'attachment; filename="{filename}"')
+                        self.send_header("Cache-Control", "no-store")
+                        self.end_headers()
+                        self.wfile.write(payload)
+                        return
                     if parsed.path == "/api/study/review/next":
                         from study_api import next_review_card  # noqa: WPS433
 
@@ -136,6 +143,15 @@ def install() -> None:
             def do_POST(self) -> None:  # noqa: N802
                 parsed = urllib.parse.urlparse(self.path)
                 try:
+                    if parsed.path == "/api/study/library/import":
+                        from study_library_sync import MAX_BYTES, import_library
+
+                        self.require_external_write_auth()
+                        length = int(self.headers.get("Content-Length") or "0")
+                        if length <= 0 or length > MAX_BYTES:
+                            raise ValueError("库文件为空或超过 128MB")
+                        self.send_json(import_library(self.rfile.read(length)))
+                        return
                     if parsed.path == "/api/study/time":
                         from study_time_service import time_action
 

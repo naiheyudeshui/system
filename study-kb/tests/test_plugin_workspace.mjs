@@ -47,11 +47,11 @@ async function setup() {
   const mapping = new vm.SourceTextModule(mappingSource, { context });
   await mapping.link(() => {}); await mapping.evaluate();
   await manager.link(() => mapping); await manager.evaluate();
-  await review.link((specifier) => specifier.includes("pluginConfigManager") ? manager : specifier.includes("tablePreview") ? preview : markdown); await review.evaluate();
-  const tree = new vm.SourceTextModule(treeSource, { context });
-  await tree.link(() => {}); await tree.evaluate();
   const searchableCombobox = new vm.SourceTextModule(searchableComboboxSource, { context });
   await searchableCombobox.link(() => {}); await searchableCombobox.evaluate();
+  await review.link((specifier) => specifier.includes("pluginConfigManager") ? manager : specifier.includes("tablePreview") ? preview : specifier.includes("searchableCombobox") ? searchableCombobox : markdown); await review.evaluate();
+  const tree = new vm.SourceTextModule(treeSource, { context });
+  await tree.link(() => {}); await tree.evaluate();
   const treeAdapter = new vm.SourceTextModule(treeAdapterSource, { context });
   await treeAdapter.link((specifier) => specifier.includes("pluginConfigManager") ? manager : specifier.includes("tablePreview") ? preview : specifier.includes("treeWorkspace") ? tree : specifier.includes("searchableCombobox") ? searchableCombobox : markdown); await treeAdapter.evaluate();
   return { tree: tree.namespace, treeAdapter: treeAdapter.namespace, dom, document: dom.window.document, workspace: workspace.namespace, manager: manager.namespace, review: review.namespace, preview: preview.namespace, resizeObservers };
@@ -263,12 +263,16 @@ test("SQL review removes chapter controls, keeps saved parameters and grades aft
     await ui.review.renderReviewTablePanel(root, { api, postApi });
     const button = (label) => [...root.querySelectorAll("button")].find((node) => (node.getAttribute("aria-label") || node.textContent) === label);
     assert.equal(root.querySelector('[aria-label="node_id"]'), null);
-    assert.equal(root.querySelector('[aria-label="搜索章节"]'), null);
+    assert.equal(root.querySelector('[aria-label="搜索或选择根节点"]'), null);
     root.querySelector('[aria-label="方案设置"]').click();
     button("编辑已有方案").click(); await settle();
     button("返回").click(); await settle();
-    assert.doesNotMatch(root.textContent, /章节范围|含后代/);
     button("预览并筛选").click(); await settle();
+    const rootSearch = root.querySelector('[aria-label="搜索或选择根节点"]');
+    const start = root.querySelector('[data-action="confirm-start"]');
+    assert.ok(rootSearch);
+    assert.equal(start.parentElement, rootSearch.closest(".wb-tree-root-tools"));
+    assert.ok(start.compareDocumentPosition(root.querySelector("table")) & 4);
     assert.equal(calls.length, 1);
     assert.match(root.querySelector("table").textContent, /Answer/);
     root.querySelector('[data-action="confirm-start"]').click(); await settle();
@@ -471,8 +475,8 @@ test("tree editor saves canonical content and retries refresh without duplicate 
   const ui = await setup();
   try {
     const root = ui.document.createElement("section"); ui.document.body.append(root);
-    let content = "Original", saves = 0, failRefresh = false;
-    const payload = () => ({ roots: [{ id: "node:root", title: "Root", data: { content_md: content }, children: [] }], rows: [{ node_id: "node:root", parent_id: null, title: "Root", content_md: content }], columns: ["node_id", "parent_id", "title", "content_md"], detail_fields: [{ column: "content_md", format: "markdown" }], editing: { provider: "study-knowledge/v1" }, validation: { kind: "tree", root_count: 1, max_depth: 1, warnings: [] }, scopes: [] });
+    let content = "Original", title = "Root", saves = 0, failRefresh = false;
+    const payload = () => ({ roots: [{ id: "node:root", title, data: { content_md: content }, children: [] }], rows: [{ node_id: "node:root", parent_id: null, title, content_md: content }], columns: ["node_id", "parent_id", "title", "content_md"], detail_fields: [{ column: "content_md", format: "markdown" }], editing: { provider: "study-knowledge/v1" }, validation: { kind: "tree", root_count: 1, max_depth: 1, warnings: [] }, scopes: [] });
     const requests = [];
     await ui.treeAdapter.renderNodeTreePanel(root, { api: async (url) => {
       if (url.includes("/configs?")) return { configs: [] };
@@ -480,9 +484,9 @@ test("tree editor saves canonical content and retries refresh without duplicate 
       return payload();
     }, postApi: async (url, values) => {
       requests.push([url, values]);
-      if (url.endsWith("/read")) return { node: { node_id: "node:root", title: "Root", content_md: content }, version: "version-1" };
-      saves++; content = values.content_md; failRefresh = true;
-      return { node: { node_id: "node:root", title: "Root", content_md: content }, version: "version-2" };
+      if (url.endsWith("/read")) return { node: { node_id: "node:root", title, content_md: content }, version: "version-1" };
+      saves++; content = values.content_md; title = values.title; failRefresh = true;
+      return { node: { node_id: "node:root", title, content_md: content }, version: "version-2" };
     } });
     const button = (label) => [...root.querySelectorAll("button")].find((node) => node.textContent === label);
     button("预览并筛选").click(); await settle(); button("打开树图").click();
@@ -490,6 +494,10 @@ test("tree editor saves canonical content and retries refresh without duplicate 
     root.querySelector(".wb-tree-graph-node").dispatchEvent(new ui.dom.window.KeyboardEvent("keydown", { key: "Enter", shiftKey: true, bubbles: true, cancelable: true }));
     await settle();
     const input = root.querySelector('[aria-label="编辑节点 Markdown"]');
+    const titleInput = root.querySelector('[aria-label="编辑节点标题"]');
+    assert.equal(titleInput.readOnly, false);
+    assert.equal(titleInput.value, "Root");
+    titleInput.value = "Renamed";
     assert.equal(input.value, "Original");
     input.value = "**Changed**";
     input.dispatchEvent(new ui.dom.window.KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
@@ -502,6 +510,49 @@ test("tree editor saves canonical content and retries refresh without duplicate 
     assert.equal(root.querySelector(".study-tree-editor"), null);
     assert.match(root.querySelector(".wb-tree-inline-content").textContent, /Changed/);
     assert.equal(requests[1][1].version, "version-1");
+    assert.equal(requests[1][1].title, "Renamed");
+    assert.equal(root.querySelector(".wb-tree-graph-node").getAttribute("aria-label"), "Renamed");
+    root.dispose();
+  } finally { ui.dom.window.close(); }
+});
+
+
+test("deleting a tree node stays on the tree and removes only that node", async () => {
+  const ui = await setup();
+  try {
+    const root = ui.document.createElement("section"); ui.document.body.append(root);
+    let rows = [
+      { node_id: "node:a", parent_id: null, title: "Keep", content_md: "" },
+      { node_id: "node:b", parent_id: null, title: "Remove", content_md: "" },
+    ];
+    const payload = () => ({
+      roots: rows.map((row) => ({ id: row.node_id, title: row.title, data: { content_md: "" }, children: [] })),
+      rows, columns: ["node_id", "parent_id", "title", "content_md"],
+      detail_fields: [{ column: "content_md", format: "markdown" }],
+      editing: { provider: "study-knowledge/v1" },
+      validation: { kind: rows.length > 1 ? "forest" : "tree", root_count: rows.length, max_depth: 1, warnings: [] },
+      scopes: [],
+    });
+    await ui.treeAdapter.renderNodeTreePanel(root, {
+      api: async (url) => url.includes("/configs?") ? { configs: [] } : payload(),
+      postApi: async (url, values) => {
+        if (url.endsWith("/read")) return { node: { node_id: values.node_id, title: "Remove", content_md: "" }, version: "v1" };
+        rows = rows.filter((row) => row.node_id !== values.node_id);
+        return { node: { node_id: values.node_id, deleted: true } };
+      },
+    });
+    const button = (label) => [...ui.document.querySelectorAll("button")].find((node) => node.textContent === label);
+    button("预览并筛选").click(); await settle(); button("打开树图").click();
+    assert.equal(root.classList.contains("is-browsing-tree"), true);
+    root.querySelector('.wb-tree-graph-node[data-node-id="node:b"]').dispatchEvent(new ui.dom.window.Event("click"));
+    root.querySelector('.wb-tree-graph-node[data-node-id="node:b"]').dispatchEvent(new ui.dom.window.KeyboardEvent("keydown", { key: "Delete", bubbles: true, cancelable: true }));
+    await settle();
+    button("删除该节点").click(); await settle(); await settle();
+    assert.equal(root.classList.contains("is-browsing-tree"), true);
+    assert.equal(root.querySelector(".study-tree-viewer").hidden, false);
+    assert.equal(root.querySelectorAll(".wb-tree-graph-node").length, 1);
+    assert.equal(root.querySelector(".wb-tree-graph-node").dataset.nodeId, "node:a");
+    assert.match(root.textContent, /节点已删除/);
     root.dispose();
   } finally { ui.dom.window.close(); }
 });
@@ -665,19 +716,19 @@ test("tree plan preview retains ancestors and allows a selected browsing root", 
     const child = { id: "leaf", title: "Leaf", answer_md: "Answer", cards: [{ front: "Card", back: "Card answer" }], children: [] };
     const tree = { roots: [{ id: "root", title: "Root", children: [child] }], scopes: [{ id: "scope", label: "Book" }] };
     await ui.treeAdapter.renderNodeTreePanel(root, { api: async (url) => url.includes("/configs?") ? { configs: [] } : tree, postApi: async () => ({}) });
-    const button = (label) => [...root.querySelectorAll("button")].find((node) => node.textContent === label);
+    const button = (label) => [...root.querySelectorAll("button")].find((node) => node.textContent === label || node.getAttribute("aria-label") === label);
     button("预览并筛选").click(); await settle();
     assert.match(root.textContent, /校验通过/);
-    root.querySelector('[aria-label="筛选 节点标题"]').click();
+    [...root.querySelectorAll("button")].find((node) => node.textContent.startsWith("节点标题")).click();
     ui.document.querySelector('.table-filter-popover input[value="Leaf"]').checked = true;
     [...ui.document.querySelectorAll("button")].find((node) => node.textContent === "应用").click();
     assert.match(root.textContent, /自动保留 1 个祖先/);
-    root.querySelector('[aria-label="根节点"]').value = "leaf";
+    root.querySelector('[aria-label="搜索或选择根节点"]').value = "leaf";
     button("打开树图").click();
     assert.ok(root.classList.contains("is-browsing-tree"));
     assert.equal(root.querySelectorAll(".wb-tree-graph-node").length, 1);
     root.querySelector('.wb-tree-graph-node[data-node-id="leaf"]').dispatchEvent(new ui.dom.window.Event("click"));
-    button("节点详情").click();
+    button("节点详情").click(); await settle();
     assert.match(root.querySelector(".wb-tree-detail").textContent, /Card answer/);
     button("返回树页面").click();
     root.querySelector('[aria-label="返回方案"]').click();

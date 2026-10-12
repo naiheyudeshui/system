@@ -6,7 +6,7 @@
 
 1. 阅读 `.cursor/skills/study/SKILL.md`；它已包含完整 Agent 操作手册，无需再读另一份 AGENT.md。
 2. 向用户解释使用方法时参考根 `README.md` 的“知识交互完整使用指南”。
-3. 默认学习库为 `study-kb/data/study.sqlite`。先核对实际路径、已有节点 ID 和用户确认范围，再写入；不能用整书重复导入代替已有树增量维护。
+3. 默认主库为手机/Android workbench（8033 HTTP）；`study-kb/data/study.sqlite` 仅为 export 备份。写入前先 `study_server.py probe`；不能用整书重复导入代替已有树增量维护。
 4. 写知识时保留来源、父子关系、卡片关联和既有复习历史；只有用户实际复习评分才写正式评分记录。
 5. 已确认草稿与目标范围可直接执行；仅要求总结或文档时不得插入真实学习数据。
 

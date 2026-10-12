@@ -17,7 +17,19 @@ import {
   setupWorkbenchSplitters,
   t,
 } from "/3dworkbench/workbenchPlatform.mjs?v=20261005-drawer";
-import { renderNodeTreePanel, renderReviewTablePanel } from "./studyPlugins.mjs?v=20260928-tree-details";
+import { renderNodeTreePanel, renderReviewTablePanel } from "./studyPlugins.mjs?v=20261006-request-id";
+import { renderLibrarySyncPanel } from "./studyLibrarySync.mjs?v=20261005-library";
+function requestId() {
+  const cryptoApi = globalThis.crypto;
+  if (typeof cryptoApi?.randomUUID === "function") return cryptoApi.randomUUID();
+  const bytes = new Uint8Array(16);
+  cryptoApi.getRandomValues(bytes);
+  bytes[6] = (bytes[6] & 15) | 64;
+  bytes[8] = (bytes[8] & 63) | 128;
+  const hex = [...bytes].map((value) => value.toString(16).padStart(2, "0")).join("");
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+
 const layoutStorageKey = "study-workbench-layout";
 const sidebarStorageKey = "study-sidebar-collapsed";
 const favoritesStorageKey = "study-sidebar-favorites";
@@ -223,15 +235,25 @@ async function api(path, { attempts = 2 } = {}) {
   throw lastError || new Error("服务未返回可用数据");
 }
 
-async function postApi(path, payload) {
-  const response = await fetch(path, {
-    method: "POST",
-    headers: { Accept: "application/json", "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-  const data = await response.json();
-  if (!response.ok) throw new Error(data.detail || `HTTP ${response.status}`);
-  return data;
+async function postApi(path, payload, { timeoutMs = 45000 } = {}) {
+  const controller = new AbortController();
+  const timer = window.setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(path, {
+      method: "POST",
+      headers: { Accept: "application/json", "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || `HTTP ${response.status}`);
+    return data;
+  } catch (error) {
+    if (error.name === "AbortError") throw new Error("请求超过 45 秒，请检查网络或稍后重试。");
+    throw error;
+  } finally {
+    window.clearTimeout(timer);
+  }
 }
 
 function objectSummary(item) {
@@ -667,7 +689,7 @@ async function openCellEditor(cell, row, viewColumn) {
       : { operation: "update", table: context.contract.table, key: context.key, values: { [context.baseColumn]: next } };
     const preview = await postApi(context.crossTable ? "/api/view-cell/preview" : "/api/record/preview", request);
     $("#inspector-command").textContent = JSON.stringify(preview, null, 2);
-    await postApi(context.crossTable ? "/api/view-cell/apply" : "/api/record/apply", { ...request, client_id: "studio-workbench", idempotency_key: crypto.randomUUID() });
+    await postApi(context.crossTable ? "/api/view-cell/apply" : "/api/record/apply", { ...request, client_id: "studio-workbench", idempotency_key: requestId() });
     await selectObject(state.active);
     },
     onError: (error) => {
@@ -794,7 +816,7 @@ async function openCreateRecordDialog() {
     catch (error) { $("#record-dialog-preview").textContent = error.message; apply.disabled = true; }
   };
   apply.onclick = async () => {
-    try { await postApi("/api/record/apply", { ...request(), client_id: "studio-workbench", idempotency_key: crypto.randomUUID() }); await refresh(); $("#record-dialog").close(); }
+    try { await postApi("/api/record/apply", { ...request(), client_id: "studio-workbench", idempotency_key: requestId() }); await refresh(); $("#record-dialog").close(); }
     catch (error) { $("#record-dialog-preview").textContent = error.message; }
   };
   $("#record-dialog").showModal();
@@ -832,7 +854,7 @@ async function openRowEditor(row) {
   preview.hidden = false; apply.hidden = false; apply.disabled = true; $("#record-dialog-preview").textContent = "";
   const payload = () => ({ operation: "update", table: contract.table, key, values: Object.fromEntries([...root.querySelectorAll("input")].map((input) => [input.name, input.value])) });
   preview.onclick = async () => { const result = await postApi("/api/record/preview", payload()); $("#record-dialog-preview").textContent = JSON.stringify(result, null, 2); apply.disabled = false; };
-  apply.onclick = async () => { const result = await postApi("/api/record/apply", { ...payload(), client_id: "studio-workbench", idempotency_key: crypto.randomUUID() }); $("#record-dialog-preview").textContent = JSON.stringify(result, null, 2); await refresh(); $("#record-dialog").close(); };
+  apply.onclick = async () => { const result = await postApi("/api/record/apply", { ...payload(), client_id: "studio-workbench", idempotency_key: requestId() }); $("#record-dialog-preview").textContent = JSON.stringify(result, null, 2); await refresh(); $("#record-dialog").close(); };
   $("#record-dialog").showModal();
 }
 
@@ -1025,6 +1047,10 @@ async function loadPluginPanel(panel, pluginId, contributionId, context = create
         postApi,
         getCurrentView: () => state.active,
       });
+      return;
+    }
+    if (pluginId === "study.library") {
+      renderLibrarySyncPanel(panel);
       return;
     }
     if (pluginId === "official.table-print") {

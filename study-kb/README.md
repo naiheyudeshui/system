@@ -127,7 +127,7 @@ study-kb/
 
 | 路径 | 说明 |
 | --- | --- |
-| `GET /api/study/tree?scope=` | 章节树 JSON |
+| `GET /api/study/tree` | 统一知识树 JSON；`scope` 缩小子树，`model=knowledge` 与不带 model 相同 |
 | `GET /api/study/markmap?scope=` | markmap 用 Markdown |
 | `GET /api/study/node/:id` | 节点详情 |
 | `GET /api/study/card/:id` | 单卡详情 |
