@@ -99,6 +99,64 @@ class StudyTimeServiceTest(unittest.TestCase):
         state = service.time_action({"kind": "pomodoro", "action": "complete"})
         self.assertEqual(state["preferences"]["planned_seconds"], 2400)
 
+    def test_today_summary_includes_morning_sessions_before_utc_midnight(self):
+        """ISO +08:00 早上会话在 SQLite date(ts) 下会落到昨天，必须用 localtime。"""
+        now = datetime.fromisoformat("2026-10-14T10:00:00+08:00")
+        con = connect(self.database)
+        con.execute("""INSERT INTO study_time_session(
+            id,timer_kind,task_text,status,planned_seconds,elapsed_seconds,started_at,ended_at
+        ) VALUES (?,?,?,?,?,?,?,?)""", (
+            "time_morning", "pomodoro", "早起复习", "completed", 1500, 1500,
+            "2026-10-14T07:38:01+08:00", "2026-10-14T08:03:01+08:00",
+        ))
+        con.execute("""INSERT INTO study_time_session(
+            id,timer_kind,task_text,status,planned_seconds,elapsed_seconds,started_at,ended_at
+        ) VALUES (?,?,?,?,?,?,?,?)""", (
+            "time_noon", "pomodoro", "午间复习", "completed", 1500, 1500,
+            "2026-10-14T09:00:00+08:00", "2026-10-14T09:25:00+08:00",
+        ))
+        con.commit()
+        summary = service._summary(con, "pomodoro", now)
+        con.close()
+        self.assertEqual(summary["today"]["completed"], 2)
+        self.assertEqual(summary["today"]["seconds"], 3000)
+
+    def test_expired_running_pomodoro_is_reconciled_and_counted(self):
+        started_at = datetime.fromisoformat("2026-10-13T08:00:00+08:00")
+        with patch.object(service, "_now", return_value=started_at):
+            service.time_action({"kind": "pomodoro", "action": "start", "task_text": "第一项", "planned_seconds": 1800})
+        with patch.object(service, "_now", return_value=started_at + timedelta(seconds=1800)):
+            service.time_state("pomodoro")
+        with patch.object(service, "_now", return_value=started_at + timedelta(seconds=1801)):
+            service.time_action({"kind": "pomodoro", "action": "start", "task_text": "第二项", "planned_seconds": 1800})
+        with patch.object(service, "_now", return_value=started_at + timedelta(seconds=3601)):
+            service.time_state("pomodoro")
+        # Simulate the third countdown reaching zero while the browser is
+        # backgrounded: no client-side complete action is sent.
+        with patch.object(service, "_now", return_value=started_at + timedelta(seconds=5401)):
+            service.time_action({"kind": "pomodoro", "action": "start", "task_text": "第三项", "planned_seconds": 1800})
+        with patch.object(service, "_now", return_value=started_at + timedelta(seconds=7201)):
+            state = service.time_state("pomodoro")
+        self.assertIsNone(state["current"])
+        self.assertEqual(state["summary"]["today"]["completed"], 3)
+        self.assertEqual(state["summary"]["today"]["seconds"], 5400)
+
+    def test_client_complete_after_expiry_is_idempotent(self):
+        # Frontend paint() posts complete at zero; _finish_expired may already
+        # have closed the session in the same request — must not error/rollback.
+        started_at = datetime.fromisoformat("2026-10-14T17:04:00+08:00")
+        with patch.object(service, "_now", return_value=started_at):
+            service.time_action({"kind": "pomodoro", "action": "start", "task_text": "番茄钟 · 10-14 17:04", "planned_seconds": 1500})
+        with patch.object(service, "_now", return_value=started_at + timedelta(seconds=1500)):
+            state = service.time_action({"kind": "pomodoro", "action": "complete"})
+        self.assertIsNone(state["current"])
+        self.assertEqual(state["summary"]["today"]["completed"], 1)
+        self.assertEqual(state["summary"]["today"]["seconds"], 1500)
+        with patch.object(service, "_now", return_value=started_at + timedelta(seconds=1501)):
+            again = service.time_action({"kind": "pomodoro", "action": "complete"})
+        self.assertIsNone(again["current"])
+        self.assertEqual(again["summary"]["today"]["completed"], 1)
+
 
 if __name__ == "__main__":
     unittest.main()

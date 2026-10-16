@@ -34,7 +34,8 @@ DEFAULTS = [
     COALESCE(NULLIF(back,''), answer_md) AS answer, hint, node_id
 FROM v_study_node_cards
 WHERE {NODE_FILTER}
-ORDER BY node_title, card_id""", "parameters": {"node_id": None}, "settings": {"scheduler": {"kind": "fsrs"}, "limit": 5000}},
+ORDER BY CASE WHEN due_at <= datetime('now','localtime') THEN 0 ELSE 1 END,
+         due_at ASC, lapses DESC, difficulty DESC, node_title, card_id""", "parameters": {"node_id": None}, "settings": {"scheduler": {"kind": "fsrs"}, "limit": 5000}},
     {"id": "study.review.due.v1", "name": "今日到期", "sql": f"""SELECT card_id, front AS question,
     COALESCE(NULLIF(back,''), answer_md) AS answer, hint, node_id
 FROM v_study_due_cards
@@ -110,77 +111,159 @@ def sql_review(payload, *, preview=False):
     from study_review_engine import identifier, session_state, validate_config
     con = open_db()
     try:
+        source_session_id = payload.get("source_session_id")
+        # 从旧会话复制同一批卡片开新轮：不依赖当前到期预览（评分后 due_at 会变，preview_hash 必失效）
+        if source_session_id and not preview:
+            if not isinstance(source_session_id, str) or not source_session_id.strip():
+                raise ValueError("无效的来源复习会话")
+            try:
+                con.execute("BEGIN IMMEDIATE")
+                previous = con.execute(
+                    "SELECT config_json FROM study_knowledge_review_session WHERE id=?",
+                    (source_session_id.strip(),),
+                ).fetchone()
+                if not previous:
+                    raise ValueError("来源复习会话不存在")
+                configuration = json.loads(previous["config_json"])
+                item_rows = con.execute(
+                    "SELECT position, item_json FROM study_knowledge_review_session_item WHERE session_id=? ORDER BY position",
+                    (source_session_id.strip(),),
+                ).fetchall()
+                if not item_rows:
+                    raise ValueError("来源复习会话没有卡片")
+                items = [json.loads(row["item_json"]) for row in item_rows]
+                selected_keys = configuration.get("selected_keys")
+                if not isinstance(selected_keys, list) or not selected_keys:
+                    selected_keys = [item.get("key") for item in items if item.get("key") is not None]
+
+                def _schedule_rank(key):
+                    """未复习(reps=0)优先，再按到期时间升序；开新轮时不能沿用旧会话的固定顺序。"""
+                    if key is None:
+                        return (0, "", "")
+                    candidates = [key]
+                    if isinstance(key, str) and not key.startswith("card:"):
+                        candidates.append("card:" + key)
+                    elif isinstance(key, str) and key.startswith("card:") and key.count(":") == 1:
+                        candidates.append(key[5:])
+                    row = None
+                    for candidate in candidates:
+                        row = con.execute(
+                            "SELECT COALESCE(reps, 0) AS reps, due_at FROM study_knowledge_schedule WHERE item_id=?",
+                            (candidate,),
+                        ).fetchone()
+                        if row:
+                            break
+                    if not row:
+                        return (0, "", str(key))
+                    return (int(row["reps"] or 0), row["due_at"] or "", str(key))
+
+                ranked = []
+                for item in items:
+                    reps, due_at, tie = _schedule_rank(item.get("key"))
+                    if due_at:
+                        item = {**item, "due_at": due_at}
+                    ranked.append((reps, due_at, tie, item))
+                ranked.sort(key=lambda entry: (entry[0], entry[1], entry[2]))
+                items = [entry[3] for entry in ranked]
+
+                configuration = {
+                    **configuration,
+                    "selected_keys": selected_keys,
+                    "source_session_id": source_session_id.strip(),
+                    "reorder": "reps_then_due_at",
+                }
+                session_id = uuid.uuid4().hex
+                con.execute(
+                    "INSERT INTO study_knowledge_review_session (id,config_json) VALUES (?,?)",
+                    (session_id, json.dumps(configuration, ensure_ascii=False)),
+                )
+                con.executemany(
+                    "INSERT INTO study_knowledge_review_session_item (session_id,position,item_json) VALUES (?,?,?)",
+                    [(session_id, position, json.dumps(item, ensure_ascii=False)) for position, item in enumerate(items)],
+                )
+                state = session_state(con, session_id)
+                con.commit()
+                return state
+            except Exception:
+                con.rollback()
+                raise
+
         saved = read_config(con, payload.get("config_id"))
         con.commit()
-        con.execute("BEGIN" if preview else "BEGIN IMMEDIATE")
-        parameters = payload.get("parameters", saved["parameters"])
-        settings = saved["settings"]
-        configuration = validate_config(con, {
-            "view": "v_study_node_cards", "mode": "all", "mapping": {"key": "card_id", "front": "front", "back": "back"},
-            "limit": settings.get("limit", 5000), "scheduler": settings.get("scheduler", {"kind": "fsrs"}),
-        })
-        result = validate_result(query_rows(con, saved["sql"], parameters, limit=50000, seconds=5, byte_limit=16*1048576), "review-cards/v1")
-        if result["truncated"]:
-            raise ValueError("超过 50000 条候选，请在 SQL 中缩小范围")
-        scheduler = configuration["scheduler"]
-        node_paths = {}
-        if "node_id" in result["columns"]:
-            nodes = {node["id"]: node for node in con.execute("SELECT legacy_node_id AS id, substr(parent_id,6) AS parent_id,title FROM study_knowledge_item WHERE item_type <> 'card'")}
-            for node_id in {row.get("node_id") for row in result["rows"]}:
-                path, visited = [], set()
-                current = node_id
-                while current in nodes and current not in visited:
-                    visited.add(current)
-                    path.append(nodes[current]["title"])
-                    current = nodes[current]["parent_id"]
-                node_paths[node_id] = " / ".join(reversed(path))
-        deadline = time.monotonic() + 5
-        items, rows, seen = [], [], set()
-        missing = duplicates = 0
-        for row in result["rows"]:
-            if time.monotonic() > deadline:
-                raise ValueError("调度关联超过时间限制，请缩小 SQL 范围")
-            key = row["card_id"]
-            target_key = "card:" + key if scheduler["kind"] == "fsrs" else key
-            target = con.execute(f'SELECT {identifier(scheduler["key"])}, {identifier(scheduler["due"])} FROM {identifier(scheduler["table"])} WHERE {identifier(scheduler["key"])}=?', (target_key,)).fetchone()
-            if not target or (scheduler["kind"] == "fsrs" and not con.execute("SELECT 1 FROM study_knowledge_item WHERE legacy_card_id=? AND status='active'", (key,)).fetchone()):
-                missing += 1
-                continue
-            key = target[0]
-            if key in seen:
-                duplicates += 1
-                continue
-            seen.add(key)
-            preview_row = {**row, "card_id": key, "due_at": target[1]}
-            if node_paths and "node_path" not in preview_row:
-                preview_row["node_path"] = node_paths.get(row.get("node_id"), "")
-            rows.append(preview_row)
-            items.append({"key": key, "front": row["question"], "back": row["answer"], "hint": row.get("hint"), "due_at": target[1]})
-        import hashlib
-        preview_hash = hashlib.sha256(json.dumps({"revision": saved["revision"], "parameters": parameters, "rows": rows}, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
-        matched = len(items)
-        selected_keys = payload.get("selected_keys")
-        if selected_keys is not None:
-            if not isinstance(selected_keys, list) or not selected_keys or any(not isinstance(key, (str, int, float)) or isinstance(key, bool) for key in selected_keys):
-                raise ValueError("请选择至少一张预览卡片")
-            if payload.get("preview_hash") != preview_hash:
-                raise ValueError("方案或候选数据已变化，请重新预览后开始")
-            if len(selected_keys) != len(set(selected_keys)) or not set(selected_keys).issubset(seen):
-                raise ValueError("选择的卡片不属于当前预览或存在重复")
-            selected_set = set(selected_keys)
-            items = [item for item in items if item["key"] in selected_set]
-        if settings.get("random"):
-            import random
-            random.SystemRandom().shuffle(items)
-        items = items[:configuration["limit"]]
-        if preview:
-            return {"matched": matched, "selected": len(items), "duplicates": duplicates, "missing_schedule": missing, "sample": items[:5], "rows": rows, "columns": list(dict.fromkeys([*result["columns"], "due_at", *(["node_path"] if node_paths else [])])), "limit": configuration["limit"], "preview_hash": preview_hash}
-        configuration.update({"source": "sql", "config_id": saved["id"], "config_revision": saved["revision"], "view": saved["name"], "sql": saved["sql"], "parameters": parameters, "selected_keys": selected_keys, "preview_hash": payload.get("preview_hash")})
-        session_id = uuid.uuid4().hex
-        con.execute("INSERT INTO study_knowledge_review_session (id,config_json) VALUES (?,?)", (session_id, json.dumps(configuration)))
-        con.executemany("INSERT INTO study_knowledge_review_session_item (session_id,position,item_json) VALUES (?,?,?)", [(session_id, position, json.dumps(item)) for position, item in enumerate(items)])
-        state = session_state(con, session_id)
-        con.commit()
-        return state
+        try:
+            con.execute("BEGIN" if preview else "BEGIN IMMEDIATE")
+            parameters = payload.get("parameters", saved["parameters"])
+            settings = saved["settings"]
+            configuration = validate_config(con, {
+                "view": "v_study_node_cards", "mode": "all", "mapping": {"key": "card_id", "front": "front", "back": "back"},
+                "limit": settings.get("limit", 5000), "scheduler": settings.get("scheduler", {"kind": "fsrs"}),
+            })
+            result = validate_result(query_rows(con, saved["sql"], parameters, limit=50000, seconds=5, byte_limit=16*1048576), "review-cards/v1")
+            if result["truncated"]:
+                raise ValueError("超过 50000 条候选，请在 SQL 中缩小范围")
+            scheduler = configuration["scheduler"]
+            node_paths = {}
+            if "node_id" in result["columns"]:
+                nodes = {node["id"]: node for node in con.execute("SELECT legacy_node_id AS id, substr(parent_id,6) AS parent_id,title FROM study_knowledge_item WHERE item_type <> 'card'")}
+                for node_id in {row.get("node_id") for row in result["rows"]}:
+                    path, visited = [], set()
+                    current = node_id
+                    while current in nodes and current not in visited:
+                        visited.add(current)
+                        path.append(nodes[current]["title"])
+                        current = nodes[current]["parent_id"]
+                    node_paths[node_id] = " / ".join(reversed(path))
+            deadline = time.monotonic() + 5
+            items, rows, seen = [], [], set()
+            missing = duplicates = 0
+            for row in result["rows"]:
+                if time.monotonic() > deadline:
+                    raise ValueError("调度关联超过时间限制，请缩小 SQL 范围")
+                key = row["card_id"]
+                target_key = "card:" + key if scheduler["kind"] == "fsrs" else key
+                target = con.execute(f'SELECT {identifier(scheduler["key"])}, {identifier(scheduler["due"])} FROM {identifier(scheduler["table"])} WHERE {identifier(scheduler["key"])}=?', (target_key,)).fetchone()
+                if not target or (scheduler["kind"] == "fsrs" and not con.execute("SELECT 1 FROM study_knowledge_item WHERE legacy_card_id=? AND status='active'", (key,)).fetchone()):
+                    missing += 1
+                    continue
+                key = target[0]
+                if key in seen:
+                    duplicates += 1
+                    continue
+                seen.add(key)
+                preview_row = {**row, "card_id": key, "due_at": target[1]}
+                if node_paths and "node_path" not in preview_row:
+                    preview_row["node_path"] = node_paths.get(row.get("node_id"), "")
+                rows.append(preview_row)
+                items.append({"key": key, "front": row["question"], "back": row["answer"], "hint": row.get("hint"), "due_at": target[1]})
+            import hashlib
+            preview_hash = hashlib.sha256(json.dumps({"revision": saved["revision"], "parameters": parameters, "rows": rows}, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
+            matched = len(items)
+            selected_keys = payload.get("selected_keys")
+            if selected_keys is not None:
+                if not isinstance(selected_keys, list) or not selected_keys or any(not isinstance(key, (str, int, float)) or isinstance(key, bool) for key in selected_keys):
+                    raise ValueError("请选择至少一张预览卡片")
+                if payload.get("preview_hash") != preview_hash:
+                    raise ValueError("方案或候选数据已变化，请重新预览后开始")
+                if len(selected_keys) != len(set(selected_keys)) or not set(selected_keys).issubset(seen):
+                    raise ValueError("选择的卡片不属于当前预览或存在重复")
+                selected_set = set(selected_keys)
+                items = [item for item in items if item["key"] in selected_set]
+            if settings.get("random"):
+                import random
+                random.SystemRandom().shuffle(items)
+            items = items[:configuration["limit"]]
+            if preview:
+                con.commit()
+                return {"matched": matched, "selected": len(items), "duplicates": duplicates, "missing_schedule": missing, "sample": items[:5], "rows": rows, "columns": list(dict.fromkeys([*result["columns"], "due_at", *(["node_path"] if node_paths else [])])), "limit": configuration["limit"], "preview_hash": preview_hash}
+            configuration.update({"source": "sql", "config_id": saved["id"], "config_revision": saved["revision"], "view": saved["name"], "sql": saved["sql"], "parameters": parameters, "selected_keys": selected_keys, "preview_hash": payload.get("preview_hash")})
+            session_id = uuid.uuid4().hex
+            con.execute("INSERT INTO study_knowledge_review_session (id,config_json) VALUES (?,?)", (session_id, json.dumps(configuration)))
+            con.executemany("INSERT INTO study_knowledge_review_session_item (session_id,position,item_json) VALUES (?,?,?)", [(session_id, position, json.dumps(item)) for position, item in enumerate(items)])
+            state = session_state(con, session_id)
+            con.commit()
+            return state
+        except Exception:
+            con.rollback()
+            raise
     finally:
         con.close()

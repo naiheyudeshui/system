@@ -193,16 +193,26 @@ export async function renderTimerPanel(panel, { api, postApi, kind, mode = "comp
     start.textContent = "继续"; start.disabled = false; start.hidden = current.status === "running";
     pause.hidden = current.status !== "running"; finish.hidden = abandon.hidden = false;
     progress.style.width = pomodoro && planned ? `${Math.min(100, used / planned * 100)}%` : "100%";
-    if (pomodoro && shown === 0 && current.status === "running" && !syncing) void sync();
+    // Persist natural completion explicitly.  The server also reconciles an
+    // expired running session, but this covers a normal foreground countdown
+    // immediately and avoids leaving the last task as `running` when the page
+    // is closed right after zero.
+    if (pomodoro && shown === 0 && current.status === "running" && !syncing) void act("complete");
   };
   const refresh = () => { paint(); renderDashboard(); };
-  const sync = async () => { syncing = true; try { acceptPayload(await api(`/api/study/time?kind=${kind}`)); refresh(); } finally { syncing = false; } };
+  const sync = async () => { syncing = true; message.textContent = ""; try { acceptPayload(await api(`/api/study/time?kind=${kind}`)); refresh(); } finally { syncing = false; } };
   const act = async (action) => {
     if (syncing) return; syncing = true; message.textContent = "";
     try {
       acceptPayload(await postApi("/api/study/time", { action, kind, task_text: task.value, project_id: project.value || null, planned_seconds: pomodoro ? idleMinutes() * 60 : null }));
       refresh();
-    } catch (error) { message.textContent = error.message; } finally { syncing = false; }
+    } catch (error) {
+      // 归零 complete 与服务端自动结账竞态时，拉一次状态即可恢复空闲界面，避免红字卡死。
+      if (action === "complete" && /没有进行中的计时/.test(error.message || "")) {
+        try { acceptPayload(await api(`/api/study/time?kind=${kind}`)); refresh(); }
+        catch { message.textContent = error.message; }
+      } else message.textContent = error.message;
+    } finally { syncing = false; }
   };
   start.addEventListener("click", () => void act(payload?.current?.status === "paused" ? "resume" : "start"));
   pause.addEventListener("click", () => void act("pause"));

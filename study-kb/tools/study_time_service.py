@@ -75,14 +75,21 @@ def _projects(con) -> list[dict]:
 
 
 def _summary(con, kind: str, now: datetime) -> dict:
-    totals = con.execute("""SELECT COALESCE(SUM(elapsed_seconds),0) seconds,
+    # started_at 存的是带 +08:00 的 ISO。SQLite date(ts) 会先按 UTC 取日，
+    # 导致北京时间 08:00 前的会话被算进昨天；必须用 date(ts,'localtime')。
+    # 今日边界以 Python 的 Asia/Shanghai now 为准，避免 SQL date('now') 与业务时钟漂移。
+    # 今日专注只统计已完成/已放弃，与「已完成/已放弃」次数口径一致（不含进行中）。
+    local = now.astimezone(STUDY_TIMEZONE)
+    today = local.date().isoformat()
+    week_start = (local.date() - timedelta(days=6)).isoformat()
+    totals = con.execute("""SELECT COALESCE(SUM(CASE WHEN status IN ('completed','abandoned') THEN elapsed_seconds ELSE 0 END),0) seconds,
         SUM(status='completed') completed, SUM(status='abandoned') abandoned
-        FROM study_time_session WHERE timer_kind=? AND date(started_at)=date('now','localtime')""", (kind,)).fetchone()
+        FROM study_time_session WHERE timer_kind=? AND date(started_at,'localtime')=?""", (kind, today)).fetchone()
     days = [dict(row) for row in con.execute("""WITH RECURSIVE dates(day) AS (
-        SELECT date('now','localtime','-6 days') UNION ALL SELECT date(day,'+1 day') FROM dates WHERE day<date('now','localtime'))
+        SELECT ? UNION ALL SELECT date(day,'+1 day') FROM dates WHERE day<?)
         SELECT dates.day,COALESCE(SUM(s.elapsed_seconds),0) seconds FROM dates
-        LEFT JOIN study_time_session s ON date(s.started_at)=dates.day AND s.timer_kind=? AND s.status IN ('completed','abandoned')
-        GROUP BY dates.day ORDER BY dates.day""", (kind,))]
+        LEFT JOIN study_time_session s ON date(s.started_at,'localtime')=dates.day AND s.timer_kind=? AND s.status IN ('completed','abandoned')
+        GROUP BY dates.day ORDER BY dates.day""", (week_start, today, kind))]
     projects = [dict(row) for row in con.execute("""SELECT p.id,p.name,p.color,COALESCE(SUM(s.elapsed_seconds),0) seconds
         FROM study_time_project p LEFT JOIN study_time_session s ON s.project_id=p.id AND s.timer_kind=? AND s.status IN ('completed','abandoned')
         GROUP BY p.id,p.name,p.color HAVING seconds>0 ORDER BY seconds DESC,p.name LIMIT 12""", (kind,))]
@@ -90,19 +97,25 @@ def _summary(con, kind: str, now: datetime) -> dict:
     today_projects = [dict(row) for row in con.execute("""SELECT COALESCE(p.id,'') id,COALESCE(p.name,'无项目') label,
         COALESCE(p.color,'#7f9f90') color,SUM(s.elapsed_seconds) seconds FROM study_time_session s
         LEFT JOIN study_time_project p ON p.id=s.project_id WHERE s.timer_kind=? AND s.status IN ('completed','abandoned')
-        AND date(s.started_at)=date('now','localtime') GROUP BY p.id,p.name,p.color ORDER BY seconds DESC""", (kind,))]
+        AND date(s.started_at,'localtime')=? GROUP BY p.id,p.name,p.color ORDER BY seconds DESC""", (kind, today))]
     week_projects = [dict(row) for row in con.execute("""SELECT COALESCE(p.id,'') id,COALESCE(p.name,'无项目') label,
         COALESCE(p.color,'#7f9f90') color,SUM(s.elapsed_seconds) seconds FROM study_time_session s
         LEFT JOIN study_time_project p ON p.id=s.project_id WHERE s.timer_kind=? AND s.status IN ('completed','abandoned')
-        AND date(s.started_at)>=date('now','localtime','-6 days') GROUP BY p.id,p.name,p.color ORDER BY seconds DESC""", (kind,))]
+        AND date(s.started_at,'localtime')>=? GROUP BY p.id,p.name,p.color ORDER BY seconds DESC""", (kind, week_start))]
     return {"today": dict(totals), "days": days, "projects": projects, "charts": {"days": days, "todayHours": today_hours, "todayProjects": today_projects, "weekProjects": week_projects}}
 
 
 def _finish_expired(con, kind: str, now: datetime) -> None:
-    row = con.execute("SELECT * FROM study_time_session WHERE timer_kind=? AND status='running'", (kind,)).fetchone()
-    if row and kind == "pomodoro" and row["planned_seconds"] and _elapsed(row, now) >= row["planned_seconds"]:
-        con.execute("""UPDATE study_time_session SET status='completed',elapsed_seconds=planned_seconds,
-            ended_at=?,last_resumed_at=NULL,updated_at=datetime('now','localtime') WHERE id=?""", (_stamp(now), row["id"]))
+    if kind != "pomodoro":
+        return
+    # Reconcile every expired running session before returning state/summary.  A
+    # client may have been backgrounded at zero, so completion cannot rely on
+    # the browser sending the final action.
+    rows = con.execute("SELECT * FROM study_time_session WHERE timer_kind=? AND status='running'", (kind,)).fetchall()
+    for row in rows:
+        if row["planned_seconds"] and _elapsed(row, now) >= row["planned_seconds"]:
+            con.execute("""UPDATE study_time_session SET status='completed',elapsed_seconds=planned_seconds,
+                ended_at=?,last_resumed_at=NULL,updated_at=datetime('now','localtime') WHERE id=? AND status='running'""", (_stamp(now), row["id"]))
 
 
 def time_state(kind: str, *, history_limit: int = 8) -> dict:
@@ -171,6 +184,11 @@ def time_action(payload: dict) -> dict:
             con.execute("INSERT INTO study_time_session(id,timer_kind,task_text,project_id,status,planned_seconds,started_at,last_resumed_at) VALUES (?,?,?,?,?,?,?,?)", (session_id, kind, task, project_id, "running", planned, stamp, stamp))
         else:
             if not current:
+                # 倒计时归零时前端会发 complete，但本请求里 _finish_expired 可能已先结账；
+                # 若再报错并 rollback，会把刚完成的会话打回 running，页面留下红字且不刷新。
+                if action == "complete":
+                    con.commit()
+                    return time_state(kind)
                 raise ValueError("没有进行中的计时")
             elapsed = _elapsed(current, now)
             if action == "pause":

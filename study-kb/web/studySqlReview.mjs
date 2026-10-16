@@ -143,6 +143,52 @@ export async function renderReviewTablePanel(panel, { api, postApi }) {
       },
     });
   });
+  const startNewRound = async () => {
+    let sessionId = state?.session_id;
+    if (!sessionId) {
+      try { sessionId = JSON.parse(localStorage.getItem("study.review.session.v1")); } catch {}
+    }
+    // 无历史会话：进入当前方案预览。
+    if (!sessionId) return prepare();
+    if (busy) return;
+    try {
+      const previous = await api(`/api/study/review/session/${encodeURIComponent(sessionId)}`);
+      if (!previous?.session_id || !(previous.total > 0)) {
+        page(home);
+        message.textContent = "请先预览方案，再开始一轮学习。";
+        return;
+      }
+      // 当前选中的方案与上次会话不是同一份时，绝不能复用旧批次（否则会一直打开第一章）。
+      const previousConfigId = previous.config?.config_id;
+      if (!previousConfigId || previousConfigId !== selectedId) {
+        message.textContent = "已切换复习方案，请先预览并确认本轮集合。";
+        return prepare();
+      }
+      const confirmed = await confirmWorkbenchAction({
+        title: "开始一轮学习？",
+        message: "将用同一批卡片创建新会话；旧会话和已有评分保留。",
+        confirmLabel: "开始",
+        danger: false,
+      });
+      if (!confirmed) return;
+      await run(async () => {
+        const created = await postApi("/api/study/review/sql-session", {
+          source_session_id: previous.session_id,
+        });
+        render(created);
+        message.textContent = "已开始一轮新的复习。";
+      });
+    } catch (error) {
+      if (/unknown review session|session.*not found|复习会话不存在/i.test(String(error?.message || error))) {
+        try { localStorage.removeItem("study.review.session.v1"); } catch {}
+        state = null;
+        resume.hidden = true;
+        message.textContent = "上次复习会话已不在当前手机主库，请重新预览并开始一轮学习。";
+        return prepare();
+      }
+      message.textContent = `操作失败：${error.message}；原进度保留。`;
+    }
+  };
   const renderCards = () => {
     cards.replaceChildren(management);
     for (const entry of entries) {
@@ -164,7 +210,7 @@ export async function renderReviewTablePanel(panel, { api, postApi }) {
         const actions = make("div", null, "wb-config-actions");
         for (const label of ["预览并筛选", "开始一轮学习"]) {
           const button = make("button", label, label === "开始一轮学习" ? "primary" : "study-preview-button");
-          button.addEventListener("click", () => { void prepare(); });
+          button.addEventListener("click", () => { void (label === "开始一轮学习" ? startNewRound() : prepare()); });
           actions.append(button);
         }
         card.append(actions);
@@ -220,14 +266,36 @@ export async function renderReviewTablePanel(panel, { api, postApi }) {
   leave.addEventListener("click", () => page(home));
   resume.addEventListener("click", () => { void run(async () => {
     const id = state?.session_id || JSON.parse(localStorage.getItem("study.review.session.v1"));
-    render(await api(`/api/study/review/session/${encodeURIComponent(id)}`));
+    try {
+      render(await api(`/api/study/review/session/${encodeURIComponent(id)}`));
+    } catch (error) {
+      if (/unknown review session|session.*not found|复习会话不存在/i.test(String(error?.message || error))) {
+        try { localStorage.removeItem("study.review.session.v1"); } catch {}
+        state = null;
+        resume.hidden = true;
+        message.textContent = "上次复习会话已不在当前手机主库，请重新预览并开始一轮学习。";
+        page(home);
+        return;
+      }
+      throw error;
+    }
   }); });
-  confirmStart.addEventListener("click", () => { void run(async () => {
-    if (!filtered.length || !previewResult) return;
-    if (state?.card && !window.confirm("开始一轮学习？旧会话保留，未评分记录不会更新时间。")) return;
-    render(await postApi("/api/study/review/sql-session", { ...previewPayload, selected_keys: filtered.map((row) => row.card_id), preview_hash: previewResult.preview_hash }));
-    message.textContent = "集合已固定；评分才更新当前记录时间。";
-  }); });
+  confirmStart.addEventListener("click", () => { void (async () => {
+    if (!filtered.length || !previewResult || busy) return;
+    if (state?.card) {
+      const accepted = await confirmWorkbenchAction({
+        title: "开始一轮学习？",
+        message: "旧会话保留，未评分记录不会更新时间。",
+        confirmLabel: "开始",
+        danger: false,
+      });
+      if (!accepted) return;
+    }
+    await run(async () => {
+      render(await postApi("/api/study/review/sql-session", { ...previewPayload, selected_keys: filtered.map((row) => row.card_id), preview_hash: previewResult.preview_hash }));
+      message.textContent = "集合已固定；评分才更新当前记录时间。";
+    });
+  })(); });
   reveal.addEventListener("click", () => {
     if (!state?.card || busy) return;
     revealed = !revealed; backSection.hidden = !revealed; ratings.hidden = !revealed;
