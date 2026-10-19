@@ -1,0 +1,12 @@
+{
+  "server": "http://10.0.0.102:8033",
+  "created": [
+    "node:node_b9dc902184ba4bd19c4360a517",
+    "card:card_9afb314aff2d4a439c7699ae45",
+    "node:node_ba5c63b84f6f48ec9a343249d8",
+    "card:card_a0b4c6305d2242af8f5b5cee11",
+    "node:node_23817fb05a3f49f79a12797387",
+    "card:card_4bb2e7eab97247eb962b16da1b"
+  ],
+  "source": "?????-????????-???(OCR).pdf"
+}

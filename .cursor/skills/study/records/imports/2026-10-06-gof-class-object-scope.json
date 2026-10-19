@@ -1,0 +1,11 @@
+{
+  "batch_id": "gof-class-object-scope-20261006",
+  "server_url": "http://10.205.90.231:8033",
+  "parent_cluster": "card:card_b42fe10b303544f3aa58242627",
+  "anchor_sibling_after": "card:card_8d8693fcf7f0481c8b635e6fd7",
+  "created": {
+    "node_id": "card:card_2973f20e98e64247aed1ae0ed9",
+    "title": "GoF 类模式与对象模式有何区别？"
+  },
+  "source_ref": "用户要求：GoF 三类说明 + 类模式/对象模式专卡（2026-10-06）"
+}

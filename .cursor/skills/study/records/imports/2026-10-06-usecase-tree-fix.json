@@ -1,0 +1,26 @@
+{
+  "batch_id": "usecase-tree-fix-20261006",
+  "server_url": "http://192.168.2.8:8033",
+  "server_push": "ok — 2026-10-06 library/import 已推送（根因：HTTP_PROXY 未 bypass 局域网）",
+  "parent_id": "node:node_699df01582b44c709d05b4487e",
+  "source_ref": "用户反馈：用例模型节点位置不对，应含包含/扩展/泛化（2026-10-06）",
+  "problem": "面向对象/用例模型卡片误挂在【需求分析】卡片下，包含扩展泛化内容 buried 4 层",
+  "changes": [
+    {
+      "action": "move",
+      "node_id": "card:card_586298b076784a009481e68faa",
+      "from_parent": "card:card_c5f11b80d8334248bef43c1841",
+      "to_parent": "node:node_699df01582b44c709d05b4487e",
+      "title": "面向对象建模为什么分为用例模型和分析模型？"
+    },
+    {
+      "action": "content",
+      "node_id": "card:card_70318c763a2a4c0cae7eeee161",
+      "title": "用例之间的包含、扩展和泛化关系分别是什么？",
+      "note": "改为表格对比 include/extend/generalization"
+    }
+  ],
+  "expected_tree": "1.4 → 面向对象建模 → 用例模型四阶段 → 包含/扩展/泛化",
+  "backup": "study-kb/data/backups/study-before-usecase-tree-20261006-153933.sqlite",
+  "push_command": "python study-kb/tools/_push_library.py http://192.168.2.8:8033"
+}

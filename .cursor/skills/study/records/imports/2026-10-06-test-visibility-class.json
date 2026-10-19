@@ -1,0 +1,11 @@
+{
+  "batch_id": "test-visibility-class-20261006",
+  "server_url": "http://10.205.90.231:8033",
+  "parent_id": "node:node_2a3c64355c8c4c5a95a63c9971",
+  "created": {
+    "node_id": "card:card_9980845c0bef4a4484482c5da4",
+    "title": "软件测试按被测程序是否可见分为哪两类？"
+  },
+  "position": "插在「按是否运行程序分为哪两类」之后",
+  "source_ref": "用户要求：软件测试下增加按可见性分类节点（2026-10-06）"
+}

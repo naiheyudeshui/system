@@ -1,0 +1,151 @@
+{
+  "batch_id": "ch01-09-realign-yibentong-20261006",
+  "server": "http://10.205.90.231:8033",
+  "mapping": {
+    "一": "教材3.1-3.5",
+    "二": "教材3.6",
+    "三": "教材第5章",
+    "四": "教材第4章",
+    "五": "教材第9章 信息安全",
+    "六": "教材第6章 企业信息化",
+    "七": "教材第7章 软件工程",
+    "八": "教材第8章 项目管理",
+    "九": "教材第10章 系统规划",
+    "十五": "教材第2章 数学与工程基础"
+  },
+  "created": [
+    {
+      "parent_id": "node:node_1e7cb8760aed43bca715e28d81",
+      "node_id": "card:card_c0505540714644d6954ad100ea",
+      "title": "DAS、NAS、SAN 三种网络存储有何区别？"
+    },
+    {
+      "parent_id": "node:node_1e7cb8760aed43bca715e28d81",
+      "node_id": "card:card_060eac2a01ad4307addcb8e1a3",
+      "title": "CISC 和 RISC 指令系统有何区别？"
+    },
+    {
+      "parent_id": "node:node_da7844d0d205446894b1cf782a",
+      "node_id": "card:card_724a55a1d079404794447b8a2b",
+      "title": "MPP 和 SMP 有何区别？UMA、NUMA、COMA 呢？"
+    },
+    {
+      "parent_id": "node:node_e4029a42b1c5422a87d8918884",
+      "node_id": "card:card_9e66e4c0db634667badbf62cd1",
+      "title": "三级封锁协议各解决什么问题？"
+    },
+    {
+      "parent_id": "node:node_182daae5614d40e985859a3a24",
+      "node_id": "card:card_2608a036cddb4ddab3d9c7b774",
+      "title": "CAP 和 BASE 各是什么？"
+    },
+    {
+      "parent_id": "node:node_ae18b9b4f1184bc4b208459195",
+      "node_id": "card:card_52eff448d74849afa190aba88d",
+      "title": "局域网五种拓扑各有什么特点？"
+    },
+    {
+      "parent_id": "node:node_127716b6c7ba46bf81e2c8a393",
+      "node_id": "card:card_e969f30cf67d4b9fac967844b8",
+      "title": "瀑布、演化、螺旋、喷泉和 4+1 视图是什么？"
+    },
+    {
+      "parent_id": "node:node_3aa1ff3c20aa4c48981c19057d",
+      "node_id": "card:card_0a8221cbc521479d993ca856af",
+      "title": "软件开发环境的集成机制分哪三类？"
+    },
+    {
+      "parent_id": "node:node_2a14f19ed0f34cfeb93437e3bf",
+      "node_id": "node:node_9c708a1a5b7a439aa4a4086f5e",
+      "title": "构件与中间件"
+    },
+    {
+      "parent_id": "node:node_9c708a1a5b7a439aa4a4086f5e",
+      "node_id": "card:card_d1be4562bccf4851b39edb2d67",
+      "title": "构件和中间件要共同解决什么问题？"
+    },
+    {
+      "parent_id": "node:node_9c708a1a5b7a439aa4a4086f5e",
+      "node_id": "card:card_d7954030c3a14af3b4c0459533",
+      "title": "Web 服务的 WSDL 和 UDDI 各做什么？"
+    },
+    {
+      "parent_id": "node:node_ca819eeb64e04866a892428eef",
+      "node_id": "node:node_3d9e1e44484c4566b8b8e70c41",
+      "title": "安全协议"
+    },
+    {
+      "parent_id": "node:node_3d9e1e44484c4566b8b8e70c41",
+      "node_id": "card:card_d6ad1f3a1fc049acb8b558c522",
+      "title": "SSL 由哪三个协议组成？"
+    },
+    {
+      "parent_id": "node:node_ce4ef92c44b04e5a90a8c1efce",
+      "node_id": "card:card_e87532fdb0a64ab5bb5fcb05a3",
+      "title": "十五 数学与工程基础"
+    },
+    {
+      "parent_id": "card:card_e87532fdb0a64ab5bb5fcb05a3",
+      "node_id": "card:card_9c0407519a1f48299a9f3821ea",
+      "title": "最小生成树用什么方法？"
+    },
+    {
+      "parent_id": "card:card_e87532fdb0a64ab5bb5fcb05a3",
+      "node_id": "card:card_1746975645b34fbe9644d78e06",
+      "title": "最短路径怎么递推？"
+    },
+    {
+      "parent_id": "card:card_e87532fdb0a64ab5bb5fcb05a3",
+      "node_id": "card:card_8c96cb53a54949fca930f779e7",
+      "title": "网络最大流怎么算？"
+    },
+    {
+      "parent_id": "card:card_e87532fdb0a64ab5bb5fcb05a3",
+      "node_id": "card:card_fea68c1c40154a6da508fa8e5f",
+      "title": "不确定型决策的五种准则是什么？"
+    },
+    {
+      "parent_id": "card:card_e87532fdb0a64ab5bb5fcb05a3",
+      "node_id": "card:card_683be26070d0416ebfcb27c4a0",
+      "title": "线性规划的模型由什么组成？"
+    },
+    {
+      "parent_id": "card:card_e87532fdb0a64ab5bb5fcb05a3",
+      "node_id": "card:card_41ff67b5e16e4ae9be572c3161",
+      "title": "预测的步骤和方法有哪些？"
+    },
+    {
+      "parent_id": "card:card_e87532fdb0a64ab5bb5fcb05a3",
+      "node_id": "card:card_095b03bd7b7f47e88473fc5a8e",
+      "title": "工程伦理关注哪四类问题、三条原则？"
+    },
+    {
+      "parent_id": "node:node_ce4ef92c44b04e5a90a8c1efce",
+      "node_id": "card:card_4772dbaf8c8a4dfcbcc5a6ae4a",
+      "title": "补充 知识产权"
+    },
+    {
+      "parent_id": "card:card_4772dbaf8c8a4dfcbcc5a6ae4a",
+      "node_id": "card:card_ef7402b4df81443caea51c789e",
+      "title": "知识产权有哪四个特点？保护期怎么记？"
+    },
+    {
+      "parent_id": "card:card_4772dbaf8c8a4dfcbcc5a6ae4a",
+      "node_id": "card:card_a88bd96dd8a2441e9a7e0badbb",
+      "title": "职务作品和委托作品的著作权归谁？"
+    },
+    {
+      "parent_id": "card:card_4772dbaf8c8a4dfcbcc5a6ae4a",
+      "node_id": "card:card_b66cd53b58a64227af73c14234",
+      "title": "哪些情形不构成著作权侵权？"
+    }
+  ],
+  "ocr_gap": [
+    "云计算在目录的第二版改变中列出，OCR正文未形成可背诵段落，未编卡"
+  ],
+  "chapter_nodes": {
+    "十五": "node:node_a6f12006491a4d3688a6279540",
+    "补充知识产权": "node:node_ef9fbd1c6b77481381fd0fa0db"
+  },
+  "sync_mirror": "ok 2026-10-06 phone 10.205.90.231:8033 active_items 326"
+}

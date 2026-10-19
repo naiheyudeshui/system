@@ -1,0 +1,13 @@
+{
+  "server": "http://10.0.0.102:8033",
+  "renamed": 6,
+  "created": [
+    "card:card_eba8ff3e22f9462cb874556684",
+    "card:card_42dab8efa3574d3297bc038586",
+    "card:card_b2def23c65984181ac5b814df4",
+    "card:card_818f05649b6b4006ae517bebe1",
+    "card:card_b1980cbe6ee34dab9e5e442d17",
+    "card:card_6e9918c558164cdab6c1590567"
+  ],
+  "source": "?????-????????-???(OCR).pdf"
+}

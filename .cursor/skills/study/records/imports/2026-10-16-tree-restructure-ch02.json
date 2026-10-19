@@ -1,0 +1,31 @@
+[
+  {
+    "parent": "node:node_69cf7bfdcc9e4c85a13e997a9a",
+    "groups": [
+      {"title": "进程基础与调度", "keywords": ["进程", "作业", "调度"]},
+      {"title": "同步、互斥与信号量", "keywords": ["同步", "互斥", "信号量", "PV", "临界"]},
+      {"title": "死锁分析与处理", "keywords": ["死锁", "银行家", "资源图"]}
+    ]
+  },
+  {
+    "parent": "node:node_76b91e571f334edc829148c36c",
+    "groups": [
+      {"title": "存储管理基础", "keywords": ["存储管理", "地址", "分区", "页面", "段式"]},
+      {"title": "虚拟存储与页面置换", "keywords": ["虚拟存储", "页面置换", "OPT", "FIFO", "LRU", "抖动"]}
+    ]
+  },
+  {
+    "parent": "node:node_cabee94232764eed89bc1b7d6e",
+    "groups": [
+      {"title": "I/O设备与设备管理", "keywords": ["I/O", "设备", "通道", "中断"]},
+      {"title": "SPOOLing与虚拟设备", "keywords": ["SPOOL", "虚拟设备", "输入井", "输出井"]}
+    ]
+  },
+  {
+    "parent": "node:node_f62ff5b1d547406da5fefc274e",
+    "groups": [
+      {"title": "文件系统与目录", "keywords": ["文件系统", "目录", "文件控制块", "路径"]},
+      {"title": "文件空间、共享与保护", "keywords": ["存储空间", "空闲", "共享", "保护", "索引"]}
+    ]
+  }
+]

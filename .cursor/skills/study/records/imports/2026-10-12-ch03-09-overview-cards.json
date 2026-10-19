@@ -1,0 +1,14 @@
+{
+  "server": "http://10.0.0.102:8033",
+  "created": [
+    "card:card_ac33f7375a6f4d0382e476a246",
+    "card:card_c2b8b0bcab4a4a2087a1ce4985",
+    "card:card_5c4e24817e164163805bdb6718",
+    "card:card_a6e82150e5f146d58625fe841c",
+    "card:card_ecc0127c8bc140aab1aa88ba4b",
+    "card:card_2b299d853e6542a680ca1e38a0",
+    "card:card_96c92a0bbff44541b6c06b956f"
+  ],
+  "skipped": [],
+  "encoding": "unicode-json"
+}

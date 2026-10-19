@@ -1,0 +1,213 @@
+{
+  "batch_id": "ch14-ops-maintenance-20261006-204500",
+  "parent_id": "node:node_b6971c84cdf0448a9f93931ab4",
+  "parent_path": "系统分析师一本通精华知识点（第二版） / 十四 系统运行与维护",
+  "source_ref": "系统分析师教程（第2版）第15章 系统运行与维护 + 一本通十四章笔记（2026-10-06）",
+  "server": "http://127.0.0.1:8033",
+  "note": "复用已有空章节节点 node_b6971c84cdf0448a9f93931ab4；手机主库 10.205.90.231:8033 导入时不可达，写入本机 workbench",
+  "created_outlines": [
+    {
+      "node_id": "node:node_1a3f0671890a4e18b54488b7bd",
+      "title": "运维技术指标",
+      "item_type": "chapter"
+    },
+    {
+      "node_id": "node:node_c3b750bb8f024277b42ee03e57",
+      "title": "系统运行管理",
+      "item_type": "chapter"
+    },
+    {
+      "node_id": "node:node_262b311f901349b19df22a6615",
+      "title": "运行管理概述",
+      "item_type": "chapter"
+    },
+    {
+      "node_id": "node:node_40eee89144f2484e8253a62e30",
+      "title": "用户管理",
+      "item_type": "chapter"
+    },
+    {
+      "node_id": "node:node_feafa4cd16574c13b450598b9a",
+      "title": "网络资源管理",
+      "item_type": "chapter"
+    },
+    {
+      "node_id": "node:node_fbb9d343a0af4bdfa228f72bf2",
+      "title": "软件资源管理",
+      "item_type": "chapter"
+    },
+    {
+      "node_id": "node:node_fd118ee8f7764db1ba4e54e481",
+      "title": "系统故障管理",
+      "item_type": "chapter"
+    },
+    {
+      "node_id": "node:node_76631d7630fb46a79513297234",
+      "title": "软件系统维护",
+      "item_type": "chapter"
+    },
+    {
+      "node_id": "node:node_9fd82b56a0274118af109c3a2e",
+      "title": "系统评价",
+      "item_type": "chapter"
+    },
+    {
+      "node_id": "node:node_149a0186b1ee49889be5c6d16b",
+      "title": "遗留系统处置",
+      "item_type": "chapter"
+    },
+    {
+      "node_id": "node:node_4e1c9665e1174c92924da714da",
+      "title": "新旧系统转换",
+      "item_type": "chapter"
+    }
+  ],
+  "created_cards": [
+    {
+      "node_id": "card:card_5d57038686bc42ec8eaf4a9c6f",
+      "card_id": "card_5d57038686bc42ec8eaf4a9c6f",
+      "title": "系统生命周期各阶段成本占比是多少？运维阶段为何最重？",
+      "sort_order": 1
+    },
+    {
+      "node_id": "card:card_52c89135abe0456a9a98bbc582",
+      "card_id": "card_52c89135abe0456a9a98bbc582",
+      "title": "MTTR、MTBF、MTTF、MTTA 分别是什么？公式怎么记？",
+      "sort_order": 2
+    },
+    {
+      "node_id": "card:card_889f110e556e447fa6d4beedc7",
+      "card_id": "card_889f110e556e447fa6d4beedc7",
+      "title": "系统运行管理的目的是什么？日常工作包括哪些？",
+      "sort_order": 1
+    },
+    {
+      "node_id": "card:card_7ff8d98e3f8548dfbcb69b264b",
+      "card_id": "card_7ff8d98e3f8548dfbcb69b264b",
+      "title": "统一用户认证有什么好处？常见认证方式有哪四种？",
+      "sort_order": 1
+    },
+    {
+      "node_id": "card:card_1de263a63bef472688891edb01",
+      "card_id": "card_1de263a63bef472688891edb01",
+      "title": "安全审计包括哪些内容？",
+      "sort_order": 2
+    },
+    {
+      "node_id": "card:card_ee94531e9b3e4893a6d1339f9e",
+      "card_id": "card_ee94531e9b3e4893a6d1339f9e",
+      "title": "网络资源管理的五大功能是什么？",
+      "sort_order": 1
+    },
+    {
+      "node_id": "card:card_9bbb6ab06a5c4c54b8c9c8d6e1",
+      "card_id": "card_9bbb6ab06a5c4c54b8c9c8d6e1",
+      "title": "网络资源管理系统应具备哪些能力？",
+      "sort_order": 2
+    },
+    {
+      "node_id": "card:card_9c68ca0e51374773ab9142ddf1",
+      "card_id": "card_9c68ca0e51374773ab9142ddf1",
+      "title": "软件资源管理包括哪三大任务？",
+      "sort_order": 1
+    },
+    {
+      "node_id": "card:card_6499004874464bc089d0027a23",
+      "card_id": "card_6499004874464bc089d0027a23",
+      "title": "什么是构件库？软件分发任务有哪些？",
+      "sort_order": 2
+    },
+    {
+      "node_id": "card:card_27ad2570da934f22aeaea97ed6",
+      "card_id": "card_27ad2570da934f22aeaea97ed6",
+      "title": "故障管理的目标是什么？影响度、紧迫性、优先级如何确定？",
+      "sort_order": 1
+    },
+    {
+      "node_id": "card:card_ee05c43cca194ba3bcfb3a99a1",
+      "card_id": "card_ee05c43cca194ba3bcfb3a99a1",
+      "title": "故障管理的五项活动是什么？",
+      "sort_order": 2
+    },
+    {
+      "node_id": "card:card_e1eb625463b04cd58bab328b63",
+      "card_id": "card_e1eb625463b04cd58bab328b63",
+      "title": "硬件和软件监视各做什么？如何收集故障信息？",
+      "sort_order": 3
+    },
+    {
+      "node_id": "card:card_2cb18d8dcf27489faaee6a075b",
+      "card_id": "card_2cb18d8dcf27489faaee6a075b",
+      "title": "故障恢复处理分哪几层？常见故障原因有哪些？",
+      "sort_order": 4
+    },
+    {
+      "node_id": "card:card_6c09661cda3145b9b6b15d2a82",
+      "card_id": "card_6c09661cda3145b9b6b15d2a82",
+      "title": "软件可维护性的六个子特性是什么？",
+      "sort_order": 1
+    },
+    {
+      "node_id": "card:card_affccd90f4634a5c99b235109f",
+      "card_id": "card_affccd90f4634a5c99b235109f",
+      "title": "软件维护的对象类型和四种维护类型分别是什么？",
+      "sort_order": 2
+    },
+    {
+      "node_id": "card:card_2d3c681740d34a85a68aea7c79",
+      "card_id": "card_2d3c681740d34a85a68aea7c79",
+      "title": "软件维护有哪些度量指标？影响维护工作量的因素有哪些？",
+      "sort_order": 3
+    },
+    {
+      "node_id": "card:card_ffd3fb885ca04f419f508c1bdc",
+      "card_id": "card_ffd3fb885ca04f419f508c1bdc",
+      "title": "提高软件可维护性的五个阶段和维护工作流程是什么？",
+      "sort_order": 4
+    },
+    {
+      "node_id": "card:card_eb11ba5f3c3a471e9f4ecbd6ac",
+      "card_id": "card_eb11ba5f3c3a471e9f4ecbd6ac",
+      "title": "系统评价的目的是什么？评价步骤和评价维度有哪些？",
+      "sort_order": 1
+    },
+    {
+      "node_id": "card:card_0434967ace82472da433eecfd1",
+      "card_id": "card_0434967ace82472da433eecfd1",
+      "title": "评价指标设计的四种途径和三种赋权方法是什么？",
+      "sort_order": 2
+    },
+    {
+      "node_id": "card:card_7d333085552b420a8463e96fe8",
+      "card_id": "card_7d333085552b420a8463e96fe8",
+      "title": "遗留系统有什么特点？评价步骤有哪些？",
+      "sort_order": 1
+    },
+    {
+      "node_id": "card:card_ddba20dc773846858b6a99040d",
+      "card_id": "card_ddba20dc773846858b6a99040d",
+      "title": "遗留系统四象限处置策略是什么？",
+      "sort_order": 2
+    },
+    {
+      "node_id": "card:card_ba9aaea954c34e9ba81f695d08",
+      "card_id": "card_ba9aaea954c34e9ba81f695d08",
+      "title": "新旧系统转换的三种方案和数据迁移三种方法是什么？",
+      "sort_order": 1
+    },
+    {
+      "node_id": "card:card_1ea1e0073ecb4fffa33e64dd1a",
+      "card_id": "card_1ea1e0073ecb4fffa33e64dd1a",
+      "title": "系统转换的三阶段和七项准备工作是什么？ETL 和验证方法有哪些？",
+      "sort_order": 2
+    }
+  ],
+  "review_history_preserved": true,
+  "checks": {
+    "probe": "writable (localhost fallback)",
+    "node_count_after": 168,
+    "subtree_outlines": 11,
+    "subtree_cards": 23,
+    "total_created": 34
+  }
+}

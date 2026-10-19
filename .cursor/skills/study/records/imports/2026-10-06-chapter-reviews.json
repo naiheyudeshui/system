@@ -1,0 +1,107 @@
+{
+  "server": "http://10.205.90.231:8033",
+  "skipped_existing": [
+    "十 软件需求工程",
+    "十一 软件架构设计",
+    "十二系统设计",
+    "十三 软件实现和测试"
+  ],
+  "created": [
+    {
+      "id": "study.review.ch01.v1",
+      "name": "一 计算机系统知识",
+      "node_id": "node:node_1ecd5cbd63d142ae91061a5f55",
+      "revision": 1,
+      "matched": 29,
+      "selected": 29
+    },
+    {
+      "id": "study.review.ch02.v1",
+      "name": "二 操作系统知识",
+      "node_id": "node:node_14e80d2d8b264d1aa2475562d2",
+      "revision": 1,
+      "matched": 49,
+      "selected": 49
+    },
+    {
+      "id": "study.review.ch03.v1",
+      "name": "三 数据库系统",
+      "node_id": "node:node_83fd9ae7e7f64224a0c3436c84",
+      "revision": 1,
+      "matched": 33,
+      "selected": 33
+    },
+    {
+      "id": "study.review.ch04.v1",
+      "name": "四 计算机网络",
+      "node_id": "node:node_2a14f19ed0f34cfeb93437e3bf",
+      "revision": 1,
+      "matched": 24,
+      "selected": 24
+    },
+    {
+      "id": "study.review.ch05.v1",
+      "name": "五 信息安全",
+      "node_id": "node:node_ca819eeb64e04866a892428eef",
+      "revision": 1,
+      "matched": 20,
+      "selected": 20
+    },
+    {
+      "id": "study.review.ch06.v1",
+      "name": "六 企业信息化",
+      "node_id": "node:node_f349ff3635aa4b39ad2d325ef1",
+      "revision": 1,
+      "matched": 22,
+      "selected": 22
+    },
+    {
+      "id": "study.review.ch07.v1",
+      "name": "七 软件工程",
+      "node_id": "node:node_283efd48baf34fa1949bb8e8e5",
+      "revision": 1,
+      "matched": 14,
+      "selected": 14
+    },
+    {
+      "id": "study.review.ch08.v1",
+      "name": "八 项目管理",
+      "node_id": "node:node_c04293d5435648fe93ae3dd487",
+      "revision": 1,
+      "matched": 16,
+      "selected": 16
+    },
+    {
+      "id": "study.review.ch09.v1",
+      "name": "九 系统规划与可行性",
+      "node_id": "node:node_688165774dcf4dfe876a779aca",
+      "revision": 1,
+      "matched": 13,
+      "selected": 13
+    },
+    {
+      "id": "study.review.ch14.v1",
+      "name": "十四系统运行与维护",
+      "node_id": "node:node_b6971c84cdf0448a9f93931ab4",
+      "revision": 1,
+      "matched": 23,
+      "selected": 23
+    },
+    {
+      "id": "study.review.ch15.v1",
+      "name": "十五 数学与工程基础",
+      "node_id": "node:node_a6f12006491a4d3688a6279540",
+      "revision": 1,
+      "matched": 8,
+      "selected": 8
+    },
+    {
+      "id": "study.review.chip.v1",
+      "name": "补充 知识产权",
+      "node_id": "node:node_ef9fbd1c6b77481381fd0fa0db",
+      "revision": 1,
+      "matched": 4,
+      "selected": 4
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "batch_id": "2026-10-12-ch07-09-deep-pass",
+  "server": "http://10.0.0.102:8033",
+  "added": [
+    "项目范围管理",
+    "项目进度管理",
+    "项目成本管理",
+    "项目风险管理"
+  ],
+  "moved": [
+    "配置管理 -> 七 软件工程",
+    "软件质量管理 -> 七 软件工程"
+  ],
+  "merged": [
+    "数据挖掘常见任务有哪些？：保留内容更完整卡片并归档重复卡片"
+  ],
+  "repaired": [
+    "硬件冗余三种方式是什么？：移除问号和损坏公式"
+  ],
+  "validation": {
+    "active_items": 476,
+    "question_mark_titles_or_content": 0,
+    "duplicate_groups_except_intentional_chapter_maps": 0,
+    "probe_writable": true
+  },
+  "mirror": "study-kb/data/study.sqlite",
+  "mirror_backup": "study-kb/data/backups/study-before-mirror-20261012-170322.sqlite"
+}

@@ -1,0 +1,17 @@
+{
+  "batch_id": "usecase-step4-fix-20261006",
+  "server_url": "http://10.205.90.231:8033",
+  "source_ref": "用户反馈：④调整用例模型节点内容误混包含/扩展/泛化（2026-10-06）",
+  "changes": [
+    {
+      "node_id": "card:card_64422b2dd2174820ad9cf24892",
+      "title": "④调整用例模型要做什么？",
+      "note": "改为调整清单；明确本步不讲三种关系定义，指向专卡 card_70318c"
+    },
+    {
+      "node_id": "card:card_4644323c945642dba9bb562d22",
+      "note": "四阶段总览中④表述与专卡分工"
+    }
+  ],
+  "related_card": "card:card_70318c763a2a4c0cae7eeee161（包含/扩展/泛化专卡，未改）"
+}

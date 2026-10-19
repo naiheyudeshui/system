@@ -1,0 +1,21 @@
+{
+  "batch_id": "ch13-causal-20261005-124139",
+  "parent_id": "node:node_83021bccd57b43efb45debc4ca",
+  "updated_cards": [
+    {
+      "node_id": "card:card_03e3f31b7f584ffca16189db73",
+      "change": "扩充因果图小节并指向专卡"
+    }
+  ],
+  "created_cards": [
+    {
+      "node_id": "card:card_fc93617ea58749d08d7dcb9c4d",
+      "card_id": "card_fc93617ea58749d08d7dcb9c4d",
+      "title": "如何使用因果图法设计黑盒测试用例？",
+      "sort_order": 13
+    }
+  ],
+  "source_ref": "用户笔记+一本通+软考因果图法（2026-10-05）",
+  "backup": "study-kb/data/backups/study-before-ch13-causal-20261005-124139.sqlite",
+  "review_history_preserved": true
+}

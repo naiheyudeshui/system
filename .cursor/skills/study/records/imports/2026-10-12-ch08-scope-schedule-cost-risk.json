@@ -1,0 +1,15 @@
+{
+  "server": "http://10.0.0.102:8033",
+  "created": [
+    "node:node_765b88ea2673496f953d0d456b",
+    "card:card_d769ce262e404186b477c6a40e",
+    "node:node_24dd7dbc4ab3452b90f4ec0394",
+    "card:card_3925c7a6ae5e41779c8daf69a3",
+    "node:node_5800a0084e3d4cb69ff3327a5a",
+    "card:card_70ceaacbac0141139ee7b53f5f",
+    "node:node_07f50b6f1e41469d8b4f1ee1ec",
+    "card:card_bd6a02b202ea42ab9f3bf81ad3"
+  ],
+  "sections": 4,
+  "encoding": "unicode-json"
+}

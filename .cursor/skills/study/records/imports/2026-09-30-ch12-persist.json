@@ -1,0 +1,32 @@
+{
+  "batch_id": "ch12-persist-20260930-213840",
+  "parent_id": "node:node_2aac7c0dfe9d475c885459b20f",
+  "parent_path": "系统分析师一本通精华知识点（第二版） / 十二系统设计",
+  "source_ref": "用户笔记：面向对象持久化与CMP/Hibernate/iBatis/JDO（2026-09-30）",
+  "backup": "study-kb/data/backups/study-before-ch12-persist-20260930-213840.sqlite",
+  "created_cards": [
+    {
+      "node_id": "card:card_407800e6a60f43138398c27aa6",
+      "card_id": "card_407800e6a60f43138398c27aa6",
+      "title": "什么是面向对象的持久化？和ORM是什么关系？",
+      "sort_order": 5
+    },
+    {
+      "node_id": "card:card_098cd4b41aec4bb196a0c62797",
+      "card_id": "card_098cd4b41aec4bb196a0c62797",
+      "title": "对象持久化技术有哪些优点？",
+      "sort_order": 6
+    },
+    {
+      "node_id": "card:card_b34f46e7a8334eecb8b785d913",
+      "card_id": "card_b34f46e7a8334eecb8b785d913",
+      "title": "CMP、Hibernate、iBatis、JDO有何相同与差异？",
+      "sort_order": 7
+    }
+  ],
+  "review_history_preserved": true,
+  "checks": {
+    "integrity_check": "ok",
+    "foreign_key_check": []
+  }
+}

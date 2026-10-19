@@ -1,0 +1,12 @@
+{
+  "batch_id": "ch13-rename-20261005-102514",
+  "updated_nodes": [
+    {
+      "node_id": "node:node_83021bccd57b43efb45debc4ca",
+      "old_title": "十三 软件重用",
+      "new_title": "十三 软件实现和测试"
+    }
+  ],
+  "backup": "study-kb/data/backups/study-before-ch13-rename-20261005-102514.sqlite",
+  "review_history_preserved": true
+}

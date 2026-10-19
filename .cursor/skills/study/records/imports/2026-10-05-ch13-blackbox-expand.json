@@ -1,0 +1,14 @@
+{
+  "batch_id": "ch13-blackbox-expand-20261005-123608",
+  "parent_id": "node:node_83021bccd57b43efb45debc4ca",
+  "updated_cards": [
+    {
+      "node_id": "card:card_03e3f31b7f584ffca16189db73",
+      "title": "黑盒测试用例设计方法有哪些？各是什么思路？",
+      "change": "扩充等价类/边界值/错误推测/因果图详述及用例设计原则"
+    }
+  ],
+  "source_ref": "用户笔记+一本通：黑盒测试用例设计方法（扩充2026-10-05）",
+  "backup": "study-kb/data/backups/study-before-ch13-blackbox-expand-20261005-123608.sqlite",
+  "review_history_preserved": true
+}

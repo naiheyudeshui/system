@@ -1,0 +1,20 @@
+{
+  "batch_id": "ch13-whitebox3-20261005-122700",
+  "parent_id": "node:node_83021bccd57b43efb45debc4ca",
+  "parent_path": "系统分析师一本通精华知识点（第二版） / 十三 软件实现和测试",
+  "source_ref": "用户笔记+一本通：白盒测试三步法（2026-10-05）",
+  "backup": "study-kb/data/backups/study-before-ch13-whitebox3-20261005-122700.sqlite",
+  "created_cards": [
+    {
+      "node_id": "card:card_2e173200c43841a2a8c89f662f",
+      "card_id": "card_2e173200c43841a2a8c89f662f",
+      "title": "白盒测试的三步法是什么？第二步和第三步有何区别？",
+      "sort_order": 12
+    }
+  ],
+  "review_history_preserved": true,
+  "checks": {
+    "integrity_check": "ok",
+    "foreign_key_check": []
+  }
+}

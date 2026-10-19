@@ -1,0 +1,11 @@
+{
+  "batch_id": "2026-10-12-ch01-02-overview-cards",
+  "server": "http://10.0.0.102:8033",
+  "operation": "新增第一、第二章本章知识地图卡",
+  "created": [
+    "card:card_8511cdfefe6449248a850b7eea",
+    "card:card_1294eb54cbb24d158fc4041bed"
+  ],
+  "encoding_check": "content_md question_marks=0",
+  "note": "通过 JSON Unicode 转义提交，避免 PowerShell 管道编码降级。"
+}

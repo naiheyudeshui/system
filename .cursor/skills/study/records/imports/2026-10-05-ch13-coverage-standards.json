@@ -1,0 +1,20 @@
+{
+  "batch_id": "ch13-coverage-20261005-121124",
+  "parent_id": "node:node_83021bccd57b43efb45debc4ca",
+  "parent_path": "系统分析师一本通精华知识点（第二版） / 十三 软件实现和测试",
+  "source_ref": "用户笔记+一本通：白盒覆盖标准与逻辑覆盖六类（2026-10-05）",
+  "backup": "study-kb/data/backups/study-before-ch13-coverage-20261005-121124.sqlite",
+  "created_cards": [
+    {
+      "node_id": "card:card_dd1f996917e64ca2830764693f",
+      "card_id": "card_dd1f996917e64ca2830764693f",
+      "title": "白盒测试的覆盖标准有哪些？逻辑覆盖包括哪几种？",
+      "sort_order": 11
+    }
+  ],
+  "review_history_preserved": true,
+  "checks": {
+    "integrity_check": "ok",
+    "foreign_key_check": []
+  }
+}

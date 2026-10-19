@@ -1,0 +1,20 @@
+{
+  "batch_id": "ch12-output-design-20261001-222135",
+  "parent_id": "node:node_2aac7c0dfe9d475c885459b20f",
+  "parent_path": "系统分析师一本通精华知识点（第二版） / 十二系统设计",
+  "source_ref": "用户笔记+一本通：系统输出设计三方面与七原则（2026-10-01）",
+  "backup": "study-kb/data/backups/study-before-ch12-output-design-20261001-222135.sqlite",
+  "created_cards": [
+    {
+      "node_id": "card:card_3cda6b17d5ff4a209b8aac6817",
+      "card_id": "card_3cda6b17d5ff4a209b8aac6817",
+      "title": "系统设计时输出设计包括哪些内容和原则？",
+      "sort_order": 12
+    }
+  ],
+  "review_history_preserved": true,
+  "checks": {
+    "integrity_check": "ok",
+    "foreign_key_check": []
+  }
+}

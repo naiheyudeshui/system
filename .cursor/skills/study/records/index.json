@@ -578,6 +578,90 @@
           "label": "import-audit"
         }
       ]
+    },
+    {
+      "id": "study-import.ch07-four-models.2026-10-17",
+      "path": "imports/2026-10-17-ch07-four-models.md",
+      "description": "第七章开发模型总览补充 CBSD、形式化方法、变换和智能模型四张子卡",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "import-audit"
+        }
+      ]
+    },
+    {
+      "id": "study-import.ch07-model-choice-format.2026-10-17",
+      "path": "imports/2026-10-17-ch07-model-choice-format.md",
+      "description": "原位修正软件开发过程模型选择卡的 Markdown 表格及错误的一一对应关系",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "import-audit"
+        }
+      ]
+    },
+    {
+      "id": "study-import.ch07-rad-child.2026-10-17",
+      "path": "imports/2026-10-17-ch07-rad-child.md",
+      "description": "在过程模型选择卡下新增 RAD 的四个基本思想与五个开发阶段",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "import-audit"
+        }
+      ]
+    },
+    {
+      "id": "study-import.ch07-agile-rup-split.2026-10-17",
+      "path": "imports/2026-10-17-ch07-agile-rup-split.md",
+      "description": "将敏捷方法与 RUP 合并卡拆成两张扩充卡，归档旧卡",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "import-audit"
+        }
+      ]
+    },
+    {
+      "id": "study-import.archived-purge.2026-10-17",
+      "path": "imports/2026-10-17-archived-purge.md",
+      "description": "物理清理全部 52 个已归档且不在活动树中的知识节点",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "import-audit"
+        }
+      ]
+    },
+    {
+      "id": "study-import.ch07-agile-xp-dsdm-scrum.2026-10-17",
+      "path": "imports/2026-10-17-ch07-agile-xp-dsdm-scrum.md",
+      "description": "在敏捷方法下增加 XP、DSDM、Scrum 三张可复习子卡",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "import-audit"
+        }
+      ]
+    },
+    {
+      "id": "study-import.ch07-rup-three-card-correction.2026-10-17",
+      "path": "imports/2026-10-17-ch07-rup-three-card-correction.md",
+      "description": "更正 RUP 为工作流、阶段、特点三张总括卡并清理误建节点",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "import-audit"
+        }
+      ]
     }
   ]
 }

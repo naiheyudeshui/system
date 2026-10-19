@@ -1,0 +1,18 @@
+{
+  "batch_id": "ch12-input-update-20261001-221122",
+  "parent_id": "node:node_2aac7c0dfe9d475c885459b20f",
+  "updated_cards": [
+    {
+      "node_id": "card:card_6fa000ac006e43e99d5ed391e3",
+      "title": "系统设计时输入要考虑哪些因素？",
+      "change": "追加输入设计七步，保留八因素表"
+    }
+  ],
+  "source_ref": "对话整理：系统设计输入设计七步+八因素（2026-10-01）",
+  "backup": "study-kb/data/backups/study-before-ch12-input-update-20261001-221122.sqlite",
+  "review_history_preserved": true,
+  "checks": {
+    "integrity_check": "ok",
+    "foreign_key_check": []
+  }
+}

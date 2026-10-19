@@ -1,0 +1,21 @@
+{
+  "batch_id": "2026-10-12-ch01-pdf-realign",
+  "source": "系统分析师-一本通精华知识点-第二版(OCR).pdf",
+  "operation": "按PDF第一章小节重新归类",
+  "moved_to_instruction_system": [
+    "card:card_7cf60bb760ea4762821955a9bb",
+    "card:card_dd683c1eeb9b445bbc8cc3f78f"
+  ],
+  "archived_duplicate": "card:card_060eac2a01ad4307addcb8e1a3",
+  "sections": [
+    "1 计算机系统概述",
+    "校验码（本章保留）",
+    "2 存储系统",
+    "3 输入输出系统",
+    "4 指令系统",
+    "5 多处理机系统",
+    "6 系统可靠性分析"
+  ],
+  "active_items_after": 472,
+  "mirror": "study-kb/data/study.sqlite"
+}

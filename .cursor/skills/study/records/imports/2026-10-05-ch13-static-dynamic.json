@@ -1,0 +1,32 @@
+{
+  "batch_id": "ch13-static-dynamic-20261005-130145",
+  "parent_id": "node:node_83021bccd57b43efb45debc4ca",
+  "parent_path": "系统分析师一本通精华知识点（第二版） / 十三 软件实现和测试",
+  "source_ref": "用户笔记+一本通：静态测试/动态测试/自动化测试（2026-10-05）",
+  "backup": "study-kb/data/backups/study-before-ch13-static-dynamic-20261005-130145.sqlite",
+  "created_cards": [
+    {
+      "node_id": "card:card_1d9cae10549d47518d8fce59a9",
+      "card_id": "card_1d9cae10549d47518d8fce59a9",
+      "title": "软件测试按是否运行程序分为哪两类？",
+      "sort_order": 14
+    },
+    {
+      "node_id": "card:card_1e20dc259e99450a84c75cf160",
+      "card_id": "card_1e20dc259e99450a84c75cf160",
+      "title": "静态测试有哪些方法？代码检查三种形式有何区别？",
+      "sort_order": 15
+    },
+    {
+      "node_id": "card:card_8b0a98d3e0fc45ee9b16581b3a",
+      "card_id": "card_8b0a98d3e0fc45ee9b16581b3a",
+      "title": "动态测试是什么？自动化测试包括哪些？",
+      "sort_order": 16
+    }
+  ],
+  "review_history_preserved": true,
+  "checks": {
+    "integrity_check": "ok",
+    "foreign_key_check": []
+  }
+}

@@ -1,0 +1,407 @@
+{
+  "batch_id": "ch01-09-double-20261006",
+  "server": "http://10.205.90.231:8033",
+  "added": 80,
+  "created": [
+    {
+      "parent": "hw",
+      "node_id": "card:card_3c2ea38f8e3c419cafd725c49b",
+      "title": "系统软件分成哪五类？固件是什么？"
+    },
+    {
+      "parent": "hw",
+      "node_id": "card:card_09cf5a3a70f8411a89f145d47e",
+      "title": "计算机系统从外到内分哪几层？"
+    },
+    {
+      "parent": "code",
+      "node_id": "card:card_64dcc9b3f06e438b9f446aaa4b",
+      "title": "码距越大说明什么？奇偶校验能纠错吗？"
+    },
+    {
+      "parent": "code",
+      "node_id": "card:card_9197f0fd496f4662a4e0cde20d",
+      "title": "海明码怎么指出哪一位出错？"
+    },
+    {
+      "parent": "store",
+      "node_id": "card:card_eec610cd828046c9a3ff23e412",
+      "title": "存储虚拟化的对称式和非对称式有何区别？"
+    },
+    {
+      "parent": "mp",
+      "node_id": "card:card_db5fb93ff2bc4c068e3b8b3699",
+      "title": "多处理机和并行处理机差在哪？互连有哪三种？"
+    },
+    {
+      "parent": "os",
+      "node_id": "card:card_6d1f587828574bc4bae24bee39",
+      "title": "操作系统的定义是什么？"
+    },
+    {
+      "parent": "os",
+      "node_id": "card:card_984329c36cba4ea28bbcc6d766",
+      "title": "操作系统的两个重要作用是什么？"
+    },
+    {
+      "parent": "os",
+      "node_id": "card:card_520a597f43584ee594f9c1ebe6",
+      "title": "操作系统的四个特征是什么？"
+    },
+    {
+      "parent": "os",
+      "node_id": "card:card_f7c685de46c142999b00f40dff",
+      "title": "操作系统五大功能各管什么？"
+    },
+    {
+      "parent": "os",
+      "node_id": "card:card_1aa89b64180149d6a9add25251",
+      "title": "批处理、分时、实时操作系统有何区别？"
+    },
+    {
+      "parent": "os",
+      "node_id": "card:card_86d6fb95c43a48578fe473027e",
+      "title": "网络操作系统和分布式操作系统有何区别？"
+    },
+    {
+      "parent": "os",
+      "node_id": "card:card_7ebc87777c354954bd9bee3ac0",
+      "title": "嵌入式操作系统有哪五个特点？初始化分哪三步？"
+    },
+    {
+      "parent": "os",
+      "node_id": "card:card_f454fd78a70f444e91f16706f2",
+      "title": "互联网环境对操作系统有哪五个要求？"
+    },
+    {
+      "parent": "os",
+      "node_id": "card:card_97974e787c9740d4b052eb01a1",
+      "title": "常见微型计算机操作系统有哪些？"
+    },
+    {
+      "parent": "proc",
+      "node_id": "card:card_6c5c774e4a33437f86aa092b40",
+      "title": "进程由哪三部分组成？"
+    },
+    {
+      "parent": "proc",
+      "node_id": "card:card_f8aa1c98c23d4872a4f0c1fb96",
+      "title": "进程五状态里新建态和终止态是什么？"
+    },
+    {
+      "parent": "proc",
+      "node_id": "card:card_4c4945e50f804a9f8909b7b222",
+      "title": "前趋图说明什么？"
+    },
+    {
+      "parent": "proc",
+      "node_id": "card:card_2b13b21d1508459dbfd67375ab",
+      "title": "进程资源图里怎样判断死锁？怎样化简？"
+    },
+    {
+      "parent": "proc",
+      "node_id": "card:card_49377acdeaff4f04932d159242",
+      "title": "互斥和同步是一回事吗？"
+    },
+    {
+      "parent": "proc",
+      "node_id": "card:card_3c38dfe7ec364172975bbdb637",
+      "title": "临界资源和临界区是什么？两类信号量初值是多少？"
+    },
+    {
+      "parent": "proc",
+      "node_id": "card:card_25c767fd7fad491fb51409275e",
+      "title": "生产者消费者里 PV 的大致顺序是什么？"
+    },
+    {
+      "parent": "mem",
+      "node_id": "card:card_5e0c348f361e405f83d7c30106",
+      "title": "首次、最佳、最差、循环首次适应有何区别？"
+    },
+    {
+      "parent": "mem",
+      "node_id": "card:card_3f6a64cf4c2c4e1dbe6d35c89f",
+      "title": "页式存储的地址怎么变物理地址？优缺点是什么？"
+    },
+    {
+      "parent": "mem",
+      "node_id": "card:card_391c1a3a57284f2d93d3e5e6d2",
+      "title": "OPT、FIFO、LRU 各按什么淘汰页面？"
+    },
+    {
+      "parent": "mem",
+      "node_id": "card:card_8e7a2056b88f4b0eac7b93ee7c",
+      "title": "快表和慢表差在哪？"
+    },
+    {
+      "parent": "mem",
+      "node_id": "card:card_93ba711ffcf4470ea98803077b",
+      "title": "分段和分页的根本差别是什么？"
+    },
+    {
+      "parent": "mem",
+      "node_id": "card:card_c5831ea2d5f3452db86616f964",
+      "title": "虚拟存储器的容量和速度由什么决定？"
+    },
+    {
+      "parent": "dev",
+      "node_id": "card:card_3ddde78f681b4190bfe716ae57",
+      "title": "I/O 系统由什么组成？设备怎么分类？"
+    },
+    {
+      "parent": "dev",
+      "node_id": "card:card_2be10b11d1a440f890aabc05c9",
+      "title": "一次读盘请求经过 I/O 软件的哪几层？"
+    },
+    {
+      "parent": "dev",
+      "node_id": "card:card_9a07590a9bf04c29b650e794c7",
+      "title": "SPOOLing 的输入井和输出井是做什么的？"
+    },
+    {
+      "parent": "file",
+      "node_id": "card:card_ce4ca9741ddb4b16817ec487cf",
+      "title": "文件系统要做哪六件事？文件有哪两种逻辑结构？"
+    },
+    {
+      "parent": "file",
+      "node_id": "card:card_e75c081ac92e430b91c4032830",
+      "title": "直接索引和一级间接索引能存多少？"
+    },
+    {
+      "parent": "file",
+      "node_id": "card:card_72eca39c6fd941579cd2793e9d",
+      "title": "文件控制块里有哪三类信息？绝对路径和相对路径差在哪？"
+    },
+    {
+      "parent": "file",
+      "node_id": "card:card_60dc87f92a36488284649d8a47",
+      "title": "空闲空间有哪四种管法？硬链接和符号链接差在哪？"
+    },
+    {
+      "parent": "job",
+      "node_id": "card:card_53403bac3c134b9c9fac3b1034",
+      "title": "作业由什么组成？四种状态怎么转换？"
+    },
+    {
+      "parent": "dbdes",
+      "node_id": "card:card_5d5cf2fc43cb406d985450a602",
+      "title": "数据库设计五个阶段各产出什么？"
+    },
+    {
+      "parent": "dbdes",
+      "node_id": "card:card_44f05d7b52f84bd6ae21bf8d28",
+      "title": "局部 E-R 合并会有哪三类冲突？"
+    },
+    {
+      "parent": "alg",
+      "node_id": "card:card_9b31e6a6d2d44982b68b2061db",
+      "title": "外模式、概念模式、内模式各保证什么独立性？"
+    },
+    {
+      "parent": "nf",
+      "node_id": "card:card_6231d1ddcaa24216b21e02c742",
+      "title": "1NF、2NF、3NF、BCNF 各去掉什么？"
+    },
+    {
+      "parent": "dbsec",
+      "node_id": "card:card_17cd0cfbde0c41d38f7266652d",
+      "title": "丢失更新、脏读、不可重复读各是什么？"
+    },
+    {
+      "parent": "dbsec",
+      "node_id": "card:card_b5e2d0ea3d0a430b897836cd96",
+      "title": "数据库故障恢复靠什么？"
+    },
+    {
+      "parent": "dw",
+      "node_id": "card:card_36c68c6a636d48e5a84d526566",
+      "title": "数据仓库的四个特征是什么？"
+    },
+    {
+      "parent": "nosql",
+      "node_id": "card:card_2ba96a6c336742869242e2fa4f",
+      "title": "NoSQL 四类各适合什么？"
+    },
+    {
+      "parent": "net",
+      "node_id": "card:card_1b6f5b2ba26c47f49627b3260c",
+      "title": "通信子网和资源子网各干什么？"
+    },
+    {
+      "parent": "net",
+      "node_id": "card:card_0dd085b72de247c18b81ef4d8f",
+      "title": "奈奎斯特和香农公式各限制什么？"
+    },
+    {
+      "parent": "lan",
+      "node_id": "card:card_c8b3c529ac234a7b8dc6c0f331",
+      "title": "CSMA/CD 三种监听算法是什么？"
+    },
+    {
+      "parent": "osi",
+      "node_id": "card:card_b8e80fa13abe4efca9214e6709",
+      "title": "OSI 七层从下到上各做什么？"
+    },
+    {
+      "parent": "osi",
+      "node_id": "card:card_5c5ef60009f2442e88efcb69d2",
+      "title": "TCP 和 UDP 的差别是什么？"
+    },
+    {
+      "parent": "ip",
+      "node_id": "card:card_d838fe8e559a4f1eb311dee7ac",
+      "title": "三类私有地址和 169.254 是什么？"
+    },
+    {
+      "parent": "comp",
+      "node_id": "card:card_ddf7734da4264465948689f871",
+      "title": "构件和中间件各自站在什么位置？"
+    },
+    {
+      "parent": "dsec",
+      "node_id": "card:card_9146acd0326642a0be7743eabe",
+      "title": "DES 和 3DES 的密钥、分组怎么记？"
+    },
+    {
+      "parent": "dsec",
+      "node_id": "card:card_60303dc2299443e195008137c1",
+      "title": "数字签名和数字信封差在哪？"
+    },
+    {
+      "parent": "nsec",
+      "node_id": "card:card_9a0b7423900e4cc489f3ace3e7",
+      "title": "防火墙六种类型和三种体系结构是什么？"
+    },
+    {
+      "parent": "nsec",
+      "node_id": "card:card_bdbd121a675241b89820003d8f",
+      "title": "VPN 要解决哪几件事？"
+    },
+    {
+      "parent": "ssl",
+      "node_id": "card:card_ad37f9bb92264a4f829f558502",
+      "title": "SSL 握手、记录、警报各做什么？"
+    },
+    {
+      "parent": "ft",
+      "node_id": "card:card_43085fe10bd24a058f524ddb00",
+      "title": "MTBF、MTTR 和可用性怎么记？"
+    },
+    {
+      "parent": "ft",
+      "node_id": "card:card_48de2a5ab02a4ac2bbb0f407f5",
+      "title": "静态冗余、动态冗余、混合冗余有何区别？"
+    },
+    {
+      "parent": "ft",
+      "node_id": "card:card_f756b66dea044fb3a2933164e1",
+      "title": "N 版本和恢复块有何区别？"
+    },
+    {
+      "parent": "irp",
+      "node_id": "card:card_df7cef5a0baa4af286d2894e74",
+      "title": "IRP 的七步和两条主线是什么？"
+    },
+    {
+      "parent": "plan",
+      "node_id": "card:card_1d7922be2eef4d7184c1de147b",
+      "title": "企业战略、信息系统战略、信息技术战略是什么关系？"
+    },
+    {
+      "parent": "dss",
+      "node_id": "card:card_445c70c15c444005b68dcd2b82",
+      "title": "DSS 由哪些部分组成？决策分哪三类？"
+    },
+    {
+      "parent": "ec",
+      "node_id": "card:card_276e0feb3f5a4b2bb4f69001be",
+      "title": "电子商务四种模式和电子政务四种模式是什么？"
+    },
+    {
+      "parent": "eai",
+      "node_id": "card:card_42bd8c7db12e411db93b4c5398",
+      "title": "EAI 的数据集成和控制集成有何区别？"
+    },
+    {
+      "parent": "wf",
+      "node_id": "card:card_5af30b3e06204c34a2bd402973",
+      "title": "工作流参考模型有哪六个部件、五类接口？"
+    },
+    {
+      "parent": "life",
+      "node_id": "card:card_cddf25b38f2e40e7baa36b2690",
+      "title": "软件生命周期的基本过程、支持过程、组织过程各有什么？"
+    },
+    {
+      "parent": "life",
+      "node_id": "card:card_a63db318876d486cb9371b243a",
+      "title": "瀑布、演化、螺旋、喷泉各解决什么问题？"
+    },
+    {
+      "parent": "sde",
+      "node_id": "card:card_4f2d93fb8dcd427d87388e7c31",
+      "title": "软件开发环境按什么角度分类？"
+    },
+    {
+      "parent": "cmmi",
+      "node_id": "card:card_ec63cb2cabde4babb4f6ff938f",
+      "title": "CMMI 阶段式五级的名称以谁为准？"
+    },
+    {
+      "parent": "cmmi",
+      "node_id": "card:card_00720a432cb74e808d3ac59719",
+      "title": "CMM、Trillium、Bootstrap 各是什么评估思路？"
+    },
+    {
+      "parent": "scm",
+      "node_id": "card:card_b657d57f409b4be9a58bac6066",
+      "title": "三种配置库和三种基线是什么？"
+    },
+    {
+      "parent": "qa",
+      "node_id": "card:card_e35f31242d154248a6e8fa0374",
+      "title": "验证、确认、测量有何区别？"
+    },
+    {
+      "parent": "qa",
+      "node_id": "card:card_6f90a0529f054247a3b8ed6834",
+      "title": "McCall 模型把质量分成哪三组？"
+    },
+    {
+      "parent": "hr",
+      "node_id": "card:card_12f6073a932f410eb1588ccd82",
+      "title": "OBS 和 RAM 各表示什么？"
+    },
+    {
+      "parent": "team",
+      "node_id": "card:card_0cae7c291767481295b22cfd65",
+      "title": "项目团队四个时期是什么？"
+    },
+    {
+      "parent": "comm",
+      "node_id": "card:card_8526c99750474517af6dcfe938",
+      "title": "管理项目团队要做哪些事？"
+    },
+    {
+      "parent": "prob",
+      "node_id": "card:card_2321ccbad9d34b7abb41a63295",
+      "title": "问题分析的四步和四类约束是什么？"
+    },
+    {
+      "parent": "bpr",
+      "node_id": "card:card_d4ae98892bb24bca803d02d796",
+      "title": "业务流程分析的步骤和价值链怎么用？"
+    },
+    {
+      "parent": "fea",
+      "node_id": "card:card_af7db4aeeb9a4cb9a2cbcd8410",
+      "title": "可行性研究的五个方面和五个步骤是什么？"
+    },
+    {
+      "parent": "econ",
+      "node_id": "card:card_aedb0eab205f4d4f8dfa4b2547",
+      "title": "NPV、投资回收期和候选方案矩阵各看什么？"
+    }
+  ]
+}

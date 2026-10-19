@@ -1,0 +1,38 @@
+{
+  "batch_id": "ch12-design-patterns-20261001-000016",
+  "parent_id": "node:node_2aac7c0dfe9d475c885459b20f",
+  "parent_path": "系统分析师一本通精华知识点（第二版） / 十二系统设计",
+  "source_ref": "一本通第二版：GoF设计模式三类23种（2026-09-30）",
+  "backup": "study-kb/data/backups/study-before-ch12-design-patterns-20261001-000016.sqlite",
+  "created_cards": [
+    {
+      "node_id": "card:card_b42fe10b303544f3aa58242627",
+      "card_id": "card_b42fe10b303544f3aa58242627",
+      "title": "GoF设计模式分为哪三类？各解决什么问题？",
+      "sort_order": 7
+    },
+    {
+      "node_id": "card:card_07934515a3bd4ea585ef0309f9",
+      "card_id": "card_07934515a3bd4ea585ef0309f9",
+      "title": "创建型设计模式有哪些？各自解决什么问题？",
+      "sort_order": 8
+    },
+    {
+      "node_id": "card:card_df8be6077b0e477c86a4411479",
+      "card_id": "card_df8be6077b0e477c86a4411479",
+      "title": "结构型设计模式有哪些？各自解决什么问题？",
+      "sort_order": 9
+    },
+    {
+      "node_id": "card:card_8d8693fcf7f0481c8b635e6fd7",
+      "card_id": "card_8d8693fcf7f0481c8b635e6fd7",
+      "title": "行为型设计模式有哪些？各自解决什么问题？",
+      "sort_order": 10
+    }
+  ],
+  "review_history_preserved": true,
+  "checks": {
+    "integrity_check": "ok",
+    "foreign_key_check": []
+  }
+}

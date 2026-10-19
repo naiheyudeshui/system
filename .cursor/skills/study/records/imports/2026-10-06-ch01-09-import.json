@@ -1,0 +1,927 @@
+{
+  "batch_id": "ch01-09-import-20261006",
+  "book_node_id": "node:node_ce4ef92c44b04e5a90a8c1efce",
+  "source_ref": "系统分析师教程（第2版）+ 一本通OCR精华（2026-10-06）",
+  "server": "http://127.0.0.1:8033",
+  "note": "手机主库 10.205.90.231:8033 导入时超时，写入本机 workbench；需用户确认手机与本机是否同一库或后续手动同步",
+  "follow_up": {
+    "sort_order_fixed": "2026-10-06 — 一至九已 reorder 为 sort 1–9，十至十四为 10–14（本机 127.0.0.1:8033）",
+    "phone_sync_completed": "2026-10-06 20:58 UTC+8 — 手机 10.205.90.231:8033 导入成功：168→299 节点；14 章 sort_order 1–14 已验证；ch1 node:node_1ecd5cbd63d142ae91061a5f55 存在；本地 mirror 已从手机 sync-mirror"
+  },
+  "node_count_before": 168,
+  "node_count_after": 299,
+  "created_chapters": [
+    {
+      "node_id": "node:node_1ecd5cbd63d142ae91061a5f55",
+      "title": "一 计算机系统知识"
+    },
+    {
+      "node_id": "node:node_14e80d2d8b264d1aa2475562d2",
+      "title": "二 操作系统知识"
+    },
+    {
+      "node_id": "node:node_83fd9ae7e7f64224a0c3436c84",
+      "title": "三 数据库系统"
+    },
+    {
+      "node_id": "node:node_2a14f19ed0f34cfeb93437e3bf",
+      "title": "四 计算机网络"
+    },
+    {
+      "node_id": "node:node_ca819eeb64e04866a892428eef",
+      "title": "五 企业信息化"
+    },
+    {
+      "node_id": "node:node_f349ff3635aa4b39ad2d325ef1",
+      "title": "六 软件过程与质量"
+    },
+    {
+      "node_id": "node:node_283efd48baf34fa1949bb8e8e5",
+      "title": "七 项目管理"
+    },
+    {
+      "node_id": "node:node_c04293d5435648fe93ae3dd487",
+      "title": "八 系统规划与可行性"
+    },
+    {
+      "node_id": "node:node_688165774dcf4dfe876a779aca",
+      "title": "九 系统分析基础"
+    }
+  ],
+  "created_outlines": [
+    {
+      "node_id": "node:node_1ecd5cbd63d142ae91061a5f55",
+      "title": "一 计算机系统知识",
+      "item_type": "chapter",
+      "parent_id": "node:node_ce4ef92c44b04e5a90a8c1efce"
+    },
+    {
+      "node_id": "node:node_c32983defa8c47bbbf53fdc76d",
+      "title": "计算机组成与软件",
+      "item_type": "chapter",
+      "parent_id": "node:node_1ecd5cbd63d142ae91061a5f55"
+    },
+    {
+      "node_id": "node:node_990bf45560f44d778858042543",
+      "title": "校验码",
+      "item_type": "chapter",
+      "parent_id": "node:node_1ecd5cbd63d142ae91061a5f55"
+    },
+    {
+      "node_id": "node:node_1e7cb8760aed43bca715e28d81",
+      "title": "存储系统",
+      "item_type": "chapter",
+      "parent_id": "node:node_1ecd5cbd63d142ae91061a5f55"
+    },
+    {
+      "node_id": "node:node_da7844d0d205446894b1cf782a",
+      "title": "多处理机系统",
+      "item_type": "chapter",
+      "parent_id": "node:node_1ecd5cbd63d142ae91061a5f55"
+    },
+    {
+      "node_id": "node:node_5356648135884961a7dfec5e2e",
+      "title": "系统可靠性与容错",
+      "item_type": "chapter",
+      "parent_id": "node:node_1ecd5cbd63d142ae91061a5f55"
+    },
+    {
+      "node_id": "node:node_14e80d2d8b264d1aa2475562d2",
+      "title": "二 操作系统知识",
+      "item_type": "chapter",
+      "parent_id": "node:node_ce4ef92c44b04e5a90a8c1efce"
+    },
+    {
+      "node_id": "node:node_518052ffa7c041bdabbbf586ee",
+      "title": "操作系统概述",
+      "item_type": "chapter",
+      "parent_id": "node:node_14e80d2d8b264d1aa2475562d2"
+    },
+    {
+      "node_id": "node:node_69cf7bfdcc9e4c85a13e997a9a",
+      "title": "进程管理",
+      "item_type": "chapter",
+      "parent_id": "node:node_14e80d2d8b264d1aa2475562d2"
+    },
+    {
+      "node_id": "node:node_76b91e571f334edc829148c36c",
+      "title": "存储管理",
+      "item_type": "chapter",
+      "parent_id": "node:node_14e80d2d8b264d1aa2475562d2"
+    },
+    {
+      "node_id": "node:node_cabee94232764eed89bc1b7d6e",
+      "title": "设备管理",
+      "item_type": "chapter",
+      "parent_id": "node:node_14e80d2d8b264d1aa2475562d2"
+    },
+    {
+      "node_id": "node:node_f62ff5b1d547406da5fefc274e",
+      "title": "文件管理",
+      "item_type": "chapter",
+      "parent_id": "node:node_14e80d2d8b264d1aa2475562d2"
+    },
+    {
+      "node_id": "node:node_5cb72a18b21b4addb781483892",
+      "title": "作业与用户界面",
+      "item_type": "chapter",
+      "parent_id": "node:node_14e80d2d8b264d1aa2475562d2"
+    },
+    {
+      "node_id": "node:node_83fd9ae7e7f64224a0c3436c84",
+      "title": "三 数据库系统",
+      "item_type": "chapter",
+      "parent_id": "node:node_ce4ef92c44b04e5a90a8c1efce"
+    },
+    {
+      "node_id": "node:node_860a4b7f9d474ca0a9e97d80fa",
+      "title": "数据库设计与建模",
+      "item_type": "chapter",
+      "parent_id": "node:node_83fd9ae7e7f64224a0c3436c84"
+    },
+    {
+      "node_id": "node:node_b991433fb25b4096a5e0e74d54",
+      "title": "关系代数与SQL",
+      "item_type": "chapter",
+      "parent_id": "node:node_83fd9ae7e7f64224a0c3436c84"
+    },
+    {
+      "node_id": "node:node_6a841a5db0e24c2981148d6197",
+      "title": "关系规范化",
+      "item_type": "chapter",
+      "parent_id": "node:node_83fd9ae7e7f64224a0c3436c84"
+    },
+    {
+      "node_id": "node:node_e4029a42b1c5422a87d8918884",
+      "title": "数据库安全与恢复",
+      "item_type": "chapter",
+      "parent_id": "node:node_83fd9ae7e7f64224a0c3436c84"
+    },
+    {
+      "node_id": "node:node_bc747b317c294f2ab4a86daa46",
+      "title": "数据仓库与挖掘",
+      "item_type": "chapter",
+      "parent_id": "node:node_83fd9ae7e7f64224a0c3436c84"
+    },
+    {
+      "node_id": "node:node_182daae5614d40e985859a3a24",
+      "title": "非关系数据库",
+      "item_type": "chapter",
+      "parent_id": "node:node_83fd9ae7e7f64224a0c3436c84"
+    },
+    {
+      "node_id": "node:node_2a14f19ed0f34cfeb93437e3bf",
+      "title": "四 计算机网络",
+      "item_type": "chapter",
+      "parent_id": "node:node_ce4ef92c44b04e5a90a8c1efce"
+    },
+    {
+      "node_id": "node:node_6a3f2f73684b45e193ce0c8fdd",
+      "title": "网络基础与数据通信",
+      "item_type": "chapter",
+      "parent_id": "node:node_2a14f19ed0f34cfeb93437e3bf"
+    },
+    {
+      "node_id": "node:node_ae18b9b4f1184bc4b208459195",
+      "title": "局域网与广域网",
+      "item_type": "chapter",
+      "parent_id": "node:node_2a14f19ed0f34cfeb93437e3bf"
+    },
+    {
+      "node_id": "node:node_4bb5fc2f67d6454b9005d75bee",
+      "title": "OSI与TCP/IP",
+      "item_type": "chapter",
+      "parent_id": "node:node_2a14f19ed0f34cfeb93437e3bf"
+    },
+    {
+      "node_id": "node:node_0c83961efc2348ea899b2dc1b6",
+      "title": "网络地址与路由",
+      "item_type": "chapter",
+      "parent_id": "node:node_2a14f19ed0f34cfeb93437e3bf"
+    },
+    {
+      "node_id": "node:node_23396b08c4e64d8597fa3742f2",
+      "title": "Web服务与安全",
+      "item_type": "chapter",
+      "parent_id": "node:node_2a14f19ed0f34cfeb93437e3bf"
+    },
+    {
+      "node_id": "node:node_6293bb05dc7b40f5a3e77bacf6",
+      "title": "通信与网络安全",
+      "item_type": "chapter",
+      "parent_id": "node:node_2a14f19ed0f34cfeb93437e3bf"
+    },
+    {
+      "node_id": "node:node_ca819eeb64e04866a892428eef",
+      "title": "五 企业信息化",
+      "item_type": "chapter",
+      "parent_id": "node:node_ce4ef92c44b04e5a90a8c1efce"
+    },
+    {
+      "node_id": "node:node_93b39d4412224d6a9f0638aac8",
+      "title": "信息资源规划IRP",
+      "item_type": "chapter",
+      "parent_id": "node:node_ca819eeb64e04866a892428eef"
+    },
+    {
+      "node_id": "node:node_e29ce94e755a4c7d87d7e80d58",
+      "title": "企业信息化规划",
+      "item_type": "chapter",
+      "parent_id": "node:node_ca819eeb64e04866a892428eef"
+    },
+    {
+      "node_id": "node:node_833d3352d5c94983a50c4b4e27",
+      "title": "决策支持系统DSS",
+      "item_type": "chapter",
+      "parent_id": "node:node_ca819eeb64e04866a892428eef"
+    },
+    {
+      "node_id": "node:node_ad1ed996b3e7493cb9595a947f",
+      "title": "电子商务与电子政务",
+      "item_type": "chapter",
+      "parent_id": "node:node_ca819eeb64e04866a892428eef"
+    },
+    {
+      "node_id": "node:node_2401399432e644afba48193aa8",
+      "title": "企业应用集成EAI",
+      "item_type": "chapter",
+      "parent_id": "node:node_ca819eeb64e04866a892428eef"
+    },
+    {
+      "node_id": "node:node_f5479042c9f64a98b231887860",
+      "title": "工作流管理",
+      "item_type": "chapter",
+      "parent_id": "node:node_ca819eeb64e04866a892428eef"
+    },
+    {
+      "node_id": "node:node_f349ff3635aa4b39ad2d325ef1",
+      "title": "六 软件过程与质量",
+      "item_type": "chapter",
+      "parent_id": "node:node_ce4ef92c44b04e5a90a8c1efce"
+    },
+    {
+      "node_id": "node:node_127716b6c7ba46bf81e2c8a393",
+      "title": "软件生命周期",
+      "item_type": "chapter",
+      "parent_id": "node:node_f349ff3635aa4b39ad2d325ef1"
+    },
+    {
+      "node_id": "node:node_3aa1ff3c20aa4c48981c19057d",
+      "title": "软件开发环境",
+      "item_type": "chapter",
+      "parent_id": "node:node_f349ff3635aa4b39ad2d325ef1"
+    },
+    {
+      "node_id": "node:node_4ac24372711f4d79a2a844442f",
+      "title": "CMMI与过程评估",
+      "item_type": "chapter",
+      "parent_id": "node:node_f349ff3635aa4b39ad2d325ef1"
+    },
+    {
+      "node_id": "node:node_ac489f9c4b694c21813757cf84",
+      "title": "配置管理",
+      "item_type": "chapter",
+      "parent_id": "node:node_f349ff3635aa4b39ad2d325ef1"
+    },
+    {
+      "node_id": "node:node_018a53b82b39495b9fbd3404fa",
+      "title": "软件质量管理",
+      "item_type": "chapter",
+      "parent_id": "node:node_f349ff3635aa4b39ad2d325ef1"
+    },
+    {
+      "node_id": "node:node_283efd48baf34fa1949bb8e8e5",
+      "title": "七 项目管理",
+      "item_type": "chapter",
+      "parent_id": "node:node_ce4ef92c44b04e5a90a8c1efce"
+    },
+    {
+      "node_id": "node:node_bd7c3094e2a5405093541a1075",
+      "title": "人力资源管理",
+      "item_type": "chapter",
+      "parent_id": "node:node_283efd48baf34fa1949bb8e8e5"
+    },
+    {
+      "node_id": "node:node_068774e7bd77435597735f3177",
+      "title": "项目团队建设",
+      "item_type": "chapter",
+      "parent_id": "node:node_283efd48baf34fa1949bb8e8e5"
+    },
+    {
+      "node_id": "node:node_22091fadff6c488c97c9a55333",
+      "title": "沟通与干系人",
+      "item_type": "chapter",
+      "parent_id": "node:node_283efd48baf34fa1949bb8e8e5"
+    },
+    {
+      "node_id": "node:node_c04293d5435648fe93ae3dd487",
+      "title": "八 系统规划与可行性",
+      "item_type": "chapter",
+      "parent_id": "node:node_ce4ef92c44b04e5a90a8c1efce"
+    },
+    {
+      "node_id": "node:node_452ddb29e33c42eeb14191d7b5",
+      "title": "问题分析与目标",
+      "item_type": "chapter",
+      "parent_id": "node:node_c04293d5435648fe93ae3dd487"
+    },
+    {
+      "node_id": "node:node_781af3a78990453199b105a77c",
+      "title": "业务流程分析",
+      "item_type": "chapter",
+      "parent_id": "node:node_c04293d5435648fe93ae3dd487"
+    },
+    {
+      "node_id": "node:node_2a95719c98a1406faeb7ac9673",
+      "title": "可行性研究",
+      "item_type": "chapter",
+      "parent_id": "node:node_c04293d5435648fe93ae3dd487"
+    },
+    {
+      "node_id": "node:node_cbd20c5300bb4f379b6eacda6a",
+      "title": "经济评价与方案建议",
+      "item_type": "chapter",
+      "parent_id": "node:node_c04293d5435648fe93ae3dd487"
+    },
+    {
+      "node_id": "node:node_688165774dcf4dfe876a779aca",
+      "title": "九 系统分析基础",
+      "item_type": "chapter",
+      "parent_id": "node:node_ce4ef92c44b04e5a90a8c1efce"
+    },
+    {
+      "node_id": "node:node_8f8fce89cb274586a0c77b9270",
+      "title": "系统分析概述",
+      "item_type": "chapter",
+      "parent_id": "node:node_688165774dcf4dfe876a779aca"
+    },
+    {
+      "node_id": "node:node_bf6eee47d2e54a97b836e76175",
+      "title": "建模工具预告",
+      "item_type": "chapter",
+      "parent_id": "node:node_688165774dcf4dfe876a779aca"
+    }
+  ],
+  "created_cards": [
+    {
+      "node_id": "card:card_2fd56362be164fe58b22f2e9eb",
+      "title": "计算机五大部件和CPU的作用是什么？",
+      "item_type": "card",
+      "parent_id": "node:node_c32983defa8c47bbbf53fdc76d",
+      "card_id": "card_2fd56362be164fe58b22f2e9eb"
+    },
+    {
+      "node_id": "card:card_fde825602372477c8d73db64e2",
+      "title": "系统软件和应用软件如何区分？",
+      "item_type": "card",
+      "parent_id": "node:node_c32983defa8c47bbbf53fdc76d",
+      "card_id": "card_fde825602372477c8d73db64e2"
+    },
+    {
+      "node_id": "card:card_541f8e9f5f7d4ea9bbee8c7c5a",
+      "title": "码距、奇偶校验和CRC各解决什么问题？",
+      "item_type": "card",
+      "parent_id": "node:node_990bf45560f44d778858042543",
+      "card_id": "card_541f8e9f5f7d4ea9bbee8c7c5a"
+    },
+    {
+      "node_id": "card:card_c8fb42af3b5b4974a2ec9801de",
+      "title": "CRC校验码生成四步是什么？",
+      "item_type": "card",
+      "parent_id": "node:node_990bf45560f44d778858042543",
+      "card_id": "card_c8fb42af3b5b4974a2ec9801de"
+    },
+    {
+      "node_id": "card:card_64853df5f22b4f859a402c4a30",
+      "title": "海明校验位位置和数据位如何分配？",
+      "item_type": "card",
+      "parent_id": "node:node_990bf45560f44d778858042543",
+      "card_id": "card_64853df5f22b4f859a402c4a30"
+    },
+    {
+      "node_id": "card:card_8c65795c7ded49858ff4e7009b",
+      "title": "存储层次从上到下有什么特点？",
+      "item_type": "card",
+      "parent_id": "node:node_1e7cb8760aed43bca715e28d81",
+      "card_id": "card_8c65795c7ded49858ff4e7009b"
+    },
+    {
+      "node_id": "card:card_6975c878f717450c837326340f",
+      "title": "Cache地址映射三种方式及优缺点？",
+      "item_type": "card",
+      "parent_id": "node:node_1e7cb8760aed43bca715e28d81",
+      "card_id": "card_6975c878f717450c837326340f"
+    },
+    {
+      "node_id": "card:card_f2db4f9e708243ea90ceb89aab",
+      "title": "磁盘调度算法有哪些？各自特点？",
+      "item_type": "card",
+      "parent_id": "node:node_1e7cb8760aed43bca715e28d81",
+      "card_id": "card_f2db4f9e708243ea90ceb89aab"
+    },
+    {
+      "node_id": "card:card_a7f10e65712a4c81963d187959",
+      "title": "多处理机耦合方式紧耦合和松耦合有何区别？",
+      "item_type": "card",
+      "parent_id": "node:node_da7844d0d205446894b1cf782a",
+      "card_id": "card_a7f10e65712a4c81963d187959"
+    },
+    {
+      "node_id": "card:card_8753581efd08426cb9d28eeec0",
+      "title": "MTBF、MTTR和可用性公式怎么记？",
+      "item_type": "card",
+      "parent_id": "node:node_5356648135884961a7dfec5e2e",
+      "card_id": "card_8753581efd08426cb9d28eeec0"
+    },
+    {
+      "node_id": "card:card_896992e6a744420a8308dea540",
+      "title": "硬件冗余三种方式是什么？",
+      "item_type": "card",
+      "parent_id": "node:node_5356648135884961a7dfec5e2e",
+      "card_id": "card_896992e6a744420a8308dea540"
+    },
+    {
+      "node_id": "card:card_e7769b0edc2d496f93935a1cfb",
+      "title": "软件容错N版本和恢复块有何区别？",
+      "item_type": "card",
+      "parent_id": "node:node_5356648135884961a7dfec5e2e",
+      "card_id": "card_e7769b0edc2d496f93935a1cfb"
+    },
+    {
+      "node_id": "card:card_13af0eee52d7416abacbc4f741",
+      "title": "操作系统的定义和五大功能是什么？",
+      "item_type": "card",
+      "parent_id": "node:node_518052ffa7c041bdabbbf586ee",
+      "card_id": "card_13af0eee52d7416abacbc4f741"
+    },
+    {
+      "node_id": "card:card_0004c5a7794c4146b45721ef41",
+      "title": "单体内核与微内核各有什么优缺点？",
+      "item_type": "card",
+      "parent_id": "node:node_518052ffa7c041bdabbbf586ee",
+      "card_id": "card_0004c5a7794c4146b45721ef41"
+    },
+    {
+      "node_id": "card:card_1670c3502bc741678de2bf7621",
+      "title": "进程三状态和转换条件是什么？",
+      "item_type": "card",
+      "parent_id": "node:node_69cf7bfdcc9e4c85a13e997a9a",
+      "card_id": "card_1670c3502bc741678de2bf7621"
+    },
+    {
+      "node_id": "card:card_1de67d08fa09494a8d1e525762",
+      "title": "前趋图和PV操作解决什么问题？",
+      "item_type": "card",
+      "parent_id": "node:node_69cf7bfdcc9e4c85a13e997a9a",
+      "card_id": "card_1de67d08fa09494a8d1e525762"
+    },
+    {
+      "node_id": "card:card_ed1f2ee9104b4d0b97bf1f0d38",
+      "title": "银行家算法是做什么的？",
+      "item_type": "card",
+      "parent_id": "node:node_69cf7bfdcc9e4c85a13e997a9a",
+      "card_id": "card_ed1f2ee9104b4d0b97bf1f0d38"
+    },
+    {
+      "node_id": "card:card_7fdb878d36bc4805af8ac40850",
+      "title": "分页、分段、段页式各解决什么问题？",
+      "item_type": "card",
+      "parent_id": "node:node_76b91e571f334edc829148c36c",
+      "card_id": "card_7fdb878d36bc4805af8ac40850"
+    },
+    {
+      "node_id": "card:card_f2748bbda4b44b2fa95b333791",
+      "title": "虚拟存储页面置换算法有哪些？",
+      "item_type": "card",
+      "parent_id": "node:node_76b91e571f334edc829148c36c",
+      "card_id": "card_f2748bbda4b44b2fa95b333791"
+    },
+    {
+      "node_id": "card:card_bf0393ef4d55466d8eb562d7dc",
+      "title": "SPOOLing技术是什么？",
+      "item_type": "card",
+      "parent_id": "node:node_cabee94232764eed89bc1b7d6e",
+      "card_id": "card_bf0393ef4d55466d8eb562d7dc"
+    },
+    {
+      "node_id": "card:card_de3513bbe28d421284fb78c1af",
+      "title": "文件目录结构和索引节点作用？",
+      "item_type": "card",
+      "parent_id": "node:node_f62ff5b1d547406da5fefc274e",
+      "card_id": "card_de3513bbe28d421284fb78c1af"
+    },
+    {
+      "node_id": "card:card_b1c20630fa2342fa8d0385a7ee",
+      "title": "文件存储空间管理方法有哪些？",
+      "item_type": "card",
+      "parent_id": "node:node_f62ff5b1d547406da5fefc274e",
+      "card_id": "card_b1c20630fa2342fa8d0385a7ee"
+    },
+    {
+      "node_id": "card:card_5cb63e888df04c3e8b242878f6",
+      "title": "作业四状态及JCB是什么？",
+      "item_type": "card",
+      "parent_id": "node:node_5cb72a18b21b4addb781483892",
+      "card_id": "card_5cb63e888df04c3e8b242878f6"
+    },
+    {
+      "node_id": "card:card_c6ffbd431ac844ad8cec4643b7",
+      "title": "数据库设计五阶段是什么？",
+      "item_type": "card",
+      "parent_id": "node:node_860a4b7f9d474ca0a9e97d80fa",
+      "card_id": "card_c6ffbd431ac844ad8cec4643b7"
+    },
+    {
+      "node_id": "card:card_63b1c2900ad44341bcefdb4c57",
+      "title": "E-R图三要素和联系类型如何表示？",
+      "item_type": "card",
+      "parent_id": "node:node_860a4b7f9d474ca0a9e97d80fa",
+      "card_id": "card_63b1c2900ad44341bcefdb4c57"
+    },
+    {
+      "node_id": "card:card_f41172243c8b4562957cc67611",
+      "title": "局部E-R合并冲突三类是什么？",
+      "item_type": "card",
+      "parent_id": "node:node_860a4b7f9d474ca0a9e97d80fa",
+      "card_id": "card_f41172243c8b4562957cc67611"
+    },
+    {
+      "node_id": "card:card_7b97fad555fd4905843cf3e724",
+      "title": "关系代数六种基本运算是什么？",
+      "item_type": "card",
+      "parent_id": "node:node_b991433fb25b4096a5e0e74d54",
+      "card_id": "card_7b97fad555fd4905843cf3e724"
+    },
+    {
+      "node_id": "card:card_08d7c25d61104558a7ae4d5178",
+      "title": "外模式/概念/内模式与两级映像作用？",
+      "item_type": "card",
+      "parent_id": "node:node_b991433fb25b4096a5e0e74d54",
+      "card_id": "card_08d7c25d61104558a7ae4d5178"
+    },
+    {
+      "node_id": "card:card_35c2afd42f664b89aa8c4218b4",
+      "title": "1NF到BCNF各级消除了什么异常？",
+      "item_type": "card",
+      "parent_id": "node:node_6a841a5db0e24c2981148d6197",
+      "card_id": "card_35c2afd42f664b89aa8c4218b4"
+    },
+    {
+      "node_id": "card:card_ab2c8345abae43eea086b91caa",
+      "title": "函数依赖和候选键如何求？",
+      "item_type": "card",
+      "parent_id": "node:node_6a841a5db0e24c2981148d6197",
+      "card_id": "card_ab2c8345abae43eea086b91caa"
+    },
+    {
+      "node_id": "card:card_51ba3975a4374ef18841a20760",
+      "title": "模式分解评判标准是什么？",
+      "item_type": "card",
+      "parent_id": "node:node_6a841a5db0e24c2981148d6197",
+      "card_id": "card_51ba3975a4374ef18841a20760"
+    },
+    {
+      "node_id": "card:card_3016dbaba78a4868b20e857783",
+      "title": "数据库安全措施有哪些？",
+      "item_type": "card",
+      "parent_id": "node:node_e4029a42b1c5422a87d8918884",
+      "card_id": "card_3016dbaba78a4868b20e857783"
+    },
+    {
+      "node_id": "card:card_9aab2cae9cce4dc1940e73ce66",
+      "title": "事务ACID和故障恢复三类是什么？",
+      "item_type": "card",
+      "parent_id": "node:node_e4029a42b1c5422a87d8918884",
+      "card_id": "card_9aab2cae9cce4dc1940e73ce66"
+    },
+    {
+      "node_id": "card:card_a2dad7dafe4248c4b50e4d64cf",
+      "title": "数据仓库四大特征是什么？",
+      "item_type": "card",
+      "parent_id": "node:node_bc747b317c294f2ab4a86daa46",
+      "card_id": "card_a2dad7dafe4248c4b50e4d64cf"
+    },
+    {
+      "node_id": "card:card_6d438f813a2e4f31a9da6a1590",
+      "title": "数据挖掘常见任务有哪些？",
+      "item_type": "card",
+      "parent_id": "node:node_bc747b317c294f2ab4a86daa46",
+      "card_id": "card_6d438f813a2e4f31a9da6a1590"
+    },
+    {
+      "node_id": "card:card_4a497b6506114199ba0a90df0e",
+      "title": "NoSQL四大类型及典型场景？",
+      "item_type": "card",
+      "parent_id": "node:node_182daae5614d40e985859a3a24",
+      "card_id": "card_4a497b6506114199ba0a90df0e"
+    },
+    {
+      "node_id": "card:card_581a037965734ca3adda43ef76",
+      "title": "通信子网和资源子网各做什么？",
+      "item_type": "card",
+      "parent_id": "node:node_6a3f2f73684b45e193ce0c8fdd",
+      "card_id": "card_581a037965734ca3adda43ef76"
+    },
+    {
+      "node_id": "card:card_e0dd1518761b4db5901db43180",
+      "title": "奈奎斯特和香农定理公式？",
+      "item_type": "card",
+      "parent_id": "node:node_6a3f2f73684b45e193ce0c8fdd",
+      "card_id": "card_e0dd1518761b4db5901db43180"
+    },
+    {
+      "node_id": "card:card_eb27d77d9040410abd97bf2019",
+      "title": "三种数字编码特点？",
+      "item_type": "card",
+      "parent_id": "node:node_6a3f2f73684b45e193ce0c8fdd",
+      "card_id": "card_eb27d77d9040410abd97bf2019"
+    },
+    {
+      "node_id": "card:card_1ef83f138e9b44b794caffe10b",
+      "title": "CSMA/CD三种监听算法？",
+      "item_type": "card",
+      "parent_id": "node:node_ae18b9b4f1184bc4b208459195",
+      "card_id": "card_1ef83f138e9b44b794caffe10b"
+    },
+    {
+      "node_id": "card:card_e3501e8c34404bfeb741cc7963",
+      "title": "以太网标准速率与介质？",
+      "item_type": "card",
+      "parent_id": "node:node_ae18b9b4f1184bc4b208459195",
+      "card_id": "card_e3501e8c34404bfeb741cc7963"
+    },
+    {
+      "node_id": "card:card_91fc78b95f94459eb395797104",
+      "title": "OSI七层和TCP/IP四层对应？",
+      "item_type": "card",
+      "parent_id": "node:node_4bb5fc2f67d6454b9005d75bee",
+      "card_id": "card_91fc78b95f94459eb395797104"
+    },
+    {
+      "node_id": "card:card_75012e7c8bae4561bec8e7f2cc",
+      "title": "TCP和UDP区别？",
+      "item_type": "card",
+      "parent_id": "node:node_4bb5fc2f67d6454b9005d75bee",
+      "card_id": "card_75012e7c8bae4561bec8e7f2cc"
+    },
+    {
+      "node_id": "card:card_849d01ac8aba4670bf341f3b22",
+      "title": "三类私有IP地址范围？",
+      "item_type": "card",
+      "parent_id": "node:node_0c83961efc2348ea899b2dc1b6",
+      "card_id": "card_849d01ac8aba4670bf341f3b22"
+    },
+    {
+      "node_id": "card:card_fad78600869347cbb0dab7f648",
+      "title": "CIDR和无分类寻址解决什么问题？",
+      "item_type": "card",
+      "parent_id": "node:node_0c83961efc2348ea899b2dc1b6",
+      "card_id": "card_fad78600869347cbb0dab7f648"
+    },
+    {
+      "node_id": "card:card_2a560ffeee6f47fb8ec9510e40",
+      "title": "对称与非对称加密及典型算法？",
+      "item_type": "card",
+      "parent_id": "node:node_23396b08c4e64d8597fa3742f2",
+      "card_id": "card_2a560ffeee6f47fb8ec9510e40"
+    },
+    {
+      "node_id": "card:card_59853df245b048f683d9512404",
+      "title": "数字签名和数字信封流程？",
+      "item_type": "card",
+      "parent_id": "node:node_23396b08c4e64d8597fa3742f2",
+      "card_id": "card_59853df245b048f683d9512404"
+    },
+    {
+      "node_id": "card:card_74bc6f85a99c401495224aff06",
+      "title": "防火墙三种体系结构？",
+      "item_type": "card",
+      "parent_id": "node:node_6293bb05dc7b40f5a3e77bacf6",
+      "card_id": "card_74bc6f85a99c401495224aff06"
+    },
+    {
+      "node_id": "card:card_a800fcb0bbc44ee29b4e6aed51",
+      "title": "VPN五关键技术？",
+      "item_type": "card",
+      "parent_id": "node:node_6293bb05dc7b40f5a3e77bacf6",
+      "card_id": "card_a800fcb0bbc44ee29b4e6aed51"
+    },
+    {
+      "node_id": "card:card_64067bab2c8c4e999ec516e9a9",
+      "title": "IRP七步过程是什么？",
+      "item_type": "card",
+      "parent_id": "node:node_93b39d4412224d6a9f0638aac8",
+      "card_id": "card_64067bab2c8c4e999ec516e9a9"
+    },
+    {
+      "node_id": "card:card_ebec8b928a074e80885ae63dd3",
+      "title": "业务模型和数据需求分析产出？",
+      "item_type": "card",
+      "parent_id": "node:node_93b39d4412224d6a9f0638aac8",
+      "card_id": "card_ebec8b928a074e80885ae63dd3"
+    },
+    {
+      "node_id": "card:card_6a5889218ece4fc39ebdd07bdd",
+      "title": "企业战略与信息化战略三种关系？",
+      "item_type": "card",
+      "parent_id": "node:node_e29ce94e755a4c7d87d7e80d58",
+      "card_id": "card_6a5889218ece4fc39ebdd07bdd"
+    },
+    {
+      "node_id": "card:card_d8e1ed4cfa8b4342950f28b562",
+      "title": "BITA和EITA分别是什么？",
+      "item_type": "card",
+      "parent_id": "node:node_e29ce94e755a4c7d87d7e80d58",
+      "card_id": "card_d8e1ed4cfa8b4342950f28b562"
+    },
+    {
+      "node_id": "card:card_b9d27f44213b4084ad36a50dea",
+      "title": "DSS四子系统和三类决策？",
+      "item_type": "card",
+      "parent_id": "node:node_833d3352d5c94983a50c4b4e27",
+      "card_id": "card_b9d27f44213b4084ad36a50dea"
+    },
+    {
+      "node_id": "card:card_e116ed1133504435b5fd42a421",
+      "title": "电子商务模式B2B/B2C/C2C/O2O？",
+      "item_type": "card",
+      "parent_id": "node:node_ad1ed996b3e7493cb9595a947f",
+      "card_id": "card_e116ed1133504435b5fd42a421"
+    },
+    {
+      "node_id": "card:card_1966dc11cb5744b281660ce96c",
+      "title": "电子政务G2G/G2B/G2C/G2E？",
+      "item_type": "card",
+      "parent_id": "node:node_ad1ed996b3e7493cb9595a947f",
+      "card_id": "card_1966dc11cb5744b281660ce96c"
+    },
+    {
+      "node_id": "card:card_58fe527adf484a54a36b677629",
+      "title": "EAI三种集成层次？",
+      "item_type": "card",
+      "parent_id": "node:node_2401399432e644afba48193aa8",
+      "card_id": "card_58fe527adf484a54a36b677629"
+    },
+    {
+      "node_id": "card:card_8c4999deaf99439ba622e79464",
+      "title": "WFMS六大模块和WRM接口？",
+      "item_type": "card",
+      "parent_id": "node:node_f5479042c9f64a98b231887860",
+      "card_id": "card_8c4999deaf99439ba622e79464"
+    },
+    {
+      "node_id": "card:card_664171b1deba4c72855bdcc6d6",
+      "title": "软件生命周期三类过程？",
+      "item_type": "card",
+      "parent_id": "node:node_127716b6c7ba46bf81e2c8a393",
+      "card_id": "card_664171b1deba4c72855bdcc6d6"
+    },
+    {
+      "node_id": "card:card_1e1c2a3a029f4bd6af62b16854",
+      "title": "SDE集成机制三类？",
+      "item_type": "card",
+      "parent_id": "node:node_3aa1ff3c20aa4c48981c19057d",
+      "card_id": "card_1e1c2a3a029f4bd6af62b16854"
+    },
+    {
+      "node_id": "card:card_64d0e948de6e400fba75746a4a",
+      "title": "CMMI阶段式五级及关键过程域？",
+      "item_type": "card",
+      "parent_id": "node:node_4ac24372711f4d79a2a844442f",
+      "card_id": "card_64d0e948de6e400fba75746a4a"
+    },
+    {
+      "node_id": "card:card_bbcc2c66f3ac4b46a3f8691845",
+      "title": "CMMI连续式四过程组？",
+      "item_type": "card",
+      "parent_id": "node:node_4ac24372711f4d79a2a844442f",
+      "card_id": "card_bbcc2c66f3ac4b46a3f8691845"
+    },
+    {
+      "node_id": "card:card_314f813d1dfa48b6a89c107129",
+      "title": "配置库三种类型？",
+      "item_type": "card",
+      "parent_id": "node:node_ac489f9c4b694c21813757cf84",
+      "card_id": "card_314f813d1dfa48b6a89c107129"
+    },
+    {
+      "node_id": "card:card_7ee6cfbbbc2e4551927e2e29d6",
+      "title": "验证、确认、测量三概念区别？",
+      "item_type": "card",
+      "parent_id": "node:node_018a53b82b39495b9fbd3404fa",
+      "card_id": "card_7ee6cfbbbc2e4551927e2e29d6"
+    },
+    {
+      "node_id": "card:card_c30293e7d9b443ba85ff1b2a22",
+      "title": "McCall与ISO25010质量模型要点？",
+      "item_type": "card",
+      "parent_id": "node:node_018a53b82b39495b9fbd3404fa",
+      "card_id": "card_c30293e7d9b443ba85ff1b2a22"
+    },
+    {
+      "node_id": "card:card_8f69696d64b04ee1af9af4c07e",
+      "title": "RAM和RACI角色含义？",
+      "item_type": "card",
+      "parent_id": "node:node_bd7c3094e2a5405093541a1075",
+      "card_id": "card_8f69696d64b04ee1af9af4c07e"
+    },
+    {
+      "node_id": "card:card_cbb701d8eacd43b1974b08af9e",
+      "title": "项目团队四阶段？",
+      "item_type": "card",
+      "parent_id": "node:node_068774e7bd77435597735f3177",
+      "card_id": "card_cbb701d8eacd43b1974b08af9e"
+    },
+    {
+      "node_id": "card:card_f05ebf2537b24fb481087bdb2c",
+      "title": "资源平衡和资源负荷？",
+      "item_type": "card",
+      "parent_id": "node:node_068774e7bd77435597735f3177",
+      "card_id": "card_f05ebf2537b24fb481087bdb2c"
+    },
+    {
+      "node_id": "card:card_e8f41c972bd34646b4d2dcfca8",
+      "title": "管理项目团队的两项核心活动？",
+      "item_type": "card",
+      "parent_id": "node:node_22091fadff6c488c97c9a55333",
+      "card_id": "card_e8f41c972bd34646b4d2dcfca8"
+    },
+    {
+      "node_id": "card:card_a17b1185a0354b7db2863425e4",
+      "title": "系统改进目标四类约束？",
+      "item_type": "card",
+      "parent_id": "node:node_452ddb29e33c42eeb14191d7b5",
+      "card_id": "card_a17b1185a0354b7db2863425e4"
+    },
+    {
+      "node_id": "card:card_a8069d82ec724d11aeef2d1d7e",
+      "title": "业务流程分析五种方法？",
+      "item_type": "card",
+      "parent_id": "node:node_781af3a78990453199b105a77c",
+      "card_id": "card_a8069d82ec724d11aeef2d1d7e"
+    },
+    {
+      "node_id": "card:card_fd44798ecf224fe5b89a7108ee",
+      "title": "TFD六种基本符号？",
+      "item_type": "card",
+      "parent_id": "node:node_781af3a78990453199b105a77c",
+      "card_id": "card_fd44798ecf224fe5b89a7108ee"
+    },
+    {
+      "node_id": "card:card_ac86ee5cd61f4773966a0042fb",
+      "title": "可行性研究五个步骤？",
+      "item_type": "card",
+      "parent_id": "node:node_2a95719c98a1406faeb7ac9673",
+      "card_id": "card_ac86ee5cd61f4773966a0042fb"
+    },
+    {
+      "node_id": "card:card_132590ffaa8c45deb30429c087",
+      "title": "NPV/IRR/投资回收期含义？",
+      "item_type": "card",
+      "parent_id": "node:node_2a95719c98a1406faeb7ac9673",
+      "card_id": "card_132590ffaa8c45deb30429c087"
+    },
+    {
+      "node_id": "card:card_099f15f4e024448b98eb86d539",
+      "title": "候选方案矩阵和可行性分析矩阵用途？",
+      "item_type": "card",
+      "parent_id": "node:node_cbd20c5300bb4f379b6eacda6a",
+      "card_id": "card_099f15f4e024448b98eb86d539"
+    },
+    {
+      "node_id": "card:card_11a46e048177451ba862a772b0",
+      "title": "系统分析在生命周期中的位置？",
+      "item_type": "card",
+      "parent_id": "node:node_8f8fce89cb274586a0c77b9270",
+      "card_id": "card_11a46e048177451ba862a772b0"
+    },
+    {
+      "node_id": "card:card_c218065d0f534db2afe72ac6a9",
+      "title": "结构化分析与面向对象分析如何选？",
+      "item_type": "card",
+      "parent_id": "node:node_8f8fce89cb274586a0c77b9270",
+      "card_id": "card_c218065d0f534db2afe72ac6a9"
+    },
+    {
+      "node_id": "card:card_50b4f1c64a9d4fe79c6feaebae",
+      "title": "UML在系统分析哪些图最常用？",
+      "item_type": "card",
+      "parent_id": "node:node_bf6eee47d2e54a97b836e76175",
+      "card_id": "card_50b4f1c64a9d4fe79c6feaebae"
+    },
+    {
+      "node_id": "card:card_a2fdf8e64fae47aa83f0a9915d",
+      "title": "从可行性到需求工程的衔接要点？",
+      "item_type": "card",
+      "parent_id": "node:node_bf6eee47d2e54a97b836e76175",
+      "card_id": "card_a2fdf8e64fae47aa83f0a9915d"
+    }
+  ],
+  "review_history_preserved": true,
+  "checks": {
+    "chapters_created": 9,
+    "outlines_created": 52,
+    "cards_created": 79,
+    "total_created": 140
+  }
+}

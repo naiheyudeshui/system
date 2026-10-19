@@ -1,0 +1,20 @@
+{
+  "batch_id": "ch12-hci-20261005-101220",
+  "parent_id": "node:node_2aac7c0dfe9d475c885459b20f",
+  "parent_path": "系统分析师一本通精华知识点（第二版） / 十二系统设计",
+  "source_ref": "用户笔记+一本通：人机交互设计目标/五层模型/设计要点（2026-10-05）",
+  "backup": "study-kb/data/backups/study-before-ch12-hci-20261005-101220.sqlite",
+  "created_cards": [
+    {
+      "node_id": "card:card_03be6ab9056641e1b08745ba44",
+      "card_id": "card_03be6ab9056641e1b08745ba44",
+      "title": "系统人机交互设计的目标、五层模型和设计要点是什么？",
+      "sort_order": 14
+    }
+  ],
+  "review_history_preserved": true,
+  "checks": {
+    "integrity_check": "ok",
+    "foreign_key_check": []
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "batch_id": "2026-10-12-ch01-pdf-review",
+  "source": "系统分析师-一本通精华知识点-第二版(OCR).pdf",
+  "section_structure": [
+    "1 计算机系统概述",
+    "校验码（本章保留）",
+    "2 存储系统",
+    "3 输入输出系统",
+    "4 指令系统",
+    "5 多处理机系统",
+    "6 系统可靠性分析"
+  ],
+  "created_sections": 3,
+  "created_cards": 3,
+  "renamed_sections": 4,
+  "root_map_policy": "知识地图正文保留在章节根节点，不建立独立地图节点",
+  "server": "http://10.0.0.102:8033",
+  "mirror": "study-kb/data/study.sqlite",
+  "status": "first-chapter-pdf-aligned"
+}

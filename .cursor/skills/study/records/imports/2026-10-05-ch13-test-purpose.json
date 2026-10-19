@@ -1,0 +1,20 @@
+{
+  "batch_id": "ch13-test-purpose-20261005-115709",
+  "parent_id": "node:node_83021bccd57b43efb45debc4ca",
+  "parent_path": "系统分析师一本通精华知识点（第二版） / 十三 软件实现和测试",
+  "source_ref": "用户笔记+一本通：软件测试目的三视角（2026-10-05）",
+  "backup": "study-kb/data/backups/study-before-ch13-test-purpose-20261005-115709.sqlite",
+  "created_cards": [
+    {
+      "node_id": "card:card_60ef6f891c4343aab7111fd0b0",
+      "card_id": "card_60ef6f891c4343aab7111fd0b0",
+      "title": "软件测试的目的从用户、开发者、测试人员角度看分别是什么？",
+      "sort_order": 7
+    }
+  ],
+  "review_history_preserved": true,
+  "checks": {
+    "integrity_check": "ok",
+    "foreign_key_check": []
+  }
+}

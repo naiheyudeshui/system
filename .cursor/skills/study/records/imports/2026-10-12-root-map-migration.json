@@ -1,0 +1,10 @@
+{
+  "batch_id": "2026-10-12-root-map-migration",
+  "server": "http://10.0.0.102:8033",
+  "operation": "将九张本章知识地图卡正文迁移到对应章节根节点",
+  "archived_map_cards": 9,
+  "root_nodes_updated": 9,
+  "active_items_after": 467,
+  "mirror": "study-kb/data/study.sqlite",
+  "mirror_backup": "study-kb/data/backups/study-before-mirror-20261012-171226.sqlite"
+}

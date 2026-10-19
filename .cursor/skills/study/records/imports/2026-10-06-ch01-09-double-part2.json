@@ -1,0 +1,221 @@
+{
+  "added": 54,
+  "created": [
+    {
+      "node_id": "card:card_893c2f67bf724f58885082e42f",
+      "title": "存储器有哪四种存取方式和四个性能指标？"
+    },
+    {
+      "node_id": "card:card_faed32757c2b49dba1ae58cb57",
+      "title": "RAM、ROM、DRAM、SRAM 有何区别？"
+    },
+    {
+      "node_id": "card:card_395bac468184477f969cc930cc",
+      "title": "辅存和磁盘的记录面、磁道、扇区、柱面是什么关系？"
+    },
+    {
+      "node_id": "card:card_9c07cb939d744edfa719872535",
+      "title": "Cache 的写直达、写回和标记法有何区别？"
+    },
+    {
+      "node_id": "card:card_8a82494dfe2c4030ac7ba5a8b8",
+      "title": "串联系统和并联系统的可靠性怎么算？"
+    },
+    {
+      "node_id": "card:card_3c49cd75897a463790ac9ae654",
+      "title": "N 模冗余至少要有几个模块正常？"
+    },
+    {
+      "node_id": "card:card_d71ec7fb9b2f45418ea296d255",
+      "title": "数据库五层安全措施从外到内是什么？"
+    },
+    {
+      "node_id": "card:card_7161712520304fd19aef7f5b05",
+      "title": "事务故障、系统故障、介质故障各怎么恢复？"
+    },
+    {
+      "node_id": "card:card_78966b9bedc24be184d609c54a",
+      "title": "分布式数据库比集中式多了哪几层模式？"
+    },
+    {
+      "node_id": "card:card_e6a2efe3c9cf4899862a1d4b8f",
+      "title": "关系代数里选择、投影、连接各做什么？"
+    },
+    {
+      "node_id": "card:card_7ea746f661194cbfb8c3cf685a",
+      "title": "函数依赖和候选键是什么关系？"
+    },
+    {
+      "node_id": "card:card_b879359f2638486486ea971374",
+      "title": "模式分解怎样才算好？"
+    },
+    {
+      "node_id": "card:card_cccc05bd7045483791d547cdce",
+      "title": "数据挖掘常见任务有哪些？"
+    },
+    {
+      "node_id": "card:card_c326f6d003f94c62aabe600531",
+      "title": "局域网、城域网、广域网的距离和速率怎么区分？"
+    },
+    {
+      "node_id": "card:card_910c74c76387422eafc919f839",
+      "title": "标准以太网和快速以太网的速率、介质是什么？"
+    },
+    {
+      "node_id": "card:card_7bffae218535442d9ddfd4cf79",
+      "title": "IP 数据报首部固定部分有多长？"
+    },
+    {
+      "node_id": "card:card_2075eba2ebf748ca948493e85d",
+      "title": "模拟信道带宽和数字信道码元速率怎么表示？"
+    },
+    {
+      "node_id": "card:card_09f418b386d046438b916a72fe",
+      "title": "子网划分后主机号和网络号怎么看？"
+    },
+    {
+      "node_id": "card:card_6bb2c71dcf72493cb1e61e78ba",
+      "title": "信息资源网和信息通信网有何区别？"
+    },
+    {
+      "node_id": "card:card_e069ccbe28fe453e8501849313",
+      "title": "信息化规划要同时回答哪几个问题？"
+    },
+    {
+      "node_id": "card:card_fdf8849f3b7f44f3bf2d4a4c79",
+      "title": "表示层集成和数据集成、控制集成差在哪？"
+    },
+    {
+      "node_id": "card:card_19a4e5a967674fb88e6021040a",
+      "title": "工作流的活动和工作项有何区别？"
+    },
+    {
+      "node_id": "card:card_5a99734b768b4590b390ff0794",
+      "title": "结构化、半结构化、非结构化决策有何区别？"
+    },
+    {
+      "node_id": "card:card_03427453dc504bf98b6ba7e56f",
+      "title": "电子商务相比传统商务的特征是什么？"
+    },
+    {
+      "node_id": "card:card_e7975ea732594cfda94b744135",
+      "title": "可行性研究到退役，开发过程中间有哪些阶段？"
+    },
+    {
+      "node_id": "card:card_12dcc693ee04448b846dee3d92",
+      "title": "连续式的四个过程组里各有什么代表过程域？"
+    },
+    {
+      "node_id": "card:card_536c17a5fafd46668cd6197e2d",
+      "title": "功能基线、分配基线、产品基线各在什么时候建立？"
+    },
+    {
+      "node_id": "card:card_f3ec81cbec744d9d82eae09a9b",
+      "title": "预测度量和验收度量有何区别？"
+    },
+    {
+      "node_id": "card:card_34399d35d6384741aff66599e1",
+      "title": "RAM 里 A、P、I、R、S 各表示什么？"
+    },
+    {
+      "node_id": "card:card_35114cf60479490ea266056b87",
+      "title": "业务流程分析的五种方法各从什么角度看？"
+    },
+    {
+      "node_id": "card:card_3652c76057c54b4996db01db16",
+      "title": "技术可行、经济可行、运行可行缺一个会怎样？"
+    },
+    {
+      "node_id": "card:card_1aaf24f13144435189b2685501",
+      "title": "系统改进目标为什么必须可度量？"
+    },
+    {
+      "node_id": "card:card_3e5fd04d5f424fb7a2b2e882cb",
+      "title": "作业步和作业说明书是什么？脱机与联机控制有何区别？"
+    },
+    {
+      "node_id": "card:card_27308e0764e84862977bc65968",
+      "title": "文件系统靠什么保证可靠？安全分哪四级？"
+    },
+    {
+      "node_id": "card:card_69d9b5b5c53a44bb926d2cdb4a",
+      "title": "页式、段式、段页式的地址各由什么组成？"
+    },
+    {
+      "node_id": "card:card_aa70f53f10104685b110b0bcab",
+      "title": "P 操作和 V 操作的判断条件是什么？"
+    },
+    {
+      "node_id": "card:card_62dac913e1b24a56872eecb381",
+      "title": "国产操作系统在一本通里为什么被单列？"
+    },
+    {
+      "node_id": "card:card_1bab1fb9270f4e0e99cfd86892",
+      "title": "独占设备、共享设备和虚拟设备有何区别？"
+    },
+    {
+      "node_id": "card:card_56ec337e7a104919bdf2d89065",
+      "title": "支持过程和组织过程为什么不是开发过程？"
+    },
+    {
+      "node_id": "card:card_701e59837b15401f99d0b2f798",
+      "title": "防火墙为什么挡不住内部攻击和不经过它的流量？"
+    },
+    {
+      "node_id": "card:card_61c033c02ae84628b110671600",
+      "title": "视图保护和审计在数据库安全里各起什么作用？"
+    },
+    {
+      "node_id": "card:card_c21636779d77463eb50411aa20",
+      "title": "相联存取和随机存取有何区别？"
+    },
+    {
+      "node_id": "card:card_4b024e2ff91c41ac9109954fe0",
+      "title": "UMA、NUMA、COMA 的访问时间有何不同？"
+    },
+    {
+      "node_id": "card:card_4d976382dc7f4a179380924eba",
+      "title": "CRC 生成时为什么要在信息位后面补 0？"
+    },
+    {
+      "node_id": "card:card_47aba9a090b94f7ea7110d669a",
+      "title": "CPU、内存和外存在速度和用途上怎么分工？"
+    },
+    {
+      "node_id": "card:card_456c2833b714493bba910e51a3",
+      "title": "虚拟存储按实现原理分成哪两种？"
+    },
+    {
+      "node_id": "card:card_7cf60bb760ea4762821955a9bb",
+      "title": "CISC 的三个主要问题是什么？"
+    },
+    {
+      "node_id": "card:card_dd683c1eeb9b445bbc8cc3f78f",
+      "title": "RISC 用哪几项技术保住流水线？"
+    },
+    {
+      "node_id": "card:card_7d279ef216874b0d831d1de15e",
+      "title": "并、交、差三种集合运算的结果各是什么？"
+    },
+    {
+      "node_id": "card:card_2645b419ce63474092787795fe",
+      "title": "第四范式要消除什么？"
+    },
+    {
+      "node_id": "card:card_06f95b8fbf7c4634ab721c913e",
+      "title": "X 锁和 S 锁各允许什么？三级封锁分别解决什么？"
+    },
+    {
+      "node_id": "card:card_dc83137ce27a4a30a2bf854cf7",
+      "title": "企业信息化的初、中、高三个阶段有何区别？"
+    },
+    {
+      "node_id": "card:card_42bef068c8004319a2978389dc",
+      "title": "批处理里单道和多道差在哪？"
+    },
+    {
+      "node_id": "card:card_7f2862762df24fc4a067d46ca0",
+      "title": "网络操作系统的三种模式是什么？"
+    }
+  ]
+}

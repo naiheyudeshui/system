@@ -1,0 +1,44 @@
+{
+  "batch_id": "ch13-style-20261005-103633",
+  "parent_id": "node:node_83021bccd57b43efb45debc4ca",
+  "parent_path": "系统分析师一本通精华知识点（第二版） / 十三 软件实现和测试",
+  "source_ref": "用户笔记+一本通：程序语言选择与程序设计风格（2026-10-05）",
+  "backup": "study-kb/data/backups/study-before-ch13-style-20261005-103633.sqlite",
+  "created_cards": [
+    {
+      "node_id": "card:card_967c06b1f4aa4ec09a766eb3e3",
+      "card_id": "card_967c06b1f4aa4ec09a766eb3e3",
+      "title": "选择程序设计语言应满足哪些条件？",
+      "sort_order": 1
+    },
+    {
+      "node_id": "card:card_ccfa264bbe1446a491458cfc25",
+      "card_id": "card_ccfa264bbe1446a491458cfc25",
+      "title": "与可理解性相关的良好程序设计风格有哪些？",
+      "sort_order": 2
+    },
+    {
+      "node_id": "card:card_b82cb875ecfa49148fdbb83338",
+      "card_id": "card_b82cb875ecfa49148fdbb83338",
+      "title": "与可复用性相关的良好程序设计风格有哪些？",
+      "sort_order": 3
+    },
+    {
+      "node_id": "card:card_06743a91fdd745d0b0fb35699a",
+      "card_id": "card_06743a91fdd745d0b0fb35699a",
+      "title": "与可扩展性相关的良好程序设计风格有哪些？",
+      "sort_order": 4
+    },
+    {
+      "node_id": "card:card_cac1055fef1a44c29ad5e398ac",
+      "card_id": "card_cac1055fef1a44c29ad5e398ac",
+      "title": "与健壮性相关的良好程序设计风格有哪些？",
+      "sort_order": 5
+    }
+  ],
+  "review_history_preserved": true,
+  "checks": {
+    "integrity_check": "ok",
+    "foreign_key_check": []
+  }
+}

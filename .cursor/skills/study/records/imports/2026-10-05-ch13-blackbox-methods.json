@@ -1,0 +1,20 @@
+{
+  "batch_id": "ch13-blackbox-20261005-120250",
+  "parent_id": "node:node_83021bccd57b43efb45debc4ca",
+  "parent_path": "系统分析师一本通精华知识点（第二版） / 十三 软件实现和测试",
+  "source_ref": "用户笔记+一本通：黑盒测试用例设计方法（2026-10-05）",
+  "backup": "study-kb/data/backups/study-before-ch13-blackbox-20261005-120250.sqlite",
+  "created_cards": [
+    {
+      "node_id": "card:card_03e3f31b7f584ffca16189db73",
+      "card_id": "card_03e3f31b7f584ffca16189db73",
+      "title": "黑盒测试用例设计方法有哪些？各是什么思路？",
+      "sort_order": 9
+    }
+  ],
+  "review_history_preserved": true,
+  "checks": {
+    "integrity_check": "ok",
+    "foreign_key_check": []
+  }
+}

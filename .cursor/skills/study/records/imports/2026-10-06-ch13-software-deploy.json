@@ -1,0 +1,31 @@
+{
+  "batch_id": "ch13-software-deploy-20261006-203500",
+  "parent_id": "node:node_2a3c64355c8c4c5a95a63c9971",
+  "parent_path": "系统分析师一本通精华知识点（第二版） / 十三 软件实现和测试 / 软件测试",
+  "source_ref": "系统分析师教程 软件部署 / 用户笔记 2026-10-06",
+  "server": "http://10.205.90.231:8033",
+  "created_cards": [
+    {
+      "node_id": "card:card_fcbb833b168a4c86bb721279e1",
+      "card_id": "card_fcbb833b168a4c86bb721279e1",
+      "title": "软件部署的工作目标有哪些？",
+      "sort_order": 10
+    },
+    {
+      "node_id": "card:card_485e398f2be84144ba2a96cfb6",
+      "card_id": "card_485e398f2be84144ba2a96cfb6",
+      "title": "软件部署的步骤有哪些？",
+      "sort_order": 11
+    }
+  ],
+  "review_history_preserved": true,
+  "checks": {
+    "probe": "writable",
+    "node_count_before": 131,
+    "node_count_after": 134,
+    "parent_children_before": 5,
+    "parent_children_after": 7,
+    "duplicate_titles": false,
+    "sync_mirror": "ok: study_server.py sync-mirror 2026-10-06T20:42 (active_items=134)"
+  }
+}

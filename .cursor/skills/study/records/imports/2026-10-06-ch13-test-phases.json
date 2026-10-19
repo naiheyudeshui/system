@@ -1,0 +1,51 @@
+{
+  "batch_id": "ch13-test-phases-20261006-170000",
+  "parent_id": "node:node_5ea26a75ca924f578c15df1689",
+  "parent_path": "系统分析师一本通精华知识点（第二版） / 十三 软件实现和测试 / 软件测试类型",
+  "source_ref": "系统分析师教程（第2版）14.4.2 按测试阶段划分（2026-10-06）",
+  "server": "http://10.205.90.231:8033",
+  "created_cards": [
+    {
+      "node_id": "card:card_6fe4825b9c2d47c49c11b06557",
+      "card_id": "card_6fe4825b9c2d47c49c11b06557",
+      "title": "按测试阶段划分，软件测试经历哪四个阶段？",
+      "sort_order": 2
+    },
+    {
+      "node_id": "card:card_d6404cb8670743e793e9f92a46",
+      "card_id": "card_d6404cb8670743e793e9f92a46",
+      "title": "单元测试的依据和测试内容分别是什么？",
+      "sort_order": 3
+    },
+    {
+      "node_id": "card:card_c72ee33b874b4c889dbee29401",
+      "card_id": "card_c72ee33b874b4c889dbee29401",
+      "title": "集成测试有哪些集成层次与集成策略？",
+      "sort_order": 4
+    },
+    {
+      "node_id": "card:card_42ab7d60b7a04a82880df83746",
+      "card_id": "card_42ab7d60b7a04a82880df83746",
+      "title": "系统测试需要测试哪些内容？",
+      "sort_order": 5
+    },
+    {
+      "node_id": "card:card_a9d5cfc103ab4e7ea8a636c87a",
+      "card_id": "card_a9d5cfc103ab4e7ea8a636c87a",
+      "title": "回归测试和冒烟测试分别是什么？",
+      "sort_order": 6
+    },
+    {
+      "node_id": "card:card_67b3073e0b2143e6b756e2a439",
+      "card_id": "card_67b3073e0b2143e6b756e2a439",
+      "title": "验收测试是什么？分为哪些类型？",
+      "sort_order": 7
+    }
+  ],
+  "review_history_preserved": true,
+  "checks": {
+    "probe": "writable",
+    "node_count_before": 125,
+    "node_count_after": 131
+  }
+}

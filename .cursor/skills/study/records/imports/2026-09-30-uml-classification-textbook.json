@@ -1,0 +1,11 @@
+{
+  "batch_id": "2026-09-30-uml-classification-textbook",
+  "db": "D:\\system\\study-kb\\data\\study.sqlite",
+  "backup": "D:\\system\\study-kb\\data\\backups\\study-before-uml-classification-20260930-165526.sqlite",
+  "updated": [
+    "card:card_2c765a730f384c4ba10ca0e99e",
+    "card:card_0c460c2ccccb411f9182e2c6c6",
+    "card:card_910f77af0dce4cc88d2c550f5b"
+  ],
+  "rule": "textbook: 8 static, 6 dynamic, 4 interaction"
+}

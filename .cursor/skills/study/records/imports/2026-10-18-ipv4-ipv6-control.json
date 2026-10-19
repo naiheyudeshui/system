@@ -1,0 +1,6 @@
+{
+  "request_id": "ipv4-ipv6-control-20261018-01",
+  "operation": "child",
+  "title": "IPv4 到 IPv6：IGMP/ARP/ICMP 分别演变成什么？",
+  "content_md": "**一句话**：IPv6 把散落的控制能力收编进 **ICMPv6**——组播用 **MLD**，地址解析用 **NDP**，并取消广播。\n\n| 功能 | IPv4 时代 | IPv6 时代 | 演进逻辑 |\n| --- | --- | --- | --- |\n| 组播成员管理（主机加不加群） | **IGMP**（Internet Group Management Protocol） | **MLD**（Multicast Listener Discovery） | IPv6 大一统：控制协议收编进 ICMPv6；MLD 本质是 ICMPv6 的一部分 |\n| 地址解析（已知 IP 查 MAC） | **ARP**（Address Resolution Protocol） | **NDP**（邻居发现协议，Neighbor Discovery Protocol） | IPv6 废除广播，ARP 广播随之消失，改用 NDP 的组播获取 MAC |\n| 控制与差错报文 | **ICMP**（v4） | **ICMPv6** | ICMPv6 权限更大：不仅报错，还承接原 ARP、IGMP 等能力 |\n\n**记忆**：IGMP→MLD，ARP→NDP，ICMP→ICMPv6；核心是“无广播 + 控制进 ICMPv6”。\n\n**易错点**：不要说 IPv6 还有 ARP；NDP/MLD 都挂在 ICMPv6 体系下，不是独立于 ICMPv6 的另一套“外挂协议名”。\n\n**来源**：用户提供的 IPv4/IPv6 控制协议演进对照整理（2026-10-18）。"
+}

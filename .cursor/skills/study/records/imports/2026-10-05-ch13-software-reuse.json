@@ -1,0 +1,26 @@
+{
+  "batch_id": "ch13-reuse-20261005-102354",
+  "parent_path": "系统分析师一本通精华知识点（第二版） / 十三 软件重用",
+  "source_ref": "用户笔记+一本通：软件重用三个层次与代码重用方法（2026-10-05）",
+  "backup": "study-kb/data/backups/study-before-ch13-reuse-20261005-102354.sqlite",
+  "created_chapter": {
+    "node_id": "node:node_83021bccd57b43efb45debc4ca",
+    "legacy_node_id": "node_83021bccd57b43efb45debc4ca",
+    "title": "十三 软件重用",
+    "sort_order": 13
+  },
+  "created_cards": [
+    {
+      "node_id": "card:card_d7bfe71b2bb64ce99f7b8f7a34",
+      "card_id": "card_d7bfe71b2bb64ce99f7b8f7a34",
+      "title": "软件重用分为哪三个层次？代码重用有哪些常用方法？",
+      "sort_order": 0,
+      "parent_id": "node:node_83021bccd57b43efb45debc4ca"
+    }
+  ],
+  "review_history_preserved": true,
+  "checks": {
+    "integrity_check": "ok",
+    "foreign_key_check": []
+  }
+}

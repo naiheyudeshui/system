@@ -1,0 +1,20 @@
+{
+  "batch_id": "ch12-oop-principles-20260930-222306",
+  "parent_id": "node:node_2aac7c0dfe9d475c885459b20f",
+  "parent_path": "系统分析师一本通精华知识点（第二版） / 十二系统设计",
+  "source_ref": "用户笔记+一本通：面向对象设计六原则（2026-09-30）",
+  "backup": "study-kb/data/backups/study-before-ch12-oop-principles-20260930-222306.sqlite",
+  "created_cards": [
+    {
+      "node_id": "card:card_996c8d840e6b4eb0b61050e3a3",
+      "card_id": "card_996c8d840e6b4eb0b61050e3a3",
+      "title": "面向对象设计的六个原则分别是什么？",
+      "sort_order": 6
+    }
+  ],
+  "review_history_preserved": true,
+  "checks": {
+    "integrity_check": "ok",
+    "foreign_key_check": []
+  }
+}

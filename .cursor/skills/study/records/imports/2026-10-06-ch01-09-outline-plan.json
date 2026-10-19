@@ -1,0 +1,175 @@
+{
+  "batch_id": "ch01-09-outline-plan-20261006",
+  "server": "http://10.205.90.231:8033",
+  "book_node_id": "node:node_ce4ef92c44b04e5a90a8c1efce",
+  "book_title": "系统分析师一本通精华知识点（第二版）",
+  "source_ref": "系统分析师教程（第2版）+ 一本通OCR精华（2026-10-06）",
+  "ocr_source": "d:\\system\\系统分析师-一本通精华知识点-第二版(OCR).docx",
+  "probe_before": {"node_count": 168, "writable": true},
+  "existing_chapters": {
+    "1-9": "全部缺失，需新建章节节点",
+    "10-14": "已有内容（十软件工程～十四系统运行与维护）"
+  },
+  "chapters": [
+    {
+      "num": 1,
+      "title": "一 计算机系统知识",
+      "textbook_map": "教程第1章 计算机系统综合知识（一本通无显式章标题，OCR行54-307）",
+      "ocr_lines": "54-307, 2055-2112(容错补充)",
+      "outline_sections": [
+        {"title": "计算机组成与软件", "est_cards": 2},
+        {"title": "校验码", "est_cards": 4},
+        {"title": "存储系统", "est_cards": 4},
+        {"title": "多处理机系统", "est_cards": 2},
+        {"title": "系统可靠性与容错", "est_cards": 4}
+      ],
+      "est_total_cards": 16,
+      "cross_refs": ["Ch4网络", "Ch6质量可靠性"]
+    },
+    {
+      "num": 2,
+      "title": "二 操作系统知识",
+      "textbook_map": "教程3.6节操作系统（OCR行308-729）",
+      "ocr_lines": "308-729",
+      "outline_sections": [
+        {"title": "操作系统概述", "est_cards": 3},
+        {"title": "进程管理", "est_cards": 5},
+        {"title": "存储管理", "est_cards": 4},
+        {"title": "设备管理", "est_cards": 2},
+        {"title": "文件管理", "est_cards": 3},
+        {"title": "作业与用户界面", "est_cards": 2}
+      ],
+      "est_total_cards": 19,
+      "cross_refs": ["Ch1存储层次", "Ch12I/O设计"]
+    },
+    {
+      "num": 3,
+      "title": "三 数据库系统",
+      "textbook_map": "教程数据库相关章节（OCR行730-1466）",
+      "ocr_lines": "730-1466",
+      "outline_sections": [
+        {"title": "数据库设计与建模", "est_cards": 4},
+        {"title": "关系代数与SQL", "est_cards": 3},
+        {"title": "关系规范化", "est_cards": 4},
+        {"title": "数据库安全与恢复", "est_cards": 3},
+        {"title": "数据仓库与挖掘", "est_cards": 3},
+        {"title": "非关系数据库", "est_cards": 2}
+      ],
+      "est_total_cards": 19,
+      "cross_refs": ["Ch5企业IRP", "Ch12持久化"]
+    },
+    {
+      "num": 4,
+      "title": "四 计算机网络",
+      "textbook_map": "教程计算机网络章节（OCR行1467-2054）",
+      "ocr_lines": "1467-2054",
+      "outline_sections": [
+        {"title": "网络基础与数据通信", "est_cards": 4},
+        {"title": "局域网与广域网", "est_cards": 3},
+        {"title": "OSI与TCP/IP", "est_cards": 4},
+        {"title": "网络地址与路由", "est_cards": 3},
+        {"title": "Web服务与安全", "est_cards": 4},
+        {"title": "通信与网络安全", "est_cards": 3}
+      ],
+      "est_total_cards": 21,
+      "cross_refs": ["Ch1可靠性", "Ch11SOA/Web"]
+    },
+    {
+      "num": 5,
+      "title": "五 企业信息化",
+      "textbook_map": "教程企业信息化/电子政务/EAI（OCR行2147-2352）",
+      "ocr_lines": "2147-2352",
+      "outline_sections": [
+        {"title": "信息资源规划IRP", "est_cards": 3},
+        {"title": "企业信息化规划", "est_cards": 3},
+        {"title": "决策支持系统DSS", "est_cards": 2},
+        {"title": "电子商务与电子政务", "est_cards": 3},
+        {"title": "企业应用集成EAI", "est_cards": 3},
+        {"title": "工作流管理", "est_cards": 2}
+      ],
+      "est_total_cards": 16,
+      "cross_refs": ["Ch3数据库", "Ch8系统规划", "Ch12工作流"]
+    },
+    {
+      "num": 6,
+      "title": "六 软件过程与质量",
+      "textbook_map": "教程软件工程过程/CMMI/质量（OCR行2353-2674）",
+      "ocr_lines": "2353-2674",
+      "outline_sections": [
+        {"title": "软件生命周期", "est_cards": 2},
+        {"title": "软件开发环境", "est_cards": 2},
+        {"title": "CMMI与过程评估", "est_cards": 4},
+        {"title": "配置管理", "est_cards": 3},
+        {"title": "软件质量管理", "est_cards": 4}
+      ],
+      "est_total_cards": 15,
+      "cross_refs": ["Ch7项目管理", "Ch10软件工程", "Ch13测试"]
+    },
+    {
+      "num": 7,
+      "title": "七 项目管理",
+      "textbook_map": "教程项目开发管理（OCR行2675-2743）",
+      "ocr_lines": "2675-2743",
+      "outline_sections": [
+        {"title": "人力资源管理", "est_cards": 3},
+        {"title": "项目团队建设", "est_cards": 2},
+        {"title": "沟通与干系人", "est_cards": 2}
+      ],
+      "est_total_cards": 7,
+      "cross_refs": ["Ch6CMMI", "Ch8可行性"]
+    },
+    {
+      "num": 8,
+      "title": "八 系统规划与可行性",
+      "textbook_map": "教程系统规划（OCR行2744-2853）",
+      "ocr_lines": "2744-2853",
+      "outline_sections": [
+        {"title": "问题分析与目标", "est_cards": 2},
+        {"title": "业务流程分析", "est_cards": 3},
+        {"title": "可行性研究", "est_cards": 4},
+        {"title": "经济评价与方案建议", "est_cards": 3}
+      ],
+      "est_total_cards": 12,
+      "cross_refs": ["Ch5企业规划", "Ch9/十需求工程"]
+    },
+    {
+      "num": 9,
+      "title": "九 系统分析基础",
+      "textbook_map": "教程系统分析入门（OCR分散引用，衔接十软件需求工程）",
+      "ocr_lines": "2488,2850-2853衔接",
+      "outline_sections": [
+        {"title": "系统分析概述", "est_cards": 2},
+        {"title": "建模工具预告", "est_cards": 2}
+      ],
+      "est_total_cards": 4,
+      "cross_refs": ["Ch8可行性", "Ch10需求工程", "Ch12UML"]
+    }
+  ],
+  "estimated_new_nodes": {
+    "chapter_nodes": 9,
+    "outline_nodes": 45,
+    "cards": 129,
+    "total": 183
+  },
+  "execution_priority": [
+    "Ch1-3 基础技术（OCR结构最清晰）",
+    "Ch4-6 网络/企业/过程",
+    "Ch7-9 管理/规划/分析衔接"
+  ],
+  "blockers": [
+    "OCR前几页目录损坏（大量点号占位）",
+    "OCR未标全一至九章标题，章节边界按内容块推断",
+    "新建章节默认排在sort_order末尾，需后续reorder置于十之前",
+    "手机主库 10.205.90.231:8033 导入时超时，实际写入 127.0.0.1:8033"
+  ],
+  "import_result": {
+    "status": "batch1_complete",
+    "node_count_before": 168,
+    "node_count_after": 299,
+    "chapters": 9,
+    "section_outlines": 43,
+    "cards": 79,
+    "audit": "imports/2026-10-06-ch01-09-import.json",
+    "deferred": "约50张计划卡（分布式/中间件/配置管理细节等）留第二批；章节sort_order重排"
+  }
+}
