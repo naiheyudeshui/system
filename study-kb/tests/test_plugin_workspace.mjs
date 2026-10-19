@@ -15,6 +15,7 @@ const treeSource = await readFile(new URL("treeWorkspace.mjs", shared), "utf8");
 const searchableComboboxSource = await readFile(new URL("searchableCombobox.mjs", shared), "utf8");
 const treeAdapterSource = await readFile(new URL("../web/studyTreeWorkspace.mjs", import.meta.url), "utf8");
 const workspaceCss = await readFile(new URL("pluginWorkspace.css", shared), "utf8");
+const studyCss = await readFile(new URL("../web/styles.css", import.meta.url), "utf8");
 const workbenchCss = await readFile(new URL("workbench.css", shared), "utf8");
 const settle = () => new Promise((resolve) => setImmediate(resolve));
 
@@ -56,6 +57,38 @@ async function setup() {
   await treeAdapter.link((specifier) => specifier.includes("pluginConfigManager") ? manager : specifier.includes("tablePreview") ? preview : specifier.includes("treeWorkspace") ? tree : specifier.includes("searchableCombobox") ? searchableCombobox : markdown); await treeAdapter.evaluate();
   return { tree: tree.namespace, treeAdapter: treeAdapter.namespace, dom, document: dom.window.document, workspace: workspace.namespace, manager: manager.namespace, review: review.namespace, preview: preview.namespace, resizeObservers };
 }
+
+test("outline long content grows naturally and delegates scrolling to the outer list", () => {
+  const dom = new JSDOM('<style>' + studyCss + '</style><style>' + workspaceCss + '</style><div class="wb-tree-browser"><div class="wb-tree-outline"><div class="wb-tree-inline-content">Long content</div></div></div>', { url: "http://localhost" });
+  try {
+    const content = dom.window.document.querySelector(".wb-tree-inline-content");
+    const style = dom.window.getComputedStyle(content);
+    assert.equal(style.height, "auto");
+    assert.equal(style.maxHeight, "none");
+    assert.equal(style.overflow, "visible");
+    assert.notEqual(style.overflowY, "auto");
+    assert.equal(style.overscrollBehavior, "auto");
+    const outer = dom.window.getComputedStyle(content.parentElement);
+    assert.equal(outer.overflow, "auto");
+  } finally { dom.window.close(); }
+});
+
+test("empty content drops restored expansion without collapsing children", async () => {
+  const ui = await setup();
+  try {
+    const root = ui.document.createElement("div");
+    ui.document.body.append(root);
+    const tree = ui.tree.createTreeWorkspace(root, {
+      roots: [{ id: "parent", title: "Parent", data: { content_md: " \n " }, children: [{ id: "child", title: "Child", data: {}, children: [] }] }],
+      detailFields: [{ column: "content_md", format: "markdown" }],
+      initialState: { expandedContent: ["parent", "missing"] },
+    });
+    assert.equal(tree.getState().expandedContent.length, 0);
+    assert.equal(root.querySelectorAll("foreignObject").length, 0);
+    assert.ok(root.querySelector('[data-node-id="child"]'));
+    tree.dispose();
+  } finally { ui.dom.window.close(); }
+});
 
 test("workspace remounts the matching presentation when placement changes", async () => {
   const ui = await setup();
@@ -883,6 +916,53 @@ test("tree drag preview distinguishes parent drop from sibling insertion", async
   } finally { ui.dom.window.close(); }
 });
 
+test("tree accepts sibling whitespace and end zones with live guides", async () => {
+  const ui = await setup();
+  try {
+    const root = ui.document.createElement("section"); ui.document.body.append(root);
+    const reorders = [];
+    const host = ui.tree.createTreeWorkspace(root, {
+      roots: [{ id: "parent", title: "Parent", children: ["source", "a", "b"].map((id) => ({ id, title: id, children: [] })) }],
+      onMove: async () => assert.fail("whitespace must not change parent"),
+      onReorder: async (...args) => reorders.push(args),
+    });
+    const source = root.querySelector('[data-node-id="source"]');
+    for (const [id, top] of [["a", 100], ["b", 240]]) {
+      root.querySelector('[data-node-id="' + id + '"]').getBoundingClientRect = () => ({ top, bottom: top + 100, height: 100, left: 100, right: 300, width: 200 });
+    }
+    ui.document.elementsFromPoint = () => [];
+    const pointer = (type, x, y) => {
+      const event = new ui.dom.window.Event(type, { bubbles: true, cancelable: true });
+      Object.defineProperties(event, { button: { value: 0 }, pointerId: { value: 1 }, clientX: { value: x }, clientY: { value: y } });
+      source.dispatchEvent(event);
+    };
+    for (const [y, target, placement] of [[80, "a", "before"], [210, "a", "after"], [230, "b", "before"], [360, "b", "after"]]) {
+      pointer("pointerdown", 150, 10); pointer("pointermove", 150, y);
+      assert.equal(root.querySelectorAll(".wb-tree-drag-connection").length, 1);
+      const connection = root.querySelector(".wb-tree-drag-connection");
+      const ghost = root.querySelector(".wb-tree-drag-ghost");
+      const translation = ghost.getAttribute("transform").match(/translate\(([^,]+),([^)]+)\)/);
+      const titleBox = ghost.querySelector(".wb-tree-node-control rect");
+      const height = Number(titleBox.getAttribute("height"));
+      assert.ok(connection.getAttribute("d").endsWith(
+        Number(translation[1]) + "," + (Number(translation[2]) + height / 2)));
+      assert.equal(connection.getAttribute("stroke"), "var(--accent)");
+      assert.equal(root.querySelectorAll(".wb-tree-insertion-line").length, 1);
+      pointer("pointerup", 150, y); await settle();
+      assert.deepEqual(reorders.at(-1), ["source", target, placement]);
+      assert.equal(root.querySelectorAll(".wb-tree-drop-guide").length, 0);
+    }
+    for (const [x, y] of [[150, 500], [700, 210]]) {
+      pointer("pointerdown", 150, 10); pointer("pointermove", x, y); pointer("pointerup", x, y);
+    }
+    assert.equal(reorders.length, 4);
+    pointer("pointerdown", 150, 10); pointer("pointermove", 150, 210); pointer("pointercancel", 150, 210);
+    assert.equal(root.querySelectorAll(".wb-tree-drop-guide,.wb-tree-drag-ghost").length, 0);
+    assert.equal(reorders.length, 4);
+    host.dispose();
+  } finally { ui.dom.window.close(); }
+});
+
 test("tree node actions use an accessible radial menu instead of header buttons", async () => {
   const ui = await setup();
   try {
@@ -955,6 +1035,8 @@ test("outline rows use child toggle and title content toggle with themed view st
     assert.equal(root.querySelector(".wb-tree-radial-menu"), null);
     assert.equal(title.getAttribute("aria-expanded"), "false");
     assert.match(root.querySelector(".wb-tree-inline-content").textContent, /Child answer/);
+    assert.ok(root.querySelector(".wb-tree-outline > .wb-tree-inline-content"));
+    assert.match(studyCss, /\.wb-tree-browser \.wb-tree-outline > \.wb-tree-inline-content \{[^}]*height:auto;[^}]*max-height:none;[^}]*overflow-y:visible/);
     assert.equal(root.querySelector('.wb-tree-outline-title[data-node-id="child"]').getAttribute("aria-expanded"), "true");
     graphButton.click();
     assert.equal(root.querySelector('[aria-label="切换到树图"]').getAttribute("aria-pressed"), "true");

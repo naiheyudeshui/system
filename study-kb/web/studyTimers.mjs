@@ -67,6 +67,7 @@ async function renderStopwatchPanel(panel, { api, postApi, mode }) {
   const onVisibilityChange = () => { if (document.visibilityState === "visible") void sync(); };
   document.addEventListener("visibilitychange", onVisibilityChange);
   interval = window.setInterval(paint, 1000);
+  panel.refreshContext = () => { void sync(); };
   panel.dispose = () => { if (interval) window.clearInterval(interval); document.removeEventListener("visibilitychange", onVisibilityChange); };
   await sync();
 }
@@ -78,8 +79,8 @@ export async function renderTimerPanel(panel, { api, postApi, kind, mode = "comp
   panel.classList.add("study-time-panel", `study-time-${kind}`, `study-time-${mode}`);
   const controller = make("section", null, "study-time-controller");
   const icon = make("span", pomodoro ? "🍅" : "⏱", "study-time-icon");
-  const task = make("input"); task.maxLength = 500; task.placeholder = "所做事宜"; task.setAttribute("aria-label", "所做事宜");
-  const project = make("select"); project.setAttribute("aria-label", "计时项目");
+  const task = make("input"); task.maxLength = 500; task.placeholder = "所做事宜"; task.className = "study-time-field"; task.setAttribute("aria-label", "所做事宜");
+  const project = make("select"); project.className = "study-time-field"; project.setAttribute("aria-label", "计时项目");
   const clock = make("input"); clock.type = "text"; clock.inputMode = "numeric"; clock.value = pomodoro ? "25" : "00:00"; clock.className = "study-time-clock"; clock.setAttribute("aria-label", pomodoro ? "番茄钟分钟数" : "计时时间");
   const state = make("span", "准备开始", "study-time-state");
   const progress = make("i"); const progressTrack = make("span", null, "study-time-progress"); progressTrack.append(progress);
@@ -226,6 +227,7 @@ export async function renderTimerPanel(panel, { api, postApi, kind, mode = "comp
   };
   document.addEventListener("visibilitychange", onVisibilityChange);
   interval = window.setInterval(paint, 1000);
+  panel.refreshContext = () => { void sync(); };
   panel.dispose = () => {
     if (interval) window.clearInterval(interval);
     document.removeEventListener("visibilitychange", onVisibilityChange);
