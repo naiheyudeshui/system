@@ -1,4 +1,4 @@
-import { createPluginWorkspace, mountLegacyWorkspaceTemplate } from "/3dworkbench/pluginWorkspace.mjs?v=20261022-bsp-clear3";
+import { createPluginWorkspace, mountLegacyWorkspaceTemplate } from "/3dworkbench/pluginWorkspace.mjs?v=20261022-bsp-strip2";
 import { installHostHelp } from "/3dworkbench/hostHelp.mjs";
 import { createRefreshCoordinator } from "/3dworkbench/refreshCoordinator.mjs";
 import { studyHelpTopics } from "./studyHelp.mjs";
