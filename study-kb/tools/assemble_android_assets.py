@@ -9,13 +9,17 @@ it is not the live Windows database.
 from __future__ import annotations
 
 import hashlib
+import json
+import os
 import shutil
 import sqlite3
+import subprocess
 import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-STUDIO_ROOT = REPO_ROOT / "3dStudio"
+STUDIO_ROOT = Path(os.environ.get("STUDY_STUDIO_ROOT", REPO_ROOT / "3dStudio")).resolve()
+CONTRACT_V2 = os.environ.get("STUDY_CONTRACT_V2") == "1"
 STUDY_ROOT = REPO_ROOT / "study-kb"
 DEST_ROOT = STUDY_ROOT / "android" / "app" / "src" / "main" / "assets" / "runtime"
 
@@ -106,6 +110,15 @@ def _copy_database(src: Path, copied: dict[str, str]) -> None:
 
 
 def assemble() -> Path:
+    # Validate before touching the generated destination; never accidentally package main.
+    if CONTRACT_V2:
+        for rel in ("3dworkbench/python/command_gateway.py", "3dworkbench/contracts/data-binding.schema.json"):
+            if not (STUDIO_ROOT / rel).is_file():
+                raise RuntimeError(f"contract-v2 source missing: {rel}")
+        branch = subprocess.check_output(
+            ["git", "-C", str(STUDIO_ROOT), "branch", "--show-current"], text=True).strip()
+        if branch != "feat/workbench-contract-v2":
+            raise RuntimeError(f"refusing non-contract branch: {branch}")
     if DEST_ROOT.exists():
         shutil.rmtree(DEST_ROOT)
     DEST_ROOT.mkdir(parents=True)
@@ -128,6 +141,32 @@ def assemble() -> Path:
             f"3dStudio/3dworkbench/python/{name}",
             copied,
         )
+    if CONTRACT_V2:
+        _copy_tree(STUDIO_ROOT / "3dworkbench/python", "3dStudio/3dworkbench/python", copied)
+        _copy_tree(STUDIO_ROOT / "3dworkbench/contracts", "3dStudio/3dworkbench/contracts", copied)
+        _copy_tree(STUDIO_ROOT / "3dworkbench/docs", "3dStudio/3dworkbench/docs", copied)
+        for name in ("requirements-contracts.txt", "requirements-contracts-lock.txt"):
+            _copy_file(STUDIO_ROOT / "3dworkbench" / name, f"3dStudio/3dworkbench/{name}", copied)
+        for rel in ("tests/test_data_platform_v2.py", "tests/test_data_schema_parity.py",
+                    "tests/contracts/schema-fixtures.json", "tests/contracts/schema-parity.mjs",
+                    "tests/contracts/package.json", "tests/contracts/package-lock.json"):
+            _copy_file(STUDIO_ROOT / rel, "3dStudio/" + rel, copied)
+        plan_root = os.environ.get("STUDY_CONTRACT_PLAN_ROOT")
+        if plan_root:
+            plan = Path(plan_root).resolve()
+            _copy_file(plan, "contract-v2-docs/plan.md", copied)
+            for name in ("protocol.md", "acceptance.md", "data-bindings.md", "foundation-progress.md"):
+                _copy_file(plan.with_suffix("") / name, "contract-v2-docs/" + name, copied)
+        metadata = {"profile": "contract-v2", "studioBranch": branch,
+                    "studioCommit": subprocess.check_output(
+                        ["git", "-C", str(STUDIO_ROOT), "rev-parse", "HEAD"], text=True).strip(),
+                    "studioChanges": subprocess.check_output(
+                        ["git", "-C", str(STUDIO_ROOT), "status", "--porcelain"], text=True),
+                    "sourceRoot": str(STUDIO_ROOT), "liveDatabaseIntegration": False,
+                    "androidValidator": "jsonschema==4.17.3 (Draft 2020-12)",
+                    "testPort": 18033}
+        payload = (json.dumps(metadata, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
+        copied["contract-v2-build.json"] = _copy_bytes(DEST_ROOT / "contract-v2-build.json", payload)
     _copy_tree(STUDIO_ROOT / "3dworkbench" / "web", "3dStudio/3dworkbench/web", copied)
     _copy_tree(
         STUDIO_ROOT / "3dworkbench" / "plugins" / "official" / "sqlite-triggers",

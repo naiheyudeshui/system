@@ -1,0 +1,6 @@
+# Android profile: Draft 2020-12, without the unavailable native rpds-py wheel.
+# Build pyrsistent with PYRSISTENT_SKIP_EXTENSION=1. Do not copy Windows .pyd files.
+# Verify using the unchanged branch foundation and shared-schema fixtures.
+attrs==26.1.0
+jsonschema==4.17.3
+pyrsistent==0.20.0

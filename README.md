@@ -2,6 +2,40 @@
 
 系统分析师学习与备考资料仓库。
 
+## 独立重构分支 Android 测试包
+
+仅在 `feat/workbench-contract-v2` 工作树使用。此包包含该分支已经实现的后端、Schema、CLI、测试及协议资料，不代表整个插件平台计划已完成。Studio 来源也必须是同名分支；构建器拒绝误用 main。主分支的未提交改动不自动混入。
+
+```powershell
+./study-kb/android/build-contract-v2.ps1 `
+  -StudioRoot D:/worktrees/3dstudio-workbench-contract-v2 `
+  -PlanFile D:/worktrees/rsim-workbench-contract-v2/readme/skills/plan/records/2026-10-20-X-standardize-workbench-plugin-contract.md
+```
+
+需要 JDK 17、Android SDK 35、Python 3.14；SDK/Python 可以通过参数或环境变量指定。输出为 `study-kb/android/app/build/outputs/apk/debug/study-kb-contract-v2-debug.apk`。包名 `local.studykb.contractv2`、名称“学习库 · 重构测试”，与正式版并存；服务监听 `0.0.0.0:18033`，不占用正式服务的 8033。手机 App 及通知显示局域网地址，同网设备访问 `http://手机IP:18033/`；手机自身仍使用 `http://127.0.0.1:18033/`。首次安装从分支本地镜像初始化自己的副本，不复制或修改已安装正式版的私有数据，也不连接手机主库。沿用现有 `--trusted-lan-write`，同网访问可改动测试副本，仅限可信 Wi-Fi，禁止公网映射；这不代表已完成新协议的权限和安全门禁。
+
+打开后点击顶部“重构分支自测”。它执行分支原始后端 fixture 和共享 Schema 样本，所有数据库操作发生在会删除的临时库。手机没有可执行的 Python CLI 子进程，因此三项 CLI 测试明确跳过（须在电脑另测），不是伪报通过。当前新命令未接入业务界面和真实授权；此入口用于验证打包的后端，而不是新版插件设置界面。主题、语言、帮助等后续 UI 计划仍待实现。
+
+Android 使用单独的 `requirements-contract-android.txt`：`jsonschema 4.17.3`（仍为 Draft 2020-12）、`attrs 26.1.0`、纯 Python `pyrsistent 0.20.0`。桌面 `jsonschema 4.25.1` 所依赖的 `rpds-py` 无对应 Android wheel；不打包 Windows `.pyd`，也不篡改桌面锁文件。构建时通过上游 `PYRSISTENT_SKIP_EXTENSION=1` 生成纯 Python wheel。验证须同时运行未改动的 49 项后端测试与 14 组共享 Schema 样本；依赖版本变化后需重新验证，不能仅以 APK 编译成功作为兼容证据。
+
+### 替换主版本前的阻塞项（2026-10-20核对）
+
+此 APK 是后端基础能力验证包，不是可替代正式版的完整重构交付。实际 UI 仍使用旧壳；打入新源码并不等于业务入口已经调用新协议。
+
+| 范围 | 现状与替换前必须完成的工作 |
+| --- | --- |
+| 统一帮助 | 已在独立重构分支接入共享问号、双语 hint、插件/页面/动作回退、F1/Escape 和安全纯文本对话框；CLI 命令引用和全量 host context 仍待完成 |
+| 数据入口归属 | 已在独立重构分支把左侧数据目录、表格、分隔条和侧栏按钮收纳到表格工作区；其他插件隐藏目录但保留选择/草稿，真实绑定设置 UI 和生产路由仍待完成 |
+| 全局联动 | 既有按钮不等于新协议；需主题/皮肤/语言/帮助/刷新 context，刷新仅可见插件加一次后台同步，切换刷新一次且保留草稿/会话/树位置 |
+| 插件描述与布局 | 完整 v2 描述、v1兼容、left/main/upper/bottom槽位、容器尺寸触发和实例状态保留尚未完成 |
+| 数据设置界面 | 表/视图/参数SQL映射和校验、新结构preview/confirm/apply仅有后端基础，未接入插件设置页；自定义输入validator扩展、实例隔离仍待实现 |
+| 生产命令、授权和审计 | 新Gateway未挂载日常Study/Studio业务路由；需真实身份/授权/撤权、旧接口不可绕行，以及业务写入和触发器影响审计、故障恢复 |
+| 既有修复移植 | 共享源码工具栏、combobox、预览、树撤销/搜索等4处已移植到独立分支并通过前端回归；system业务修改仍需逐项A/B核对，不可直接用测试包取代现用版本 |
+| 数据与安装切换 | 独立包名/数据副本不能视作正式迁移；需最新主库备份、配置/会话/评分/计时历史校验、单向迁移、兼容回滚及正式签名/版本方案，不以旧镜像覆盖手机主库 |
+| 发行验收 | 缺完整A/B、手机/平板/PC交互、性能、权限绕行及回滚证据；桌面fixture和编译成功不等于这些项目通过 |
+
+本次只完成局域网监听、地址显示及相关构建修改；上述阻塞项没有因本次打包被标为完成。下一阶段优先统一宿主帮助与context、插件化数据入口和设置页，再接生产命令并迁移已有插件，最后执行完整发行门禁。
+
 ## 学习知识库（study-kb）
 
 本仓库专用间隔重复 / 背诵系统，数据在 `study-kb/data/study.sqlite`（本地，不入 git）。

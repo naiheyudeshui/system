@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class StudyServerService extends Service {
     private static final int NOTIFICATION_ID = 8033;
-    private static final int PORT = 8033;
+    private static final int PORT = BuildConfig.SERVER_PORT;
     private final AtomicBoolean running = new AtomicBoolean(false);
 
     @Override
@@ -55,7 +55,7 @@ public class StudyServerService extends Service {
                 try {
                     Python.getInstance()
                         .getModule("bootstrap")
-                        .callAttr("main", runtime.getAbsolutePath());
+                        .callAttr("main", runtime.getAbsolutePath(), BuildConfig.CONTRACT_V2, PORT);
                 } catch (Throwable error) {
                     failure.set(error);
                 }
@@ -105,6 +105,10 @@ public class StudyServerService extends Service {
 
     private String runningStatus() {
         String address = lanUrl();
+        if (BuildConfig.CONTRACT_V2) {
+            return "重构测试版（独立数据） " + (address != null ? address
+                : "http://127.0.0.1:" + PORT + " · " + getString(R.string.no_lan));
+        }
         if (address == null) {
             return getString(R.string.running) + " " + getString(R.string.no_lan);
         }

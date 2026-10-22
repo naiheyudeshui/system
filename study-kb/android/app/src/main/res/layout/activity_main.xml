@@ -1,9 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#111111">
+    android:background="#111111"
+    android:orientation="vertical">
+
+    <TextView
+        android:id="@+id/contract_address"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="8dp"
+        android:textColor="#FFFFFF"
+        android:textIsSelectable="true"
+        android:visibility="gone" />
+
+    <Button
+        android:id="@+id/contract_tests"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="重构分支自测（临时数据，不写正式库）"
+        android:visibility="gone" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
 
     <WebView
         android:id="@+id/web"
@@ -20,4 +42,5 @@
         android:text="@string/starting"
         android:textColor="#FFFFFF"
         android:textSize="18sp" />
-</FrameLayout>
+    </FrameLayout>
+</LinearLayout>

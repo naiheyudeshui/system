@@ -11,6 +11,11 @@ import android.webkit.WebResourceRequest;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.TextView;
+import android.widget.Button;
+import android.widget.ScrollView;
+import android.app.AlertDialog;
+import com.chaquo.python.Python;
+import java.io.File;
 
 import androidx.activity.ComponentActivity;
 import androidx.activity.OnBackPressedCallback;
@@ -24,7 +29,7 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 
 public class MainActivity extends ComponentActivity {
-    private static final String LOCAL_URL = "http://127.0.0.1:8033/";
+    private static final String LOCAL_URL = "http://127.0.0.1:" + BuildConfig.SERVER_PORT + "/";
     private static final int NOTIFICATION_REQUEST = 1;
 
     private WebView webView;
@@ -41,6 +46,12 @@ public class MainActivity extends ComponentActivity {
         applySystemInsets(root);
         webView = findViewById(R.id.web);
         statusView = findViewById(R.id.status);
+        if (BuildConfig.CONTRACT_V2) {
+            setTitle("学习库 · 重构测试版");
+            Button tests = findViewById(R.id.contract_tests);
+            tests.setVisibility(View.VISIBLE);
+            tests.setOnClickListener(view -> runContractTests(tests));
+        }
         webView.getSettings().setJavaScriptEnabled(true);
         webView.getSettings().setDomStorageEnabled(true);
         webView.getSettings().setUseWideViewPort(true);
@@ -107,6 +118,11 @@ public class MainActivity extends ComponentActivity {
             }
             if (StudyServerState.READY.equals(status)) {
                 String detail = StudyServerState.detail();
+                if (BuildConfig.CONTRACT_V2) {
+                    TextView address = findViewById(R.id.contract_address);
+                    address.setText(detail + "\n仅限可信局域网，允许访问测试副本，不连接正式主库");
+                    address.setVisibility(View.VISIBLE);
+                }
                 if (!detail.isEmpty()) {
                     statusView.setText(detail);
                 }
@@ -115,6 +131,38 @@ public class MainActivity extends ComponentActivity {
                 }
             }
         });
+    }
+
+    private void runContractTests(Button button) {
+        button.setEnabled(false);
+        button.setText("正在运行分支自测…");
+        new Thread(() -> {
+            String report;
+            try {
+                File runtime = new File(getFilesDir(), "runtime");
+                if (!new File(runtime, "contract-v2-build.json").isFile()) {
+                    throw new IllegalStateException("运行时尚未准备好，请等待服务启动");
+                }
+                report = Python.getInstance().getModule("contract_selftest")
+                    .callAttr("run", runtime.getAbsolutePath(), getCacheDir().getAbsolutePath()).toString();
+            } catch (Throwable error) {
+                report = "自测未完成：" + error;
+            }
+            final String result = report;
+            runOnUiThread(() -> {
+                button.setEnabled(true);
+                button.setText("重构分支自测（临时数据，不写正式库）");
+                if (isFinishing() || isDestroyed()) return;
+                TextView text = new TextView(this);
+                text.setText(result);
+                text.setTextIsSelectable(true);
+                text.setPadding(24, 16, 24, 16);
+                ScrollView scroll = new ScrollView(this);
+                scroll.addView(text);
+                new AlertDialog.Builder(this).setTitle("重构分支自测结果")
+                    .setView(scroll).setPositiveButton("关闭", null).show();
+            });
+        }, "contract-selftest").start();
     }
 
     private void applySystemInsets(View root) {

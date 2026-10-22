@@ -1,9 +1,56 @@
-import { createPluginWorkspace } from "/3dworkbench/pluginWorkspace.mjs";
+import { createPluginWorkspace, mountLegacyWorkspaceTemplate } from "/3dworkbench/pluginWorkspace.mjs?v=20261022-bsp-clear3";
+import { installHostHelp } from "/3dworkbench/hostHelp.mjs";
+import { createRefreshCoordinator } from "/3dworkbench/refreshCoordinator.mjs";
+import { studyHelpTopics } from "./studyHelp.mjs";
 import { renderTimerPanel } from "./studyTimers.mjs";
 import { confirmWorkbenchAction, openConfigManager } from "/3dworkbench/pluginConfigManager.mjs";
 import { rowMatchesFilter } from "/3dworkbench/tablePreview.mjs";
 import { editCellInline } from "/3dworkbench/inlineCellEditor.mjs";
 let pluginWorkspace;
+let pluginWorkspaceReady = Promise.resolve();
+const BSP_HOST_LAYOUT = true;
+// #region agent log
+function agentDebug(hypothesisId, location, message, data) {
+  fetch("http://127.0.0.1:7740/ingest/57efec59-45a9-4a01-875e-1a191590d85d", { method: "POST", headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "533dd3" }, body: JSON.stringify({ sessionId: "533dd3", runId: "post-fix", hypothesisId, location, message, data, timestamp: Date.now() }) }).catch(() => {});
+}
+function agentLayoutSnapshot(hypothesisId, location, message) {
+  const rect = (el) => {
+    if (!el) return null;
+    const box = el.getBoundingClientRect();
+    const style = getComputedStyle(el);
+    return { w: Math.round(box.width), h: Math.round(box.height), x: Math.round(box.x), y: Math.round(box.y), pos: style.position, display: style.display };
+  };
+  const shell = document.querySelector("#app");
+  const metric = document.querySelector("#metric-area");
+  const left = document.querySelector("#left-column");
+  const title = document.querySelector("#active-title");
+  const host = document.querySelector(".wb-bsp-host");
+  const dock = document.querySelector(".wb-bsp-dock");
+  agentDebug(hypothesisId, location, message, {
+    vw: window.innerWidth,
+    vh: window.innerHeight,
+    bodyClass: document.body.className,
+    metricRow: getComputedStyle(document.documentElement).getPropertyValue("--metric-row").trim(),
+    shellRows: shell ? getComputedStyle(shell).gridTemplateRows : "",
+    shellChildren: [...(shell?.children || [])].map((el) => el.id || el.className),
+    workbench: rect(document.querySelector("#workbench")),
+    metricParent: metric?.parentElement ? (metric.parentElement.id || metric.parentElement.className) : null,
+    metricConnected: Boolean(metric?.isConnected),
+    metric: rect(metric),
+    titleConnected: Boolean(title?.isConnected),
+    titleText: title?.textContent || "",
+    leftParent: left?.parentElement ? (left.parentElement.id || left.parentElement.className) : null,
+    leftConnected: Boolean(left?.isConnected),
+    left: rect(left),
+    host: rect(host),
+    dockCount: dock?.children.length || 0,
+    dockText: dock ? dock.textContent.slice(0, 180) : "",
+    leaves: [...document.querySelectorAll(".wb-bsp-leaf")].map((el) => ({ id: el.dataset.pluginId, ...rect(el), parent: el.parentElement?.className || "" })),
+  });
+}
+window.addEventListener("error", (event) => agentDebug("H5", "app.js:window", "uncaught", { message: event.message, stack: String(event.error?.stack || "").slice(0, 500) }));
+// #endregion
+mountLegacyWorkspaceTemplate();
 import {
   applyIconButtons,
   describeColumnFilter,
@@ -1017,7 +1064,8 @@ function renderPrintPanel(panel, context = createPluginContext()) {
 
 function renderPluginInspector() {
   if (!pluginWorkspace) pluginWorkspace = createPluginWorkspace({ api, postApi, loadPanel: loadPluginPanel, context: createPluginContext, onPlugins: (plugins) => { state.plugins = plugins; } });
-  void pluginWorkspace.update(state.plugins || []);
+  pluginWorkspaceReady = Promise.resolve(pluginWorkspace.update(state.plugins || []));
+  return pluginWorkspaceReady;
 }
 
 async function loadPluginPanel(panel, pluginId, contributionId, context = createPluginContext()) {
@@ -1552,6 +1600,7 @@ async function selectObject(item) {
 
 function setLoadState(percent, detail, { failed = false } = {}) {
   const overlay = $("#load-state");
+  if (!overlay) return;
   overlay.hidden = false;
   overlay.classList.toggle("failed", failed);
   $("#load-state-title").textContent = failed ? "载入失败" : "正在载入工作台";
@@ -1561,10 +1610,14 @@ function setLoadState(percent, detail, { failed = false } = {}) {
 }
 
 function hideLoadState() {
-  $("#load-state").hidden = true;
+  const overlay = $("#load-state");
+  if (overlay) overlay.hidden = true;
 }
 
 async function refresh() {
+  // #region agent log
+  agentLayoutSnapshot("H2", "app.js:refresh-start", "refresh entered");
+  // #endregion
   setLoadState(8, "正在读取表结构");
   const schema = await api("/api/schema");
   setLoadState(30, "正在读取指标定义");
@@ -1581,12 +1634,25 @@ async function refresh() {
   state.metricDefinitions = metricDefinitionsPayload.definitions || [];
   state.dashboard = { metricsVisible: dashboard.metrics_visible, inspectorVisible: dashboard.inspector_visible, enabledMetrics: dashboard.enabled_metrics, customMetrics: dashboard.custom_metrics || [], metricLabels: dashboard.metric_labels || {}, builtinMetricSql: dashboard.builtin_metric_sql || {}, pluginOrder: dashboard.plugin_order || [] };
   saveDashboardPreferences();
+  await renderPluginInspector();
   renderMetrics(metrics);
   const objects = schema.objects || [];
   const next = state.active ? objects.find((item) => item.name === state.active.name) : objects.find((item) => item.name === "v_study_due_cards") || objects[0];
   setLoadState(76, "正在装载当前数据视图");
   if (next) await selectObject(next);
   setLoadState(100, "工作台已就绪");
+  try {
+    await pluginWorkspaceReady;
+  } catch (error) {
+    // #region agent log
+    agentDebug("H5", "app.js:refresh", "plugin update rejected", { error: String(error?.message || error) });
+    // #endregion
+    throw error;
+  }
+  // #region agent log
+  agentLayoutSnapshot("H1", "app.js:refresh-settled", "refresh settled");
+  window.setTimeout(() => agentLayoutSnapshot("H4", "app.js:refresh-paint", "after overlay hidden"), 500);
+  // #endregion
   window.setTimeout(hideLoadState, 220);
 }
 
@@ -1601,8 +1667,15 @@ document.addEventListener("click", (event) => {
 
 document.querySelectorAll('.inspector-pane .tab[data-tab="actions"], .inspector-pane .tab[data-tab="command"]').forEach((tab) => tab.remove());
 
-$("#refresh").addEventListener("click", refresh);
-$("#retry-load").addEventListener("click", () => { void refresh().catch(handleLoadFailure); });
+const refreshCoordinator = createRefreshCoordinator({
+  refreshHost: ({ reason }) => refresh({ reason }),
+  refreshVisible: ({ reason }) => pluginWorkspace?.refreshVisible({ reason }),
+  onStatus: ({ phase, error }) => {
+    if (phase === "sync-error") $("#inspector-command").textContent = "后台同步失败：" + error.message;
+  },
+});
+$("#refresh").addEventListener("click", () => { void refreshCoordinator.run({ reason: "global" }).catch(handleLoadFailure); });
+$("#retry-load").addEventListener("click", () => { void refreshCoordinator.run({ reason: "retry" }).catch(handleLoadFailure); });
 function openViewDialog() {
   editingViewName = "";
   editingManagedView = false;
@@ -1919,7 +1992,11 @@ document.addEventListener("workbench:languagechange", () => {
 setupLanguageSelect({ select: ensureLanguageSelect(), storageKey: languageStorageKey, initial: "zh", translations: STUDIO_I18N, onChange: applyStudioLanguage });
 applyStudioLanguage();
 setupThemeToggle({ button: $("#theme-toggle"), storageKey: "study-theme", initial: state.theme });
+installHostHelp({ topics: studyHelpTopics, getContext: () => pluginWorkspace?.getActiveContext() || { pluginId: "core.table" } });
 applyIconButtons(document);
+const storedMetricHeight = localStorage.getItem("studio-metrics-height");
+if (storedMetricHeight) document.documentElement.style.setProperty("--metric-row", storedMetricHeight);
+if (!BSP_HOST_LAYOUT) {
 metricEdgeControl = setupEdgeToggle({
   toggle: $("#metric-strip-toggle"),
   storageKey: "studio-metrics-collapsed",
@@ -1929,6 +2006,16 @@ metricEdgeControl = setupEdgeToggle({
   expandIcon: "\u25bc",
   collapseTitle: () => t("pane.collapse"),
   expandTitle: () => t("pane.expand"),
+  resize: {
+    axis: "y",
+    start: ({ toggle }) => ({ height: toggle.parentElement?.getBoundingClientRect().height || 90 }),
+    move: ({ start, delta }) => {
+      const height = Math.max(48, Math.min(360, (start?.height || 90) + delta));
+      const value = `${Math.round(height)}px`;
+      document.documentElement.style.setProperty("--metric-row", value);
+      localStorage.setItem("studio-metrics-height", value);
+    },
+  },
   onChange: (collapsed) => { state.dashboard.metricsVisible = !collapsed; void persistDashboard(); },
 });
 inspectorEdgeControl = setupEdgeToggle({
@@ -1940,14 +2027,61 @@ inspectorEdgeControl = setupEdgeToggle({
   expandIcon: "\u25b2",
   collapseTitle: () => t("pane.collapse"),
   expandTitle: () => t("pane.expand"),
+  resize: {
+    axis: "y",
+    start: ({ toggle }) => {
+      const column = toggle.closest(".right-column");
+      const height = column?.getBoundingClientRect().height || 640;
+      const raw = getComputedStyle(document.documentElement).getPropertyValue("--right-top").trim();
+      const percent = Number.parseFloat(raw) || 68;
+      return { height, percent };
+    },
+    move: ({ start, delta }) => {
+      const percent = Math.max(20, Math.min(82, (start?.percent || 68) + (delta / Math.max(1, start?.height || 640)) * 100));
+      const value = `${percent.toFixed(2)}%`;
+      document.documentElement.style.setProperty("--right-top", value);
+      try {
+        const saved = JSON.parse(localStorage.getItem(layoutStorageKey) || "{}");
+        saved["--right-top"] = value;
+        localStorage.setItem(layoutStorageKey, JSON.stringify(saved));
+      } catch { /* ignore malformed old layout */ }
+    },
+  },
   onChange: (collapsed) => { state.dashboard.inspectorVisible = !collapsed; if (!collapsed) activateInspectorTab("fields"); void persistDashboard(); },
 });
 saveDashboardPreferences();
-setupSidebarCollapse({ toggle: $("#sidebar-toggle"), storageKey: sidebarStorageKey });
+if (document.querySelector("#sidebar-toggle")) setupSidebarCollapse({
+  toggle: $("#sidebar-toggle"),
+  storageKey: sidebarStorageKey,
+  resize: {
+    axis: "x",
+    start: ({ toggle }) => ({ width: toggle.closest(".workbench")?.getBoundingClientRect().width || 1200 }),
+    move: ({ start, delta }) => {
+      const current = Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--left-width")) || 23;
+      const percent = Math.max(18, Math.min(42, current + (delta / Math.max(1, start?.width || 1200)) * 100));
+      const value = `${percent.toFixed(2)}%`;
+      document.documentElement.style.setProperty("--left-width", value);
+      try {
+        const saved = JSON.parse(localStorage.getItem(layoutStorageKey) || "{}");
+        saved["--left-width"] = value;
+        localStorage.setItem(layoutStorageKey, JSON.stringify(saved));
+      } catch { /* ignore malformed old layout */ }
+    },
+  },
+});
 setupWorkbenchSplitters({ workbench: $("#workbench"), layoutStorageKey });
+}
 function handleLoadFailure(error) {
+  // #region agent log
+  agentDebug("H5", "app.js:handleLoadFailure", "refresh failed", { error: String(error?.message || error), stack: String(error?.stack || "").slice(0, 700) });
+  agentLayoutSnapshot("H2", "app.js:handleLoadFailure", "layout after failure");
+  // #endregion
   setLoadState(100, error.message || "服务未返回可用数据，请检查服务后重试。", { failed: true });
   $("#active-title").textContent = "载入失败";
   $("#active-summary").textContent = error.message;
 }
+if (!pluginWorkspace) pluginWorkspace = createPluginWorkspace({ api, postApi, loadPanel: loadPluginPanel, context: createPluginContext, onPlugins: (plugins) => { state.plugins = plugins; } });
+// #region agent log
+agentLayoutSnapshot("H2", "app.js:boot", "after createPluginWorkspace, before refresh");
+// #endregion
 refresh().catch(handleLoadFailure);

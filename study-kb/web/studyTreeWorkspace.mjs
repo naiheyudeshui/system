@@ -26,6 +26,7 @@ function requestId() {
 export async function renderNodeTreePanel(panel, { api, postApi }) {
   panel.classList.add("study-tree-panel", "study-tree-workspace");
   const home = make("section");
+  home.dataset.helpPage = "plans";
   const header = make("header", null, "study-review-header");
   const tools = make("div", null, "wb-config-actions");
   const refresh = make("button", "刷新");
@@ -41,6 +42,7 @@ export async function renderNodeTreePanel(panel, { api, postApi }) {
   const info = make("p", "选择数据方案，先校验、预览筛选，再打开整页树图。", "action-hint");
   home.append(header, info, grid, scopeLabel);
   const preview = make("section"); preview.hidden = true;
+  preview.dataset.helpPage = "preview";
   const previewHeader = make("header", null, "study-review-header");
   const previewTitle = make("h3", "树数据预览");
   const returnHome = make("button", "返回方案"); previewHeader.append(previewTitle, returnHome);
@@ -171,6 +173,7 @@ export async function renderNodeTreePanel(panel, { api, postApi }) {
     const originalSession = session;
     const state = session.getState();
     const editor = make("form", null, "study-tree-editor");
+    editor.dataset.helpPage = "node-edit";
     const editorHeader = make("header", null, "wb-tree-header");
     const cancel = make("button", "取消并返回");
     cancel.type = "button";

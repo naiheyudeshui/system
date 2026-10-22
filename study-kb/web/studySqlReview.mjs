@@ -14,6 +14,7 @@ function make(tag, text, className) {
 export async function renderReviewTablePanel(panel, { api, postApi }) {
   panel.classList.add("study-review-panel", "study-sql-review");
   const home = make("section");
+  home.dataset.helpPage = "plans";
   const header = make("header", null, "study-review-header");
   const settings = make("button", "⚙", "trigger-settings");
   settings.setAttribute("aria-label", "方案设置");
@@ -38,6 +39,7 @@ export async function renderReviewTablePanel(panel, { api, postApi }) {
   headerActions.append(resume, settings);
   home.append(header, make("p", "选择方案卡片，再预览、筛选并确认本轮集合。", "action-hint"), cards, parameters);
   const preparation = make("section");
+  preparation.dataset.helpPage = "preview";
   preparation.hidden = true;
   const previewHeader = make("header", null, "study-review-header");
   const previewTitle = make("h3");
@@ -49,6 +51,7 @@ export async function renderReviewTablePanel(panel, { api, postApi }) {
   confirmStart.dataset.action = "confirm-start";
   preparation.append(previewHeader, make("p", "点击列标题搜索或选择条件后应用；筛选作用于全部候选，不只是当前页。搜索根节点后，只保留该节点及其后面整棵子树里的卡片。", "action-hint"), previewTable, previewSummary);
   const learning = make("section", null, "study-learning-card");
+  learning.dataset.helpPage = "session";
   learning.hidden = true;
   const learningHeader = make("header", null, "study-review-header");
   const meta = make("p");

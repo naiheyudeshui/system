@@ -7,7 +7,7 @@ import runpy
 import sys
 
 
-def main(runtime_root: str) -> None:
+def main(runtime_root: str, contract_v2: bool = False, port: int = 8033) -> None:
     root = os.path.abspath(runtime_root)
     script = os.path.join(root, "study-kb", "tools", "serve_workbench.py")
     if not os.path.isfile(script):
@@ -20,7 +20,7 @@ def main(runtime_root: str) -> None:
         "--host",
         "0.0.0.0",
         "--port",
-        "8033",
+        str(port),
         "--no-open",
         "--trusted-lan-write",
     ]

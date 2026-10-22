@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Launch 3dworkbench UI against study-kb SQLite (not ops.sqlite)."""
+"""Launch the Study Knowledge Base UI with the study SQLite (not ops.sqlite)."""
 
 from __future__ import annotations
 
@@ -84,7 +84,7 @@ def _free_port(port: int) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Open study-kb in 3dworkbench UI")
+    parser = argparse.ArgumentParser(description="Open Study Knowledge Base")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8033)
     parser.add_argument("--no-open", action="store_true")
@@ -132,7 +132,7 @@ def main(argv: list[str] | None = None) -> int:
     lan_url = f"http://{lan_ip}:{args.port}" if lan_ip else None
     if not args.no_open:
         webbrowser.open(url)
-    print("正在打开学习库 3dworkbench")
+    print("正在打开 Study Knowledge Base（共享 3dStudio 宿主）")
     print()
     print(f"本机访问：{url}")
     print(f"局域网访问：{lan_url or '未检测到可用的局域网 IPv4 地址'}")

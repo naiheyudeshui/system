@@ -3,20 +3,31 @@ import test from "node:test";
 import { readFile } from "node:fs/promises";
 import vm from "node:vm";
 import { JSDOM } from "jsdom";
+import { execFileSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
+import { relative } from "node:path";
 
 const shared = new URL("../../3dStudio/3dworkbench/web/", import.meta.url);
-const workspaceSource = await readFile(new URL("pluginWorkspace.mjs", shared), "utf8");
-const mappingSource = await readFile(new URL("treeMapping.mjs", shared), "utf8");
-const managerSource = await readFile(new URL("pluginConfigManager.mjs", shared), "utf8");
-const reviewSource = await readFile(new URL("../web/studySqlReview.mjs", import.meta.url), "utf8");
-const previewSource = await readFile(new URL("tablePreview.mjs", shared), "utf8");
-const platformSource = await readFile(new URL("workbenchPlatform.mjs", shared), "utf8");
-const treeSource = await readFile(new URL("treeWorkspace.mjs", shared), "utf8");
-const searchableComboboxSource = await readFile(new URL("searchableCombobox.mjs", shared), "utf8");
-const treeAdapterSource = await readFile(new URL("../web/studyTreeWorkspace.mjs", import.meta.url), "utf8");
-const workspaceCss = await readFile(new URL("pluginWorkspace.css", shared), "utf8");
-const studyCss = await readFile(new URL("../web/styles.css", import.meta.url), "utf8");
-const workbenchCss = await readFile(new URL("workbench.css", shared), "utf8");
+// Reproduce pre-existing failures without resetting either dirty worktree.
+const readUiSource = async (url) => {
+  if (process.env.WB_TEST_SOURCE !== "HEAD") return readFile(url, "utf8");
+  const isShared = url.href.startsWith(shared.href);
+  const root = fileURLToPath(isShared ? new URL("../../", shared) : new URL("../../", import.meta.url));
+  const path = relative(root, fileURLToPath(url)).replaceAll("\\", "/");
+  return execFileSync("git", ["-C", root, "show", "HEAD:" + path], { encoding: "utf8", maxBuffer: 4 * 1024 * 1024 });
+};
+const workspaceSource = await readUiSource(new URL("pluginWorkspace.mjs", shared));
+const mappingSource = await readUiSource(new URL("treeMapping.mjs", shared));
+const managerSource = await readUiSource(new URL("pluginConfigManager.mjs", shared));
+const reviewSource = await readUiSource(new URL("../web/studySqlReview.mjs", import.meta.url));
+const previewSource = await readUiSource(new URL("tablePreview.mjs", shared));
+const platformSource = await readUiSource(new URL("workbenchPlatform.mjs", shared));
+const treeSource = await readUiSource(new URL("treeWorkspace.mjs", shared));
+const searchableComboboxSource = await readUiSource(new URL("searchableCombobox.mjs", shared));
+const treeAdapterSource = await readUiSource(new URL("../web/studyTreeWorkspace.mjs", import.meta.url));
+const workspaceCss = await readUiSource(new URL("pluginWorkspace.css", shared));
+const studyCss = await readUiSource(new URL("../web/styles.css", import.meta.url));
+const workbenchCss = await readUiSource(new URL("workbench.css", shared));
 const settle = () => new Promise((resolve) => setImmediate(resolve));
 
 function drop(ui, id, target) {
@@ -32,7 +43,7 @@ async function setup() {
   dom.window.HTMLDialogElement.prototype.close = function (value = "") { this.returnValue = value; this.open = false; this.dispatchEvent(new dom.window.Event("close")); };
   const resizeObservers = [];
   dom.window.ResizeObserver = class { constructor(callback) { this.callback = callback; resizeObservers.push(this); } observe(target) { this.target = target; } disconnect() { this.disconnected = true; } emit(width, height) { this.callback([{ target: this.target, contentRect: { width, height } }]); } };
-  const context = vm.createContext({ document: dom.window.document, window: dom.window, localStorage: dom.window.localStorage, Event: dom.window.Event, Option: dom.window.Option, structuredClone, console, requestAnimationFrame: (callback) => callback() });
+  const context = vm.createContext({ document: dom.window.document, window: dom.window, crypto: dom.window.crypto, AbortController: dom.window.AbortController, fetch: (...args) => dom.window.fetch(...args), localStorage: dom.window.localStorage, Event: dom.window.Event, Option: dom.window.Option, structuredClone, console, requestAnimationFrame: (callback) => callback() });
   const workspace = new vm.SourceTextModule(workspaceSource, { context });
   const manager = new vm.SourceTextModule(managerSource, { context });
   const markdown = new vm.SyntheticModule(["attachMarkdownToggle", "renderMarkdown"], function () {
@@ -58,6 +69,59 @@ async function setup() {
   return { tree: tree.namespace, treeAdapter: treeAdapter.namespace, dom, document: dom.window.document, workspace: workspace.namespace, manager: manager.namespace, review: review.namespace, preview: preview.namespace, resizeObservers };
 }
 
+test("table catalog is owned by table workspace, preserves state and restores on disposal", { skip: process.env.WB_TEST_SOURCE === "HEAD" }, async () => {
+  const ui = await setup();
+  try {
+    const workbench = ui.document.createElement("main"); workbench.id = "workbench";
+    const sidebar = ui.document.createElement("aside"); sidebar.id = "left-column";
+    const input = ui.document.createElement("input"); input.value = "unsaved filter"; sidebar.append(input);
+    let clicks = 0; input.addEventListener("click", () => { clicks++; });
+    const toggle = ui.document.createElement("button"); toggle.id = "sidebar-toggle";
+    const splitter = ui.document.createElement("div"); splitter.className = "splitter vertical";
+    const right = ui.document.createElement("section"); right.className = "right-column";
+    const pane = ui.document.querySelector(".data-pane"); right.append(pane);
+    workbench.append(toggle, sidebar, splitter, right); ui.document.body.append(workbench);
+    const title = ui.document.createElement("header"); title.className = "data-title";
+    const actions = ui.document.createElement("div"); actions.className = "action-group"; title.append(actions); pane.prepend(title);
+    const plugin = { id: "sample", contributes: { panels: [{ id: "main" }] } };
+    const layout = { groups: { top: ["sample"], upper: [], bottom: [], disabled: [] } };
+    const host = ui.workspace.createPluginWorkspace({ api: async () => layout, postApi: async () => layout, loadPanel: () => {}, context: () => ({}) });
+    await host.update([plugin]);
+    const table = ui.document.querySelector(".wb-table-workspace");
+    assert.equal(sidebar.parentElement, table);
+    assert.equal(splitter.parentElement, table);
+    const tableSidebarButton = table.querySelector(".table-sidebar-button");
+    assert.ok(tableSidebarButton);
+    assert.equal(tableSidebarButton.parentElement.classList.contains("action-group"), true);
+    tableSidebarButton.click();
+    assert.equal(table.classList.contains("catalog-collapsed"), true);
+    tableSidebarButton.click();
+    assert.equal(table.classList.contains("catalog-collapsed"), false);
+    assert.equal(toggle.parentElement, workbench);
+    assert.equal(workbench.querySelector(":scope > #left-column"), null);
+    assert.equal(workbench.classList.contains("wb-plugin-owned-layout"), true);
+    assert.equal(ui.document.querySelector("#metric-area").parentElement.classList.contains("wb-region-timer"), true);
+    assert.equal(workbench.classList.contains("wb-region-host"), true);
+    host.show("sample");
+    assert.equal(table.hidden, true);
+    assert.ok(sidebar.closest("[hidden]"));
+    host.show("table");
+    assert.equal(table.hidden, false);
+    assert.equal(sidebar.querySelector("input"), input);
+    assert.equal(input.value, "unsaved filter"); input.click(); assert.equal(clicks, 1);
+    await host.update([plugin]);
+    assert.equal(ui.document.querySelectorAll(".wb-table-workspace").length, 1);
+    assert.equal(ui.document.querySelectorAll("#left-column").length, 1);
+    host.dispose();
+    assert.equal(sidebar.parentElement, workbench);
+    assert.equal(toggle.parentElement, workbench);
+    assert.equal(splitter.parentElement, workbench);
+    assert.equal(ui.document.querySelector(".wb-table-workspace"), null);
+    assert.equal(ui.document.querySelector(".wb-plugin-navigation"), null);
+    assert.equal(workbench.classList.contains("wb-plugin-owned-layout"), false);
+  } finally { ui.dom.window.close(); }
+});
+
 test("outline long content grows naturally and delegates scrolling to the outer list", () => {
   const dom = new JSDOM('<style>' + studyCss + '</style><style>' + workspaceCss + '</style><div class="wb-tree-browser"><div class="wb-tree-outline"><div class="wb-tree-inline-content">Long content</div></div></div>', { url: "http://localhost" });
   try {
@@ -71,6 +135,31 @@ test("outline long content grows naturally and delegates scrolling to the outer 
     const outer = dom.window.getComputedStyle(content.parentElement);
     assert.equal(outer.overflow, "auto");
   } finally { dom.window.close(); }
+});
+
+test("tree history toolbar and shortcuts do not hijack text editing", { skip: process.env.WB_TEST_SOURCE === "HEAD" }, async () => {
+  const ui = await setup();
+  try {
+    const root = ui.document.createElement("section"); ui.document.body.append(root);
+    let undone = 0, redone = 0;
+    const host = ui.tree.createTreeWorkspace(root, {
+      roots: [{ id: "root", title: "Root", children: [] }], canUndo: true, canRedo: true,
+      onUndo: async () => { undone++; }, onRedo: async () => { redone++; },
+    });
+    root.querySelector('[aria-label="撤销 Ctrl+Z"]').click(); await settle();
+    const canvas = root.querySelector(".wb-tree-canvas");
+    canvas.dispatchEvent(new ui.dom.window.KeyboardEvent("keydown", { key: "y", ctrlKey: true, bubbles: true, cancelable: true }));
+    await settle();
+    assert.equal(undone, 1); assert.equal(redone, 1);
+    const input = root.querySelector('input[type="search"]');
+    const event = new ui.dom.window.KeyboardEvent("keydown", { key: "z", ctrlKey: true, bubbles: true, cancelable: true });
+    input.dispatchEvent(event); await settle();
+    assert.equal(event.defaultPrevented, false); assert.equal(undone, 1);
+    assert.ok(root.querySelector('[aria-label="上一个匹配"] svg'));
+    assert.ok(root.querySelector('[aria-label="下一个匹配"] svg'));
+    assert.ok(root.querySelector('[aria-label="执行搜索"] svg'));
+    host.dispose();
+  } finally { ui.dom.window.close(); }
 });
 
 test("empty content drops restored expansion without collapsing children", async () => {
@@ -124,7 +213,7 @@ test("workspace remounts the matching presentation when placement changes", asyn
     const movedReviewPanel = ui.document.querySelector('#inspector-plugin-panels [data-presentation-id="inspector"]');
     assert.equal(reviewPanel.isConnected, false);
     assert.match(movedReviewPanel.textContent, /selected_view/);
-    assert.equal(ui.document.querySelectorAll(".wb-plugin-zone").length, 4);
+    assert.equal(ui.document.querySelectorAll(".wb-plugin-zone").length, 6);
     drop(ui, plugins[0].id, '[data-zone="bottom"] [data-plugin-id="official.table-print"]');
     await settle();
     assert.deepEqual(layout.groups.bottom, [plugins[0].id, plugins[1].id]);
@@ -133,6 +222,69 @@ test("workspace remounts the matching presentation when placement changes", asyn
     assert.equal(mounts.length, 3);
     host.show("table");
     assert.equal(ui.document.querySelector(".table-frame").hidden, false);
+  } finally { ui.dom.window.close(); }
+});
+
+test("left and right plugin slots are single-pane sidebars with draggable toggles", async () => {
+  const ui = await setup();
+  try {
+    const plugins = [
+      { id: "left.plugin", state: "enabled", contributes: { presentations: [{ id: "left", slots: ["left"], renderer: "left" }] } },
+      { id: "right.plugin", state: "enabled", contributes: { presentations: [{ id: "right", slots: ["right"], renderer: "right" }] } },
+    ];
+    const layout = { revision: 0, groups: { top: [], upper: [], bottom: [], left: ["left.plugin"], right: ["right.plugin"], disabled: [] } };
+    const host = ui.workspace.createPluginWorkspace({ api: async () => structuredClone(layout), postApi: async () => layout, loadPanel: (panel, id) => { panel.textContent = id; }, context: () => ({}) });
+    await host.update(plugins);
+    const workspace = ui.document.querySelector(".wb-plugin-workspace");
+    assert.ok(workspace.classList.contains("has-plugin-left"));
+    assert.ok(workspace.classList.contains("has-plugin-right"));
+    assert.equal(ui.document.querySelectorAll(".wb-plugin-slot-left .wb-plugin-instance").length, 1);
+    assert.equal(ui.document.querySelectorAll(".wb-plugin-slot-right .wb-plugin-instance").length, 1);
+    assert.equal(ui.document.querySelectorAll(".wb-plugin-slot-toggle").length, 2);
+    const toggle = ui.document.querySelector(".wb-plugin-slot-left .wb-plugin-slot-toggle");
+    workspace.getBoundingClientRect = () => ({ top: 0, left: 0, width: 900, height: 700 });
+    toggle.getBoundingClientRect = () => ({ top: 200, left: 220, width: 22, height: 72 });
+    const pointer = (type, x, y) => {
+      const event = new ui.dom.window.Event(type, { bubbles: true, cancelable: true });
+      Object.defineProperties(event, { pointerId: { value: 7 }, clientX: { value: x }, clientY: { value: y } });
+      toggle.dispatchEvent(event);
+    };
+    pointer("pointerdown", 220, 200); pointer("pointermove", 260, 240); pointer("pointerup", 260, 240);
+    assert.equal(workspace.style.getPropertyValue("--plugin-left-width"), "260px");
+    assert.equal(ui.document.documentElement.style.getPropertyValue("--region-left-size"), "260px");
+    assert.equal(workspace.style.getPropertyValue("--plugin-left-toggle-top"), "240px");
+    toggle.click();
+    assert.equal(workspace.classList.contains("plugin-left-collapsed"), false);
+    toggle.click();
+    assert.equal(workspace.classList.contains("plugin-left-collapsed"), true);
+    host.dispose();
+  } finally { ui.dom.window.close(); }
+});
+
+test("visible plugin panels refresh on activation and global language/theme context", async () => {
+  const ui = await setup();
+  try {
+    const plugin = { id: "study.review-table", state: "enabled", contributes: { presentations: [{ id: "full", slots: ["top"], renderer: "review" }] } };
+    const layout = { revision: 0, groups: { top: [plugin.id], upper: [], bottom: [], disabled: [] } };
+    const reasons = [];
+    const host = ui.workspace.createPluginWorkspace({ api: async () => layout, postApi: async () => layout, loadPanel: (panel) => {
+      panel.refreshContext = ({ reason }) => reasons.push("context:" + reason);
+      panel.refresh = async ({ reason }) => reasons.push("refresh:" + reason);
+    }, context: () => ({}) });
+    await host.update([plugin]);
+    host.show(plugin.id); await settle();
+    ui.document.dispatchEvent(new ui.dom.window.CustomEvent("workbench:languagechange"));
+    ui.document.dispatchEvent(new ui.dom.window.CustomEvent("workbench:themechange"));
+    await host.refreshVisible({ reason: "global" });
+    assert.ok(reasons.includes("context:activate"));
+    assert.ok(reasons.includes("context:languagechange"));
+    assert.ok(reasons.includes("context:themechange"));
+    assert.ok(reasons.includes("refresh:global"));
+    host.show("table"); await settle();
+    const before = reasons.length;
+    await host.refreshVisible({ reason: "hidden" });
+    assert.equal(reasons.length, before);
+    host.dispose();
   } finally { ui.dom.window.close(); }
 });
 
@@ -164,7 +316,7 @@ test("empty upper slot remains visible with a stable placeholder", async () => {
     const host = ui.workspace.createPluginWorkspace({ api: async () => layout, postApi: async () => layout, loadPanel: () => {}, context: () => ({}) });
     await host.update([plugin]);
     assert.equal(ui.document.querySelector("#metric-area").hidden, false);
-    assert.match(ui.document.querySelector("#metric-strip").textContent, /上栏暂无插件/);
+    assert.match(ui.document.querySelector(".wb-upper-strip").textContent, /顶栏暂无插件/);
     assert.ok(ui.document.querySelector(".wb-plugin-upper-empty[role=status]"));
     host.dispose();
   } finally { ui.dom.window.close(); }
@@ -234,13 +386,13 @@ test("upper bar accepts one lightweight plugin and displaces the previous plugin
       context: () => ({}),
     });
     await host.update(plugins);
-    assert.match(ui.document.querySelector("#metric-strip").textContent, /study.metrics/);
+    assert.match(ui.document.querySelector(".wb-upper-strip").textContent, /study.metrics/);
     host.show("manager");
     drop(ui, "study.pomodoro", '[data-zone="upper"]'); await settle();
     assert.equal(JSON.stringify(layout.groups.upper), JSON.stringify(["study.pomodoro"]));
     assert.ok(layout.groups.disabled.includes("study.metrics"));
-    assert.match(ui.document.querySelector("#metric-strip").textContent, /study.pomodoro/);
-    assert.doesNotMatch(ui.document.querySelector("#metric-strip").textContent, /study.metrics/);
+    assert.match(ui.document.querySelector(".wb-upper-strip").textContent, /study.pomodoro/);
+    assert.doesNotMatch(ui.document.querySelector(".wb-upper-strip").textContent, /study.metrics/);
     assert.equal(ui.document.querySelectorAll('[data-zone="upper"] .wb-plugin-card').length, 1);
     host.dispose();
   } finally { ui.dom.window.close(); }
@@ -322,6 +474,22 @@ test("SQL review removes chapter controls, keeps saved parameters and grades aft
   } finally { ui.dom.window.close(); }
 });
 
+
+test("mobile preview toolbar keeps search width and icon pagination", { skip: process.env.WB_TEST_SOURCE === "HEAD" }, async () => {
+  const ui = await setup();
+  try {
+    const root = ui.document.createElement("section"); ui.document.body.append(root);
+    ui.preview.renderTablePreview(root, { rows: Array.from({ length: 75 }, (_, n) => ({ title: String(n) })), columns: ["title"] });
+    const next = root.querySelector('[aria-label="下一页"]');
+    assert.ok(next.querySelector("svg"));
+    next.click(); assert.equal(root.querySelectorAll("tbody tr").length, 25);
+    root.querySelector('[aria-label="上一页"]').click();
+    assert.equal(root.querySelectorAll("tbody tr").length, 50);
+    assert.ok(root.querySelector(".wb-preview-actions"));
+    assert.match(workspaceCss, /\.wb-preview-actions\s*\{[^}]*overflow-x:\s*auto/s);
+    assert.match(workspaceCss, /\.wb-preview-actions \.wb-tree-root-picker\s*\{[^}]*min-width:\s*240px/s);
+  } finally { ui.dom.window.close(); }
+});
 
 test("preview filters the complete collection and paginates using shared column popover", async () => {
   const ui = await setup();
@@ -423,7 +591,7 @@ test("plan cards expose only selected actions, edit current plan, create new and
     assert.equal(root.querySelector('[aria-label="方案名称"]').value, "");
     assert.match(root.querySelector("textarea").value, /card_id/);
     button("返回").click(); await settle();
-    button("开始一轮学习").click(); await settle();
+    button("预览并筛选").click(); await settle();
     assert.equal(root.querySelector('[data-action="confirm-start"]').disabled, true);
     assert.match(root.textContent, /筛选 0 条/);
   } finally { ui.dom.window.close(); }
@@ -465,7 +633,7 @@ test("tree browser replaces graph with outline and returns from nested details w
     const roots = [{ id: "root", title: "Root", data: {}, children: [child] }];
     const filtered = ui.tree.filterTree(roots, ["child"]);
     assert.equal(filtered.addedAncestors, 1);
-    const host = ui.tree.createTreeWorkspace(root, { roots, detailFields: [{ column: "answer", format: "markdown" }, { column: "note", format: "text" }], renderMarkdown: (value, target) => { target.textContent = value; }, onRefresh: async () => { throw new Error("offline"); } });
+    const host = ui.tree.createTreeWorkspace(root, { roots, initialState: { collapsed: ["root"] }, detailFields: [{ column: "answer", format: "markdown" }, { column: "note", format: "text" }], renderMarkdown: (value, target) => { target.textContent = value; }, onRefresh: async () => { throw new Error("offline"); } });
     const button = (label) => [...root.querySelectorAll("button")].find((node) => node.textContent === label);
     root.querySelector('[aria-label="展开或收起子树 Root"]').dispatchEvent(new ui.dom.window.Event("click"));
     assert.equal(root.querySelectorAll(".wb-tree-graph-node").length, 2);
@@ -482,16 +650,18 @@ test("tree browser replaces graph with outline and returns from nested details w
     assert.equal(root.querySelector(".wb-tree-radial-menu"), null);
     assert.match(root.querySelector(".wb-tree-inline-content").textContent, /Detail/);
     root.querySelector('[aria-label="切换到树图"]').click();
-    root.querySelector('.wb-tree-graph-node[data-node-id="child"]').click();
-    root.querySelector('.wb-tree-radial-item[aria-label="节点详情"]').click();
+    root.querySelector('.wb-tree-graph-node[data-node-id="child"]').dispatchEvent(new ui.dom.window.Event("click"));
+    root.querySelector('.wb-tree-radial-item[aria-label="节点详情"]').click(); await settle();
     assert.equal(root.querySelector(".wb-tree-browser").hidden, true);
     assert.equal(root.querySelectorAll(".wb-tree-detail-module").length, 2);
     button("返回树页面").click();
     assert.equal(host.getState().mode, "graph");
-    root.querySelector('.wb-tree-graph-node[data-node-id="child"]').click();
-    root.querySelector('.wb-tree-radial-item[aria-label="节点详情"]').click();
+    root.querySelector('.wb-tree-graph-node[data-node-id="child"]').dispatchEvent(new ui.dom.window.Event("click"));
+    root.querySelector('.wb-tree-radial-item[aria-label="节点详情"]').click(); await settle();
     button("以此节点为根").click();
     assert.equal(host.getState().root, "child");
+    assert.equal(root.querySelectorAll(".wb-tree-graph-node").length, 1);
+    root.querySelector('[aria-label="切换到大纲"]').click();
     assert.equal(root.querySelectorAll(".wb-tree-outline-row").length, 1);
     root.querySelector('[aria-label="恢复全图"]').click();
     assert.equal(root.querySelectorAll(".wb-tree-outline-row").length, 2);
@@ -504,13 +674,19 @@ test("tree browser replaces graph with outline and returns from nested details w
 });
 
 
-test("tree editor saves canonical content and retries refresh without duplicate writes", async () => {
+test("tree editor saves canonical content and retries toolbar refresh without duplicate writes", async () => {
   const ui = await setup();
   try {
     const root = ui.document.createElement("section"); ui.document.body.append(root);
     let content = "Original", title = "Root", saves = 0, failRefresh = false;
     const payload = () => ({ roots: [{ id: "node:root", title, data: { content_md: content }, children: [] }], rows: [{ node_id: "node:root", parent_id: null, title, content_md: content }], columns: ["node_id", "parent_id", "title", "content_md"], detail_fields: [{ column: "content_md", format: "markdown" }], editing: { provider: "study-knowledge/v1" }, validation: { kind: "tree", root_count: 1, max_depth: 1, warnings: [] }, scopes: [] });
     const requests = [];
+    ui.dom.window.fetch = async (url, options) => {
+      const values = JSON.parse(options.body);
+      requests.push([url, values]);
+      saves++; content = values.content_md; title = values.title; failRefresh = true;
+      return { ok: true, json: async () => ({ node: { node_id: "node:root", title, content_md: content }, version: "version-2" }) };
+    };
     await ui.treeAdapter.renderNodeTreePanel(root, { api: async (url) => {
       if (url.includes("/configs?")) return { configs: [] };
       if (failRefresh) { failRefresh = false; throw new Error("refresh offline"); }
@@ -533,14 +709,18 @@ test("tree editor saves canonical content and retries refresh without duplicate 
     titleInput.value = "Renamed";
     assert.equal(input.value, "Original");
     input.value = "**Changed**";
+    input.dispatchEvent(new ui.dom.window.Event("input", { bubbles: true }));
     input.dispatchEvent(new ui.dom.window.KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
     assert.equal(saves, 0);
-    button("保存").click(); button("保存").click(); await settle(); await settle();
-    assert.equal(saves, 1);
-    assert.match(root.querySelector(".study-tree-editor").textContent, /已保存，但树图刷新失败/);
-    button("重新加载树").click(); await settle(); await settle();
+    const saveButton = button("保存");
+    saveButton.click(); saveButton.click(); await settle(); await settle();
     assert.equal(saves, 1);
     assert.equal(root.querySelector(".study-tree-editor"), null);
+    assert.match(root.textContent, /节点已保存，但树图刷新失败/);
+    root.querySelector('[aria-label="刷新"]').click(); await settle(); await settle();
+    assert.equal(saves, 1);
+    assert.equal(root.querySelector(".study-tree-editor"), null);
+    root.querySelector('[aria-label="展开或收起内容 Renamed"]').dispatchEvent(new ui.dom.window.Event("click"));
     assert.match(root.querySelector(".wb-tree-inline-content").textContent, /Changed/);
     assert.equal(requests[1][1].version, "version-1");
     assert.equal(requests[1][1].title, "Renamed");
@@ -637,7 +817,8 @@ test("node controls share the rounded surface and retain accessible keyboard foc
     const frame = card.querySelector(".wb-tree-node-frame");
     const clip = card.querySelector("clipPath rect");
     for (const attribute of ["width", "height", "rx"]) assert.equal(frame.getAttribute(attribute), clip.getAttribute(attribute));
-    assert.equal(card.lastElementChild, frame);
+    assert.equal(frame.previousElementSibling.tagName.toLowerCase(), "title");
+    assert.ok(frame.nextElementSibling.classList.contains("wb-tree-insert-marker"));
     assert.ok(card.querySelector(".wb-tree-node-surface").getAttribute("clip-path").includes(card.querySelector("clipPath").id));
     assert.equal(card.querySelectorAll(".wb-tree-node-surface .wb-tree-node-control").length, 2);
     assert.equal(card.querySelectorAll(".wb-tree-control-focus").length, 2);
@@ -658,16 +839,16 @@ test("child toggle remains clickable when move support is enabled", async () => 
   try {
     const root = ui.document.createElement("section"); ui.document.body.append(root);
     const operations = [];
-    const host = ui.tree.createTreeWorkspace(root, { roots: [{ id: "root", title: "Root", children: [{ id: "child", title: "Child", children: [] }] }], onMove: async (...args) => operations.push(args), onDelete: async () => {} });
-    const toggle = root.querySelector('[aria-label="展开或收起子树 Root"]');
+    const host = ui.tree.createTreeWorkspace(root, { roots: [{ id: "root", title: "Root", children: [{ id: "child", title: "Child", children: [] }] }], initialState: { collapsed: ["root"] }, onMove: async (...args) => operations.push(args), onDelete: async () => {} });
     assert.equal(root.querySelectorAll(".wb-tree-graph-node").length, 1);
     root.querySelector(".wb-tree-graph-node").dispatchEvent(new ui.dom.window.MouseEvent("click", { bubbles: true }));
+    const toggle = root.querySelector('[aria-label="展开或收起子树 Root"]');
     toggle.dispatchEvent(new ui.dom.window.MouseEvent("pointerdown", { button: 0, bubbles: true, cancelable: true }));
     toggle.dispatchEvent(new ui.dom.window.MouseEvent("pointerup", { button: 0, bubbles: true, cancelable: true }));
     toggle.dispatchEvent(new ui.dom.window.MouseEvent("click", { bubbles: true, cancelable: true }));
     assert.equal(root.querySelectorAll(".wb-tree-graph-node").length, 2);
     assert.equal(operations.length, 0);
-    assert.equal([...root.querySelectorAll("button")].find((button) => button.textContent === "删除节点")?.hidden, false);
+    assert.equal(root.querySelector(".wb-tree-radial-menu"), null);
     host.dispose();
   } finally { ui.dom.window.close(); }
 });
@@ -802,10 +983,7 @@ test("tree workspace handles deep titles without Markdown heading limits and sta
     }
     const second = { id: "second", title: "Second root", children: [] };
     const host = ui.tree.createTreeWorkspace(root, { roots: [tree, second] });
-    for (let depth = 0; depth < 11; depth++) {
-      const parent = root.querySelector(`[data-node-id="${depth}"]`);
-      parent.querySelector(".wb-tree-node-control").dispatchEvent(new ui.dom.window.Event("click"));
-    }
+    // New trees are fully expanded by default, including deep hierarchies.
     assert.equal(root.querySelectorAll(".wb-tree-graph-node").length, 13);
     assert.ok(root.querySelector('[data-node-id="11"]'));
     const firstPosition = root.querySelector('[data-node-id="11"]').getAttribute("transform");
@@ -826,12 +1004,12 @@ test("unified tree content toggles independently from descendants and supports f
       { id: "card:question", title: "Question", data: { content_md: "**Answer**" }, children: [] },
       { id: "node:empty", title: "Empty", data: { content_md: "" }, children: [] },
     ] }];
-    const host = ui.tree.createTreeWorkspace(root, { roots: trees, detailFields: [{ column: "content_md", format: "markdown" }], renderMarkdown: (value, body) => { body.textContent = value; } });
+    const host = ui.tree.createTreeWorkspace(root, { roots: trees, initialState: { collapsed: ["node:chapter"] }, detailFields: [{ column: "content_md", format: "markdown" }], renderMarkdown: (value, body) => { body.textContent = value; } });
     const click = (label) => root.querySelector(`[aria-label="${label}"]`).dispatchEvent(new ui.dom.window.Event("click", { bubbles: true }));
     click("展开或收起子树 Chapter");
     click("Question");
     click("展开或收起内容 Question");
-    assert.equal(root.querySelector(".wb-tree-inline-content").textContent, "content_md**Answer**");
+    assert.equal(root.querySelector(".wb-tree-inline-content").textContent, "**Answer**");
     assert.equal(root.querySelector(".wb-tree-detail").hidden, true);
     click("Empty");
     assert.equal(root.querySelector('[aria-label="展开或收起内容 Empty"]').getAttribute("aria-disabled"), "true");
@@ -860,14 +1038,14 @@ test("node cards keep controls inside and wrap full titles without truncation", 
   try {
     const root = ui.document.createElement("section"); ui.document.body.append(root);
     const title = "很长的知识问题标题：如何理解软件体系结构的设计与实现？".repeat(5);
-    const host = ui.tree.createTreeWorkspace(root, { roots: [{ id: "root", title, data: { back: "Answer" }, children: [{ id: "child", title: "Child", children: [] }] }], detailFields: [{ column: "back" }] });
+    const host = ui.tree.createTreeWorkspace(root, { roots: [{ id: "root", title, data: { back: "Answer" }, children: [{ id: "child", title: "Child", children: [] }] }], initialState: { collapsed: ["root"] }, detailFields: [{ column: "back" }] });
     let card = root.querySelector('[data-node-id="root"]');
     assert.equal(root.querySelectorAll(".wb-tree-graph-node").length, 1);
     assert.equal(card.querySelector(".wb-tree-node-control text").textContent, "+");
     assert.equal(card.querySelector(".wb-tree-node-title").textContent, title);
     assert.ok(card.querySelectorAll("tspan").length > 1);
     assert.ok(Number(card.querySelector(".wb-tree-node-frame").getAttribute("height")) > 64);
-    assert.equal(card.querySelectorAll(".wb-tree-node-control").length, 1);
+    assert.equal(card.querySelectorAll(".wb-tree-node-control").length, 2);
     card.dispatchEvent(new ui.dom.window.Event("click"));
     card = root.querySelector('[data-node-id="root"]');
     assert.equal(root.querySelector(".wb-tree-detail").hidden, true);
@@ -881,7 +1059,7 @@ test("node cards keep controls inside and wrap full titles without truncation", 
     }
     card.querySelector(".wb-tree-node-control").dispatchEvent(new ui.dom.window.Event("click"));
     assert.equal(root.querySelectorAll(".wb-tree-graph-node").length, 2);
-    assert.equal(root.querySelector("svg").firstElementChild.classList.contains("wb-tree-edges"), true);
+    assert.equal(root.querySelector(".wb-tree-canvas svg").firstElementChild.classList.contains("wb-tree-edges"), true);
     host.dispose();
   } finally { ui.dom.window.close(); }
 });

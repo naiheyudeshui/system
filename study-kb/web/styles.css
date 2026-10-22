@@ -338,3 +338,16 @@ button.danger { background: var(--danger); color: var(--panel); }
 .study-library-sync .action-group { flex-wrap:wrap; margin-left:0; }
 .study-library-sync .action-hint { margin:0; line-height:1.6; }
 .study-tree-delete-actions { display:flex; justify-content:flex-end; flex-wrap:wrap; gap:8px; margin-top:20px; }
+
+/* BSP 是页面外壳。指标和表格都在工作区叶子里，不能再占外壳的第二行。 */
+.app-shell.wb-bsp-shell { grid-template-rows: auto minmax(0, 1fr); }
+@media (max-width: 860px) {
+  .wb-bsp-shell .wb-table-workspace > .left-column {
+    position: relative;
+    inset: auto;
+    width: auto;
+    height: auto;
+    z-index: auto;
+    box-shadow: none;
+  }
+}
