@@ -1,4 +1,4 @@
-import { createPluginWorkspace, mountLegacyWorkspaceTemplate } from "/3dworkbench/pluginWorkspace.mjs?v=20261022-bsp-strip2";
+import { createPluginWorkspace } from "/3dworkbench/pluginWorkspace.mjs?v=20261026-gesture3";
 import { installHostHelp } from "/3dworkbench/hostHelp.mjs";
 import { createRefreshCoordinator } from "/3dworkbench/refreshCoordinator.mjs";
 import { studyHelpTopics } from "./studyHelp.mjs";
@@ -6,6 +6,9 @@ import { renderTimerPanel } from "./studyTimers.mjs";
 import { confirmWorkbenchAction, openConfigManager } from "/3dworkbench/pluginConfigManager.mjs";
 import { rowMatchesFilter } from "/3dworkbench/tablePreview.mjs";
 import { editCellInline } from "/3dworkbench/inlineCellEditor.mjs";
+import { renderObjectGrid, renderObjectInspector, renderObjectNavigator } from "./studyTableSurface.mjs?v=20261026-sidebar3";
+import { renderTableCatalogPanel } from "./studyTableCatalog.mjs?v=20261026-gesture3";
+import { renderTableGridPanel } from "./studyTableGrid.mjs?v=20261026-gesture";
 let pluginWorkspace;
 let pluginWorkspaceReady = Promise.resolve();
 const BSP_HOST_LAYOUT = true;
@@ -50,20 +53,15 @@ function agentLayoutSnapshot(hypothesisId, location, message) {
 }
 window.addEventListener("error", (event) => agentDebug("H5", "app.js:window", "uncaught", { message: event.message, stack: String(event.error?.stack || "").slice(0, 500) }));
 // #endregion
-mountLegacyWorkspaceTemplate();
 import {
   applyIconButtons,
-  describeColumnFilter,
-  openTableFilterPopover,
-  installNavigatorControls,
-  renderSidebarSections,
   setupLanguageSelect,
   setupEdgeToggle,
   setupSidebarCollapse,
   setupThemeToggle,
   setupWorkbenchSplitters,
   t,
-} from "/3dworkbench/workbenchPlatform.mjs?v=20261005-drawer";
+} from "/3dworkbench/workbenchPlatform.mjs?v=20261026-sidebar3";
 import { renderNodeTreePanel, renderReviewTablePanel } from "./studyPlugins.mjs?v=20261006-request-id";
 import { renderLibrarySyncPanel } from "./studyLibrarySync.mjs?v=20261005-library";
 function requestId() {
@@ -202,7 +200,7 @@ let triggerEditorPreview = null;
 let triggerPanelReload = null;
 
 const $ = (selector) => document.querySelector(selector);
-const grid = $("#data-grid");
+let schemaDocTarget = null;
 
 function ensureLanguageSelect() {
   const existing = $("#language-select");
@@ -329,29 +327,16 @@ function addPaneSearch(list, itemClass, value, onChange) {
 }
 
 function renderNav() {
-  const objects = state.schema?.objects || [];
-  const views = objects.filter((item) => item.kind === "view");
-  const tables = objects.filter((item) => item.kind === "table");
-  const toItem = (item) => ({
-    id: item.name,
-    label: item.name_zh || item.name,
-    detail: item.name,
-    kind: item.kind === "view" ? "VIEW" : "TABLE",
-    active: state.active?.name === item.name,
-    payload: item,
-  });
-  renderSidebarSections($("#left-column"), [
-    { id: "favorites", title: t("nav.favorites"), className: "favorite-pane", itemClass: "favorite-item", kind: "PIN", items: [], size: "23%", collapsedWhenEmpty: true },
-    { id: "views", title: t("nav.views"), className: "derived-pane", itemClass: "view-item", items: views.map(toItem), size: "39%" },
-    { id: "tables", title: t("nav.tables"), className: "source-pane", itemClass: "table-item", items: tables.map(toItem), size: "1fr" },
-  ], {
+  const column = document.querySelector("#left-column");
+  if (!column) return;
+  renderObjectNavigator(column, {
+    objects: state.schema?.objects || [],
+    activeName: state.active?.name || "",
     storageKey: favoritesStorageKey,
-    onSelect: (_section, item) => selectObject(item.payload),
-    onRender: (root) => installNavigatorControls(root, [
-      { id: "favorites", search: true, settings: true, hint: t("nav.favoriteHint"), remove: { canRemove: () => true, onRemove: (id) => { localStorage.setItem(favoritesStorageKey, JSON.stringify(JSON.parse(localStorage.getItem(favoritesStorageKey) || "[]").filter((value) => value !== id))); renderNav(); } }, edit: { canEdit: (id) => Boolean(views.find((item) => item.name === id)), onEdit: editStudioView } },
-      { id: "views", search: true, settings: true, create: { label: t("nav.createView"), onClick: openViewDialog }, remove: { canRemove: (id) => views.find((item) => item.name === id)?.can_delete === true, onRemove: removeStudioView }, edit: { canEdit: (id) => Boolean(views.find((item) => item.name === id)), onEdit: editStudioView } },
-      { id: "tables", search: true },
-    ], { storageKey: favoritesStorageKey, rerender: renderNav }),
+    onSelect: (object) => { void selectObject(object); },
+    onCreateView: openViewDialog,
+    onEditView: editStudioView,
+    onRemoveView: removeStudioView,
   });
 }
 
@@ -596,9 +581,9 @@ async function persistDashboard() {
   }
 }
 
-function openSchemaDocDialog() {
-  const item = state.active;
+function openSchemaDocDialog(item = state.active) {
   if (!item) return;
+  schemaDocTarget = item;
   const form = $("#schema-doc-form");
   form.name_zh.value = item.name_zh || item.name;
   form.description_zh.value = item.description_zh || "";
@@ -607,69 +592,43 @@ function openSchemaDocDialog() {
 }
 
 function renderGrid(result) {
-  const head = grid.querySelector("thead");
-  const body = grid.querySelector("tbody");
-  head.replaceChildren();
-  body.replaceChildren();
-  const columns = result.columns || [];
-  const columnWidth = (column) => {
-    const headerLength = String(column).length;
-    const samples = (result.rows || []).slice(0, 80).map((row) => String(row[column] ?? "").replace(/\s+/g, " ").length);
-    const usefulLength = Math.max(headerLength, ...samples.filter((length) => length > 0).slice(0, 12));
-    return Math.max(112, Math.min(320, 28 + usefulLength * 8));
-  };
-  grid.style.setProperty("--table-min-width", `${Math.max(840, columns.reduce((sum, column) => sum + columnWidth(column), 0))}px`);
-  const headerRow = document.createElement("tr");
-  for (const column of columns) {
-    const cell = document.createElement("th");
-    cell.style.width = `${columnWidth(column)}px`;
-    cell.textContent = column;
-    cell.className = "table-filterable" + (activeColumnFilters()[column] ? " filter-active" : "");
-    cell.tabIndex = 0;
-    cell.title = `筛选 ${column}`;
-    const openFilter = () => openHeaderFilter(cell, column);
-    cell.addEventListener("click", openFilter);
-    cell.addEventListener("keydown", (event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); openFilter(); } });
-    headerRow.append(cell);
-  }
-  head.append(headerRow);
-  const rows = applyColumnFilter(result.rows || []);
-  document.querySelectorAll(".print-panel, .study-review-panel").forEach((panel) => panel.refreshContext?.());
-  if (!rows.length) {
-    const row = document.createElement("tr");
-    const cell = document.createElement("td");
-    cell.colSpan = Math.max(columns.length, 1);
-    cell.className = "empty";
-    cell.textContent = "没有匹配当前筛选的数据";
-    row.append(cell);
-    body.append(row);
-    return;
-  }
-  for (const payload of rows) {
-    const row = document.createElement("tr");
-    row.tabIndex = 0;
-    row.className = state.selectedRow === payload ? "selected" : "";
-    row.addEventListener("click", () => {
-      state.selectedRow = payload;
-      body.querySelectorAll("tr.selected").forEach((item) => item.classList.remove("selected"));
-      row.classList.add("selected");
+  const pane = document.querySelector("#data-grid")?.closest(".data-pane");
+  if (!pane || !result) return;
+  renderObjectGrid(pane, {
+    object: state.active,
+    result,
+    filters: activeColumnFilters(),
+    selectedRow: state.selectedRow,
+    editLocked: state.editLocked,
+    onFilter: (column, filter) => {
+      const filters = activeColumnFilters();
+      if (filter) filters[column] = filter;
+      else delete filters[column];
+      renderGrid(state.activeResult);
+    },
+    onClearFilters: () => {
+      state.query = "";
+      clearAllColumnFilters();
+      if (state.active) void selectObject(state.active);
+    },
+    onSelectRow: (row) => {
+      state.selectedRow = row;
       renderInspector();
-    });
-    for (const column of columns) {
-      const cell = document.createElement("td");
-      cell.style.width = `${columnWidth(column)}px`;
-      const value = payload[column];
-      cell.textContent = value === null || value === undefined ? "" : String(value);
-      if (typeof value === "string" && (value.length > 36 || value.includes("\n"))) cell.className = "cell-long-text";
-      cell.addEventListener("dblclick", () => openCellEditor(cell, payload, column));
-      row.append(cell);
-    }
-    body.append(row);
-  }
+    },
+    onToggleLock: () => {
+      state.editLocked = !state.editLocked;
+      updateEditLock();
+    },
+    onAdd: () => { void openCreateRecordDialog(state.active, { onSaved: () => refresh() }); },
+    onEditCell: (cell, row, column) => {
+      void openCellEditor(cell, row, column, state.active, { onSaved: () => selectObject(state.active) });
+    },
+  });
+  document.querySelectorAll(".print-panel, .study-review-panel").forEach((panel) => panel.refreshContext?.());
 }
 
-function recordEditContext(row, viewColumn) {
-  const contract = objectEditContract();
+function recordEditContext(row, viewColumn, object = state.active) {
+  const contract = objectEditContract(object);
   const columnTarget = contract.targets?.[viewColumn];
   if (columnTarget) {
     const recordTable = (state.recordContract?.tables || []).find((table) => table.name === columnTarget.table);
@@ -710,13 +669,13 @@ function displayChoices(mapping) {
   return unique.length ? unique : null;
 }
 
-async function openCellEditor(cell, row, viewColumn) {
+async function openCellEditor(cell, row, viewColumn, object = state.active, { onSaved, editLocked = state.editLocked } = {}) {
   if (cell.classList.contains("cell-editing")) return;
-  if (state.editLocked) {
+  if (editLocked) {
     showEditBlocked("当前处于锁定模式。请点击表格右上角的锁图标，解锁后再修改单元格。");
     return;
   }
-  const context = recordEditContext(row, viewColumn);
+  const context = recordEditContext(row, viewColumn, object);
   if (!context?.contract.operations?.includes("update") || !context.baseColumn || context.recordTable.primary_key.includes(context.baseColumn)) {
     showEditBlocked("该字段没有可写入原始表的有效映射，因此只能查看，不能修改。");
     return;
@@ -732,12 +691,12 @@ async function openCellEditor(cell, row, viewColumn) {
     options: statusOptions || [],
     save: async (next) => {
     const request = context.crossTable
-      ? { view: state.active.name, row, column: viewColumn, value: next }
+      ? { view: object.name, row, column: viewColumn, value: next }
       : { operation: "update", table: context.contract.table, key: context.key, values: { [context.baseColumn]: next } };
     const preview = await postApi(context.crossTable ? "/api/view-cell/preview" : "/api/record/preview", request);
     $("#inspector-command").textContent = JSON.stringify(preview, null, 2);
     await postApi(context.crossTable ? "/api/view-cell/apply" : "/api/record/apply", { ...request, client_id: "studio-workbench", idempotency_key: requestId() });
-    await selectObject(state.active);
+    await onSaved?.();
     },
     onError: (error) => {
       $("#inspector-command").textContent = error.message;
@@ -750,25 +709,6 @@ function applyColumnFilter(rows) {
   return filters.length ? rows.filter((row) => filters.every((filter) => rowMatchesFilter(row, filter))) : rows;
 }
 
-function hasFilterValue(filter) {
-  return Boolean(filter?.value || filter?.values?.length || filter?.min || filter?.max);
-}
-
-function openHeaderFilter(anchor, columnName) {
-  const descriptor = describeColumnFilter(activeFilterColumns(), state.activeResult?.rows || [], columnName);
-  openTableFilterPopover({
-    anchor, descriptor, current: activeColumnFilters()[columnName],
-    labels: { clear: t("filter.clear"), apply: t("filter.apply"), search: t("filter.search"), minimum: t("filter.minimum"), maximum: t("filter.maximum") },
-    onApply: (filter) => {
-      const filters = activeColumnFilters();
-      if (hasFilterValue(filter)) filters[columnName] = filter;
-      else delete filters[columnName];
-      renderGrid(state.activeResult);
-    },
-    onClear: () => { delete activeColumnFilters()[columnName]; renderGrid(state.activeResult); },
-  });
-}
-
 function updateEditLock() {
   const button = $("#edit-lock");
   button.textContent = state.editLocked ? "🔒" : "🔓";
@@ -778,15 +718,8 @@ function updateEditLock() {
   localStorage.setItem("studio-edit-locked", state.editLocked ? "1" : "0");
 }
 
-function objectEditContract() {
-  return state.active?.edit_contract || {};
-}
-
-function activeFilterColumns() {
-  const contract = (state.recordContract?.tables || []).find((table) => table.name === state.active?.name);
-  if (!contract) return state.active?.columns || [];
-  const schemaColumns = new Map((state.active?.columns || []).map((column) => [column.name, column]));
-  return contract.columns.map((column) => ({ ...schemaColumns.get(column.name), ...column }));
+function objectEditContract(object = state.active) {
+  return object?.edit_contract || {};
 }
 
 function showRecordDialog(title, message) {
@@ -831,9 +764,9 @@ async function addForeignKeyChoices(select, column) {
   }
 }
 
-async function openCreateRecordDialog() {
-  const contract = objectEditContract();
-  if (state.editLocked) {
+async function openCreateRecordDialog(object = state.active, { editLocked = state.editLocked, onSaved } = {}) {
+  const contract = objectEditContract(object);
+  if (editLocked) {
     showRecordDialog("当前处于锁定模式", "请点击表格右上角的锁图标，解锁后再新增记录。");
     return;
   }
@@ -863,7 +796,7 @@ async function openCreateRecordDialog() {
     catch (error) { $("#record-dialog-preview").textContent = error.message; apply.disabled = true; }
   };
   apply.onclick = async () => {
-    try { await postApi("/api/record/apply", { ...request(), client_id: "studio-workbench", idempotency_key: requestId() }); await refresh(); $("#record-dialog").close(); }
+    try { await postApi("/api/record/apply", { ...request(), client_id: "studio-workbench", idempotency_key: requestId() }); await onSaved?.(); $("#record-dialog").close(); }
     catch (error) { $("#record-dialog-preview").textContent = error.message; }
   };
   $("#record-dialog").showModal();
@@ -908,72 +841,16 @@ async function openRowEditor(row) {
 function renderInspector() {
   const item = state.active;
   if (!item) return;
-  const editDocumentation = document.createElement("button");
-  editDocumentation.type = "button";
-  editDocumentation.className = "inspector-edit-doc";
-  editDocumentation.textContent = "编辑表格说明";
-  editDocumentation.addEventListener("click", openSchemaDocDialog);
-  const inspectorControls = [editDocumentation];
-  if (item.kind === "view" && item.name !== "v_schema_doc") {
-    const editView = document.createElement("button");
-    editView.type = "button";
-    editView.className = "inspector-edit-doc";
-    editView.textContent = "编辑外观视图";
-    editView.addEventListener("click", () => openViewEditor(item));
-    inspectorControls.push(editView);
-  }
-  const columns = item.columns.filter((column) => !column.hidden);
-  const fieldTable = document.createElement("div");
-  fieldTable.className = "field-table" + (state.selectedRow ? " has-selected-row" : "");
-  fieldTable.setAttribute("role", "table");
-
-  const header = document.createElement("div");
-  header.className = "field-table-row field-table-header";
-  header.setAttribute("role", "row");
-  const appendHeader = (label) => {
-    const cell = document.createElement("span");
-    cell.className = "field-table-cell";
-    cell.setAttribute("role", "columnheader");
-    cell.textContent = label;
-    header.append(cell);
-  };
-  appendHeader("字段");
-  appendHeader("类别");
-  if (state.selectedRow) appendHeader("选中行数据");
-  fieldTable.append(header);
-
-  const valueText = (value) => value === null || value === undefined ? "空值" : String(value);
-  for (const column of columns) {
-    const row = document.createElement("div");
-    row.className = "field-table-row";
-    row.setAttribute("role", "row");
-
-    const name = document.createElement("strong");
-    name.className = "field-table-cell field-name";
-    name.setAttribute("role", "cell");
-    name.textContent = column.name;
-
-    const category = document.createElement("span");
-    category.className = "field-table-cell field-category";
-    category.setAttribute("role", "cell");
-    category.textContent = `${column.type || "TEXT"}${column.primary_key ? " / PK" : ""}${column.not_null ? " / NOT NULL" : ""}`;
-
-    row.append(name, category);
-    if (state.selectedRow) {
-      const value = document.createElement("span");
-      value.className = "field-table-cell field-value";
-      value.setAttribute("role", "cell");
-      value.textContent = valueText(state.selectedRow[column.name]);
-      row.append(value);
-    }
-    fieldTable.append(row);
-  }
-  $("#inspector-fields").replaceChildren(...inspectorControls, fieldTable);
-  $("#inspector-sql").textContent = item.sql || `SELECT * FROM ${item.name}`;
+  renderObjectInspector(null, {
+    object: item,
+    selectedRow: state.selectedRow,
+    fieldsRoot: $("#inspector-fields"),
+    sqlRoot: $("#inspector-sql"),
+    onEditDocumentation: openSchemaDocDialog,
+    onEditView: openViewEditor,
+  });
   const q = state.query ? ` --q ${JSON.stringify(state.query)}` : "";
-  $("#inspector-command").textContent = item.kind === "view"
-    ? `python tools/ops.py view query ${item.name}${q} --json`
-    : `python tools/ops.py view query ${item.name}${q} --json`;
+  $("#inspector-command").textContent = `python tools/ops.py view query ${item.name}${q} --json`;
   renderPluginInspector();
 }
 
@@ -993,8 +870,11 @@ function activateInspectorTab(tabName) {
 
 function createPluginContext() {
   return {
+    api,
+    postApi,
     currentObject: () => state.active,
     currentResult: () => state.activeResult,
+    selectObject,
     columnFilters: () => ({ ...activeColumnFilters() }),
     filteredRows: () => applyColumnFilter(state.activeResult?.rows || []),
   };
@@ -1094,6 +974,37 @@ async function loadPluginPanel(panel, pluginId, contributionId, context = create
         api,
         postApi,
         getCurrentView: () => state.active,
+      });
+      return;
+    }
+    if (pluginId === "study.table-catalog") {
+      await renderTableCatalogPanel(panel, {
+        ...context,
+        onCreateView: openViewDialog,
+        onEditView: editStudioView,
+        onRemoveView: removeStudioView,
+      });
+      return;
+    }
+    if (pluginId === "study.table-grid") {
+      await renderTableGridPanel(panel, {
+        ...context,
+        onCreateRecord: (object, editLocked, onSaved) => openCreateRecordDialog(object, {
+          editLocked,
+          onSaved: async () => {
+            await onSaved?.();
+            if (state.active?.name === object?.name) await selectObject(state.active);
+          },
+        }),
+        onEditCell: (cell, row, column, object, onSaved, editLocked) => openCellEditor(cell, row, column, object, {
+          editLocked,
+          onSaved: async () => {
+            await onSaved?.();
+            if (state.active?.name === object?.name) await selectObject(state.active);
+          },
+        }),
+        onEditDocumentation: openSchemaDocDialog,
+        onEditView: openViewEditor,
       });
       return;
     }
@@ -1596,6 +1507,7 @@ async function selectObject(item) {
   state.activeResult = await api(`/api/object?${params.toString()}`);
   renderGrid(state.activeResult);
   renderInspector();
+  document.dispatchEvent(new CustomEvent("workbench:table-selection", { detail: { name: item.name } }));
 }
 
 function setLoadState(percent, detail, { failed = false } = {}) {
@@ -1871,13 +1783,6 @@ $("#view-delete-form").addEventListener("submit", async (event) => {
     $("#inspector-command").textContent = error.message;
   }
 });
-$("#clear-filter").addEventListener("click", () => {
-  state.query = "";
-  clearAllColumnFilters();
-  if (state.active) void selectObject(state.active);
-});
-$("#edit-lock").addEventListener("click", () => { state.editLocked = !state.editLocked; updateEditLock(); });
-document.getElementById("add-record").addEventListener("click", () => { void openCreateRecordDialog(); });
 $("#close-record-dialog").addEventListener("click", () => $("#record-dialog").close());
 $("#close-metric-dialog").addEventListener("click", () => $("#metric-dialog").close());
 $("#close-builtin-metric-dialog").addEventListener("click", () => $("#builtin-metric-dialog").close());
@@ -1970,10 +1875,11 @@ $("#close-schema-doc-dialog").addEventListener("click", () => $("#schema-doc-dia
 $("#schema-doc-form").addEventListener("submit", async (event) => {
   event.preventDefault();
   if (event.submitter?.value === "cancel") { $("#schema-doc-dialog").close(); return; }
-  if (!state.active) return;
+  const documented = schemaDocTarget || state.active;
+  if (!documented) return;
   const form = event.currentTarget;
   try {
-    await postApi("/api/schema-doc", { kind: state.active.kind, name: state.active.name, values: { name_zh: form.name_zh.value, description_zh: form.description_zh.value, sort_order: Number(form.sort_order.value) } });
+    await postApi("/api/schema-doc", { kind: documented.kind, name: documented.name, values: { name_zh: form.name_zh.value, description_zh: form.description_zh.value, sort_order: Number(form.sort_order.value) } });
     $("#schema-doc-dialog").close();
     await refresh();
   } catch (error) {

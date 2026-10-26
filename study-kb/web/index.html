@@ -4,8 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Study Knowledge Base</title>
-    <link rel="stylesheet" href="styles.css?v=20261022-bsp-strip">
-    <link rel="stylesheet" href="/3dworkbench/pluginWorkspace.css?v=20261022-bsp-pane">
+    <link rel="stylesheet" href="styles.css?v=20261026-sidebar3">
+    <link rel="stylesheet" href="/3dworkbench/pluginWorkspace.css?v=20261026-gesture">
   </head>
   <body>
     <div id="app" class="app-shell wb-bsp-shell">
@@ -26,7 +26,7 @@
       </header>
       <main class="workbench" id="workbench"></main>
     </div>
-    <template id="wb-legacy-workspace">
+    <div id="wb-workspace-staging" hidden>
       <section id="metric-area" class="metric-area" aria-label="学习摘要">
         <section id="metric-strip" class="metric-strip"></section>
         <button id="metric-strip-toggle" class="pane-edge-toggle metric-strip-toggle" type="button" aria-pressed="false" title="收起学习指标" aria-label="收起学习指标">⌃</button>
@@ -68,7 +68,7 @@
             <div id="inspector-plugin-panels"></div>
           </section>
         </section>
-    </template>
+    </div>
     <dialog id="view-dialog" class="view-dialog">
       <form id="view-form" method="dialog">
         <header><h2 id="view-dialog-title">新建外观视图</h2><button id="close-view-dialog" type="button" class="symbol-button" aria-label="关闭">×</button></header>
@@ -147,6 +147,6 @@
         <footer><button value="cancel">cancel</button><button id="trigger-preview" type="button">preview</button><button id="trigger-apply" class="primary" value="submit" disabled>save</button></footer>
       </form>
     </dialog>
-    <script type="module" src="app.js?v=20261022-debug-533dd3k"></script>
+    <script type="module" src="app.js?v=20261026-gesture3"></script>
   </body>
 </html>

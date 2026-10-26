@@ -22,13 +22,19 @@ def install() -> None:
 
     def discover_plugins(root: Path | None = None) -> list[dict]:
         manifests = original_discover(root if root is not None else plugin_host.PLUGIN_ROOT)
+        study_manifests = original_from(STUDY_PLUGIN_ROOT) if STUDY_PLUGIN_ROOT.is_dir() else []
+        # The factory checkout may carry manifest copies so it can validate a
+        # product in isolation.  The Study consumer owns its renderers and
+        # therefore wins duplicate IDs when both roots are scanned; exposing
+        # both copies would make startup fail before /api/plugins is served.
+        study_ids = {item["id"] for item in study_manifests}
+        manifests = [item for item in manifests if item["id"] not in study_ids]
         seen = {item["id"] for item in manifests}
-        if STUDY_PLUGIN_ROOT.is_dir():
-            for item in original_from(STUDY_PLUGIN_ROOT):
-                if item["id"] in seen:
-                    raise ValueError(f"Duplicate plugin id: {item['id']}")
-                manifests.append(item)
-                seen.add(item["id"])
+        for item in study_manifests:
+            if item["id"] in seen:
+                raise ValueError(f"Duplicate plugin id: {item['id']}")
+            manifests.append(item)
+            seen.add(item["id"])
         return manifests
 
     plugin_host.discover_plugins = discover_plugins

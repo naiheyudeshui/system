@@ -1,0 +1,16 @@
+{
+  "id": "study.table-grid",
+  "icon": "icon.svg",
+  "version": "1.0.0",
+  "api": {"host": ">=1.0 <2.0"},
+  "activation": ["onStartupFinished"],
+  "contributes": {
+    "transfers": {
+      "accepts": [{"type": "study.table/ref", "label": "Table reference"}]
+    },
+    "presentations": [
+      {"id": "default", "renderer": "table-grid", "label": "Table grid", "slots": ["top", "bottom", "left", "right"], "default": true}
+    ]
+  },
+  "permissions": ["data.read:table", "data.write:table"]
+}

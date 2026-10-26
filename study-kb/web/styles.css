@@ -1,4 +1,4 @@
-@import url("/3dworkbench/workbench.css?v=20261005-handle");
+@import url("/3dworkbench/workbench.css?v=20261026-sidebar");
 
 /* Study reading theme — forest/phosphor greens (Glean + Forest Walk inspired). */
 
@@ -142,6 +142,19 @@ button.danger { background: var(--danger); color: var(--panel); }
 .study-learning-card .study-md { width:100%; min-width:0; max-width:100%; overflow-wrap:anywhere; word-break:break-word; }
 .study-table-scroll { width:100%; max-width:100%; min-width:0; overflow-x:auto; overflow-y:hidden; overscroll-behavior-inline:contain; -webkit-overflow-scrolling:touch; }
 .study-table-scroll table,.study-learning-card .study-md table { width:max-content; min-width:100%; max-width:none; table-layout:auto; border-collapse:collapse; }
+.study-table-catalog,.study-table-grid { display:flex; flex-direction:column; gap:10px; min-width:0; min-height:0; height:100%; padding:12px; box-sizing:border-box; overflow:hidden; }
+.study-table-catalog h3,.study-table-grid h3 { margin:0; }
+.study-table-catalog-list { display:flex; flex-direction:column; gap:6px; min-height:0; overflow:auto; }
+.study-table-catalog-item { display:flex; width:100%; justify-content:flex-start; padding:8px 10px; border:1px solid var(--border); border-radius:7px; background:var(--canvas); color:var(--text); text-align:left; cursor:grab; }
+.study-table-catalog-item:active { cursor:grabbing; }
+.study-table-grid.is-transfer-target { outline:2px dashed var(--accent); outline-offset:-3px; }
+.study-table-grid-header { display:flex; align-items:center; justify-content:space-between; gap:10px; min-width:0; }
+.study-table-grid-title { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.study-table-grid-actions { display:flex; gap:6px; flex:none; }
+.study-table-grid-body { min-height:0; overflow:auto; border:1px solid var(--border); border-radius:7px; background:var(--canvas); }
+.study-table-grid-body table { width:max-content; min-width:100%; border-collapse:collapse; }
+.study-table-grid-body th,.study-table-grid-body td { padding:7px 9px; border-bottom:1px solid var(--border); text-align:left; vertical-align:top; white-space:pre-wrap; }
+.study-table-grid-dialog { max-width:min(720px,calc(100vw - 32px)); }
 .study-learning-card .study-md th,.study-learning-card .study-md td { min-width:0; max-width:none; white-space:normal; overflow-wrap:anywhere; word-break:break-word; vertical-align:top; }
 .study-learning-card .study-md pre,.study-learning-card .study-md code { max-width:100%; white-space:pre-wrap; overflow-wrap:anywhere; word-break:break-word; }
 .study-answer-toggle { align-self:flex-start; min-width:108px; margin:8px 0 14px; font-weight:650; transition:background-color .16s ease,border-color .16s ease,color .16s ease; }
@@ -365,4 +378,80 @@ button.danger { background: var(--danger); color: var(--panel); }
     z-index: auto;
     box-shadow: none;
   }
+}
+
+.wb-plugin-instance:has(> .study-table-catalog),
+.wb-plugin-instance:has(> .study-table-grid) {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.wb-plugin-content.study-table-catalog,
+.wb-plugin-content.study-table-grid {
+  flex: 1 1 auto;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+.study-table-catalog > .splitter { display: block; }
+.study-table-grid-stack {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+.study-table-grid .data-pane {
+  flex: 1 1 auto;
+  min-height: 0;
+  border-right: 0;
+}
+.study-table-grid .table-frame { flex: 1 1 auto; min-height: 0; }
+.study-table-grid-inspector {
+  flex: 0 0 34%;
+  min-height: 140px;
+  max-height: 42%;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--border);
+}
+.study-table-grid [hidden] { display: none !important; }
+.study-table-grid-drop { margin: 16px; }
+.study-table-grid.is-transfer-target { outline: 2px solid var(--accent); outline-offset: -2px; }
+@media (max-width: 860px) {
+  .wb-bsp-shell .wb-bsp-leaf:has(.study-table-catalog),
+  .wb-bsp-shell .wb-bsp-leaf:has(.study-table-grid) {
+    flex: 1 1 auto !important;
+    height: calc(100dvh - 72px) !important;
+    max-height: calc(100dvh - 72px);
+    min-height: 0;
+    overflow: hidden;
+  }
+  .study-table-catalog.left-column {
+    position: relative !important;
+    inset: auto !important;
+    width: auto !important;
+    height: 100% !important;
+    display: grid !important;
+    box-shadow: none !important;
+    z-index: auto !important;
+  }
+  .study-table-catalog.left-column > .pane {
+    height: auto;
+    min-height: 0;
+    overflow: hidden;
+  }
+  .study-table-catalog.left-column .nav-list {
+    max-height: none;
+    min-height: 0;
+    overflow: auto;
+  }
+  .study-table-grid,
+  .study-table-grid-stack,
+  .study-table-grid .data-pane,
+  .study-table-grid .table-frame {
+    min-height: 0;
+    max-height: 100%;
+  }
+  .study-table-grid .data-pane { min-height: 0; overflow: hidden; }
 }

@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --experimental-vm-modules --test test_study_review.mjs test_plugin_workspace.mjs test_host_help.mjs test_refresh_coordinator.mjs",
+    "test": "node --experimental-vm-modules --test test_study_review.mjs test_plugin_workspace.mjs test_host_help.mjs test_refresh_coordinator.mjs test_table_plugin_split.mjs",
     "test:help": "node --experimental-vm-modules --test test_host_help.mjs"
   },
   "devDependencies": {
