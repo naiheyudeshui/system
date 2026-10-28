@@ -2,15 +2,41 @@
   "id": "study.table-catalog",
   "icon": "icon.svg",
   "version": "1.0.0",
-  "api": {"host": ">=1.0 <2.0"},
-  "activation": ["onStartupFinished"],
+  "api": {
+    "host": ">=1.0 <2.0"
+  },
+  "activation": [
+    "onStartupFinished"
+  ],
   "contributes": {
     "transfers": {
-      "offers": [{"type": "study.table/ref", "label": "Table reference"}]
+      "offers": [
+        {
+          "type": "workbench.table/ref",
+          "label": "Table reference"
+        }
+      ]
     },
     "presentations": [
-      {"id": "default", "renderer": "table-catalog", "label": "Table catalog", "slots": ["top", "bottom", "left", "right"], "default": true}
+      {
+        "id": "compact",
+        "label": "表格目录",
+        "renderer": "table-catalog",
+        "mode": "compact",
+        "when": {
+          "maxCols": 5
+        },
+        "priority": 10
+      },
+      {
+        "id": "default",
+        "label": "表格目录",
+        "renderer": "table-catalog",
+        "default": true
+      }
     ]
   },
-  "permissions": ["data.read:schema"]
+  "permissions": [
+    "data.read:schema"
+  ]
 }

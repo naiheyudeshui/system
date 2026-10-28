@@ -66,8 +66,8 @@ class ReviewHttpTests(unittest.TestCase):
                 catalog = request('/api/study/review/catalog')
                 assert any(view['name'] == 'v_study_node_cards' for view in catalog['views'])
                 layout = request('/api/plugin/layout')
-                assert 'study.review-table' in layout['groups']['top']
-                assert 'study.node-tree' in layout['groups']['top']
+                assert layout['schema'] == 'workbench.layout.bsp/v1'
+                assert layout['tree']['first']['pluginId'] == 'study.table-catalog'
                 updated_layout = request('/api/plugin/layout', layout)
                 request('/api/plugin/layout', layout, expected=409)
                 saved_configs = request('/api/plugin/configs?plugin_id=study.review-table&module_id=reviews')['configs']
@@ -92,7 +92,7 @@ class ReviewHttpTests(unittest.TestCase):
                 sql_grade = {'session_id': sql_state['session_id'], 'position': 0, 'rating': 3}
                 assert request('/api/study/review/session-grade', sql_grade)['next']['completed'] == 1
                 assert request('/api/study/review/session-grade', sql_grade)['replayed']
-                request('/api/plugin/config/preview', {**changed, 'sql': 'DELETE FROM study_card'}, expected=400)
+                request('/api/plugin/config/preview', {**changed, 'sql': 'DELETE FROM study_knowledge_item'}, expected=400)
                 request('/api/plugin/config/delete', changed)
                 remaining = request('/api/plugin/configs?plugin_id=study.review-table&module_id=reviews')['configs']
                 assert len(remaining) == 1
@@ -120,7 +120,7 @@ class ReviewHttpTests(unittest.TestCase):
                 request('/api/plugin/config/save', {'plugin_id': 'study.node-tree', 'module_id': 'trees', 'name': 'Invalid beyond first page', 'sql': "WITH RECURSIVE nodes(id) AS (SELECT 1 UNION ALL SELECT id+1 FROM nodes WHERE id<250) SELECT id AS node_id, CASE WHEN id=230 THEN id ELSE NULL END AS parent_id, 'Node' AS title FROM nodes"}, expected=400)
                 assert not any(item['id'] == 'official.metrics' for item in request('/api/plugins')['plugins'])
                 request('/api/plugin/configs?plugin_id=official.metrics&module_id=metrics', expected=400)
-                trigger = request('/api/plugin/config/save', {'plugin_id': 'official.sqlite-triggers', 'module_id': 'triggers', 'name': 'Test trigger', 'sql': 'CREATE TRIGGER trg_test_sql AFTER INSERT ON study_node BEGIN SELECT 1; END'})
+                trigger = request('/api/plugin/config/save', {'plugin_id': 'official.sqlite-triggers', 'module_id': 'triggers', 'name': 'Test trigger', 'sql': 'CREATE TRIGGER trg_test_sql AFTER INSERT ON study_knowledge_item BEGIN SELECT 1; END'})
                 assert not any(item['name'] == 'trg_test_sql' for item in request('/api/triggers')['triggers'])
                 request('/api/plugin/config/apply', trigger)
                 assert any(item['name'] == 'trg_test_sql' for item in request('/api/triggers')['triggers'])
@@ -150,7 +150,7 @@ class ReviewHttpTests(unittest.TestCase):
                 assert result['next']['completed'] == 1
                 assert result['graded']['due_at'] != '2099-01-01 00:00:00'
                 assert request('/api/study/review/session-grade', grade)['replayed']
-                request('/api/study/review/session', {'config': {**config, 'view': 'study_card'}}, expected=400)
+                request('/api/study/review/session', {'config': {**config, 'view': 'study_knowledge_item'}}, expected=400)
                 request('/api/study/review/session-grade', {**grade, 'rating': 9}, expected=400)
                 request('/api/study/review/session/missing', expected=400)
                 request('/api/study/review/next')
@@ -174,7 +174,7 @@ class ReviewHttpTests(unittest.TestCase):
                 assert selected_state['total'] == 2 and selected_state['card']['key'] in subset
                 con = open_db(path)
                 try:
-                    con.execute('UPDATE study_card SET back=? WHERE id=?', ('Changed after preview', subset[0]))
+                    con.execute('UPDATE study_knowledge_item SET content_md=? WHERE id=?',('Changed after preview', subset[0]))
                     con.commit()
                 finally:
                     con.close()

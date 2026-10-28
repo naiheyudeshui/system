@@ -2,15 +2,58 @@
   "id": "study.table-grid",
   "icon": "icon.svg",
   "version": "1.0.0",
-  "api": {"host": ">=1.0 <2.0"},
-  "activation": ["onStartupFinished"],
+  "api": {
+    "host": ">=1.0 <2.0"
+  },
+  "activation": [
+    "onStartupFinished"
+  ],
   "contributes": {
     "transfers": {
-      "accepts": [{"type": "study.table/ref", "label": "Table reference"}]
+      "accepts": [
+        {
+          "type": "workbench.table/ref",
+          "label": "Table reference"
+        }
+      ],
+      "offers": [
+        {
+          "type": "workbench.row/ref",
+          "label": "Selected row"
+        }
+      ]
     },
     "presentations": [
-      {"id": "default", "renderer": "table-grid", "label": "Table grid", "slots": ["top", "bottom", "left", "right"], "default": true}
+      {
+        "id": "compact",
+        "label": "表格",
+        "renderer": "table-grid",
+        "mode": "compact",
+        "when": {
+          "maxCols": 5
+        },
+        "priority": 20
+      },
+      {
+        "id": "short",
+        "label": "表格",
+        "renderer": "table-grid",
+        "mode": "compact",
+        "when": {
+          "maxRows": 12
+        },
+        "priority": 10
+      },
+      {
+        "id": "default",
+        "label": "表格",
+        "renderer": "table-grid",
+        "default": true
+      }
     ]
   },
-  "permissions": ["data.read:table", "data.write:table"]
+  "permissions": [
+    "data.read:table",
+    "data.write:table"
+  ]
 }

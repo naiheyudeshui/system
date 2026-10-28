@@ -37,90 +37,51 @@ function drop(ui, id, target) {
 }
 
 async function setup() {
-  const dom = new JSDOM('<header class="topbar"><div class="topbar-primary"><div class="brand-block">KB</div><div class="toolbar"></div></div></header><section id="metric-area"><section id="metric-strip"></section></section><section class="data-pane"><div class="table-frame">Table</div></section><section class="inspector-pane"><div class="tabs"><button class="tab" data-tab="fields">Fields</button><button class="tab" data-tab="plugins">Plugins</button></div><div id="inspector-fields" class="inspector-panel active"></div><div id="inspector-plugin-panels"></div></section>', { url: "http://localhost" });
+  const dom = new JSDOM('<header class="topbar"><div class="topbar-primary"><div class="brand-block"><span class="brand-mark">KB</span></div><div class="toolbar"><button id="refresh">Refresh</button></div></div></header><main id="workbench"></main>', { url: "http://localhost" });
   dom.window.confirm = () => true;
   dom.window.HTMLDialogElement.prototype.showModal = function () { this.open = true; };
   dom.window.HTMLDialogElement.prototype.close = function (value = "") { this.returnValue = value; this.open = false; this.dispatchEvent(new dom.window.Event("close")); };
   const resizeObservers = [];
-  dom.window.ResizeObserver = class { constructor(callback) { this.callback = callback; resizeObservers.push(this); } observe(target) { this.target = target; } disconnect() { this.disconnected = true; } emit(width, height) { this.callback([{ target: this.target, contentRect: { width, height } }]); } };
-  const context = vm.createContext({ document: dom.window.document, window: dom.window, crypto: dom.window.crypto, AbortController: dom.window.AbortController, fetch: (...args) => dom.window.fetch(...args), localStorage: dom.window.localStorage, Event: dom.window.Event, Option: dom.window.Option, structuredClone, console, requestAnimationFrame: (callback) => callback() });
-  const workspace = new vm.SourceTextModule(workspaceSource, { context });
-  const manager = new vm.SourceTextModule(managerSource, { context });
-  const markdown = new vm.SyntheticModule(["attachMarkdownToggle", "renderMarkdown"], function () {
-    this.setExport("renderMarkdown", (value, target) => { target.textContent = value; });
-    this.setExport("attachMarkdownToggle", (toolbar, target, getText) => ({ refresh: () => { target.textContent = getText(); } }));
-  }, { context });
-  const platform = new vm.SourceTextModule(platformSource, { context });
-  await platform.link(() => {}); await platform.evaluate();
-  const preview = new vm.SourceTextModule(previewSource, { context });
-  await preview.link(() => platform); await preview.evaluate();
-  const review = new vm.SourceTextModule(reviewSource, { context });
-  await workspace.link(() => {}); await workspace.evaluate();
-  const mapping = new vm.SourceTextModule(mappingSource, { context });
-  await mapping.link(() => {}); await mapping.evaluate();
-  await manager.link(() => mapping); await manager.evaluate();
-  const searchableCombobox = new vm.SourceTextModule(searchableComboboxSource, { context });
-  await searchableCombobox.link(() => {}); await searchableCombobox.evaluate();
-  await review.link((specifier) => specifier.includes("pluginConfigManager") ? manager : specifier.includes("tablePreview") ? preview : specifier.includes("searchableCombobox") ? searchableCombobox : markdown); await review.evaluate();
-  const tree = new vm.SourceTextModule(treeSource, { context });
-  await tree.link(() => {}); await tree.evaluate();
-  const treeAdapter = new vm.SourceTextModule(treeAdapterSource, { context });
-  await treeAdapter.link((specifier) => specifier.includes("pluginConfigManager") ? manager : specifier.includes("tablePreview") ? preview : specifier.includes("treeWorkspace") ? tree : specifier.includes("searchableCombobox") ? searchableCombobox : markdown); await treeAdapter.evaluate();
+  dom.window.ResizeObserver = class { constructor(callback) { this.callback = callback; resizeObservers.push(this); } observe(target) { this.target = target; } disconnect() { this.disconnected = true; } emit(width, height) { this.callback([{ target: this.target, contentRect: { width, height }, borderBoxSize: [{ inlineSize: width, blockSize: height }] }]); } };
+  const context = vm.createContext({ document: dom.window.document, window: dom.window, CustomEvent: dom.window.CustomEvent, ResizeObserver: dom.window.ResizeObserver, CSS: dom.window.CSS, crypto: dom.window.crypto, AbortController: dom.window.AbortController, fetch: (...args) => dom.window.fetch(...args), localStorage: dom.window.localStorage, Event: dom.window.Event, Option: dom.window.Option, structuredClone, console, requestAnimationFrame: (callback) => callback() });
+  // Generic linker: "/3dworkbench/x.mjs?v=..." resolves to the shared web
+  // directory, "./x.mjs" relative to the importer; one module per file.
+  const studyWeb = new URL("../web/", import.meta.url);
+  const modules = new Map();
+  const stubs = {
+    studyMarkdown: () => new vm.SyntheticModule(["attachMarkdownToggle", "renderMarkdown"], function () {
+      this.setExport("renderMarkdown", (value, target) => { target.textContent = value; });
+      this.setExport("attachMarkdownToggle", (toolbar, target, getText) => ({ refresh: () => { target.textContent = getText(); } }));
+    }, { context }),
+  };
+  const resolve = (specifier, parent) => {
+    const bare = specifier.split("?")[0];
+    if (bare.startsWith("/3dworkbench/")) return new URL(bare.slice("/3dworkbench/".length), shared);
+    return new URL(bare, parent);
+  };
+  const load = async (url) => {
+    const key = url.href;
+    if (modules.has(key)) return modules.get(key);
+    const stub = Object.entries(stubs).find(([name]) => key.includes(name));
+    const module = stub ? stub[1]() : new vm.SourceTextModule(await readUiSource(url), { context, identifier: key });
+    if (stub) Object.defineProperty(module, "identifier", { value: key });
+    modules.set(key, module);
+    return module;
+  };
+  const link = async (url) => {
+    const module = await load(url);
+    if (module.status === "unlinked") await module.link((specifier, referrer) => load(resolve(specifier, new URL(referrer.identifier))));
+    if (module.status === "linked") await module.evaluate();
+    return module.namespace;
+  };
+  const workspace = { namespace: await link(new URL("pluginWorkspace.mjs", shared)) };
+  const manager = { namespace: await link(new URL("pluginConfigManager.mjs", shared)) };
+  const review = { namespace: await link(new URL("studySqlReview.mjs", studyWeb)) };
+  const preview = { namespace: await link(new URL("tablePreview.mjs", shared)) };
+  const tree = { namespace: await link(new URL("treeWorkspace.mjs", shared)) };
+  const treeAdapter = { namespace: await link(new URL("studyTreeWorkspace.mjs", studyWeb)) };
   return { tree: tree.namespace, treeAdapter: treeAdapter.namespace, dom, document: dom.window.document, workspace: workspace.namespace, manager: manager.namespace, review: review.namespace, preview: preview.namespace, resizeObservers };
 }
-
-test("table catalog is owned by table workspace, preserves state and restores on disposal", { skip: process.env.WB_TEST_SOURCE === "HEAD" }, async () => {
-  const ui = await setup();
-  try {
-    const workbench = ui.document.createElement("main"); workbench.id = "workbench";
-    const sidebar = ui.document.createElement("aside"); sidebar.id = "left-column";
-    const input = ui.document.createElement("input"); input.value = "unsaved filter"; sidebar.append(input);
-    let clicks = 0; input.addEventListener("click", () => { clicks++; });
-    const toggle = ui.document.createElement("button"); toggle.id = "sidebar-toggle";
-    const splitter = ui.document.createElement("div"); splitter.className = "splitter vertical";
-    const right = ui.document.createElement("section"); right.className = "right-column";
-    const pane = ui.document.querySelector(".data-pane"); right.append(pane);
-    workbench.append(toggle, sidebar, splitter, right); ui.document.body.append(workbench);
-    const title = ui.document.createElement("header"); title.className = "data-title";
-    const actions = ui.document.createElement("div"); actions.className = "action-group"; title.append(actions); pane.prepend(title);
-    const plugin = { id: "sample", contributes: { panels: [{ id: "main" }] } };
-    const layout = { groups: { top: ["sample"], upper: [], bottom: [], disabled: [] } };
-    const host = ui.workspace.createPluginWorkspace({ api: async () => layout, postApi: async () => layout, loadPanel: () => {}, context: () => ({}) });
-    await host.update([plugin]);
-    const table = ui.document.querySelector(".wb-table-workspace");
-    assert.equal(sidebar.parentElement, table);
-    assert.equal(splitter.parentElement, table);
-    const tableSidebarButton = table.querySelector(".table-sidebar-button");
-    assert.ok(tableSidebarButton);
-    assert.equal(tableSidebarButton.parentElement.classList.contains("action-group"), true);
-    tableSidebarButton.click();
-    assert.equal(table.classList.contains("catalog-collapsed"), true);
-    tableSidebarButton.click();
-    assert.equal(table.classList.contains("catalog-collapsed"), false);
-    assert.equal(toggle.parentElement, workbench);
-    assert.equal(workbench.querySelector(":scope > #left-column"), null);
-    assert.equal(workbench.classList.contains("wb-plugin-owned-layout"), true);
-    assert.equal(ui.document.querySelector("#metric-area").parentElement.classList.contains("wb-region-timer"), true);
-    assert.equal(workbench.classList.contains("wb-region-host"), true);
-    host.show("sample");
-    assert.equal(table.hidden, true);
-    assert.ok(sidebar.closest("[hidden]"));
-    host.show("table");
-    assert.equal(table.hidden, false);
-    assert.equal(sidebar.querySelector("input"), input);
-    assert.equal(input.value, "unsaved filter"); input.click(); assert.equal(clicks, 1);
-    await host.update([plugin]);
-    assert.equal(ui.document.querySelectorAll(".wb-table-workspace").length, 1);
-    assert.equal(ui.document.querySelectorAll("#left-column").length, 1);
-    host.dispose();
-    assert.equal(sidebar.parentElement, workbench);
-    assert.equal(toggle.parentElement, workbench);
-    assert.equal(splitter.parentElement, workbench);
-    assert.equal(ui.document.querySelector(".wb-table-workspace"), null);
-    assert.equal(ui.document.querySelector(".wb-plugin-navigation"), null);
-    assert.equal(workbench.classList.contains("wb-plugin-owned-layout"), false);
-  } finally { ui.dom.window.close(); }
-});
 
 test("outline long content grows naturally and delegates scrolling to the outer list", () => {
   const dom = new JSDOM('<style>' + studyCss + '</style><style>' + workspaceCss + '</style><div class="wb-tree-browser"><div class="wb-tree-outline"><div class="wb-tree-inline-content">Long content</div></div></div>', { url: "http://localhost" });
@@ -179,225 +140,6 @@ test("empty content drops restored expansion without collapsing children", async
   } finally { ui.dom.window.close(); }
 });
 
-test("workspace remounts the matching presentation when placement changes", async () => {
-  const ui = await setup();
-  try {
-    const plugins = [
-      { id: "study.review-table", state: "enabled", contributes: { presentations: [{ id: "full", label: "Review", slots: ["top"], renderer: "review" }, { id: "inspector", label: "Review", slots: ["bottom"], renderer: "review" }] } },
-      { id: "official.table-print", state: "enabled", contributes: { panels: [{ id: "print", label: "Print", location: "inspector" }] } },
-    ];
-    let layout = { revision: 0, groups: { top: [plugins[0].id], upper: [], bottom: [plugins[1].id], disabled: [] } };
-    const mounts = [];
-    const host = ui.workspace.createPluginWorkspace({
-      api: async () => structuredClone(layout),
-      postApi: async (url, payload) => { layout = { ...payload, revision: payload.revision + 1 }; return layout; },
-      loadPanel: (panel, id, contribution, context) => { mounts.push(`${id}:${context.presentationId}:${context.slot}`); panel.textContent = `state:${id}:${context.currentObject().name}`; },
-      context: () => ({ currentObject: () => ({ name: "selected_view" }) }),
-    });
-    await host.update(plugins);
-    assert.equal(ui.document.querySelector(".topbar").lastElementChild.className, "wb-plugin-navigation");
-    assert.ok(ui.document.querySelector(".topbar-primary > .toolbar"));
-    assert.deepEqual(mounts, ["study.review-table:full:top", "official.table-print:print:bottom"]);
-    assert.equal(ui.document.querySelectorAll('.wb-plugin-navigation [data-workspace="manager"]').length, 0);
-    assert.ok(ui.document.querySelector('[data-workspace="table"] svg'));
-    assert.equal(ui.document.querySelectorAll('.wb-plugin-card select,.wb-plugin-card button').length, 0);
-    host.show(plugins[0].id);
-    assert.equal(ui.document.querySelector(".table-frame").hidden, true);
-    const reviewPanel = ui.document.querySelector(".wb-plugin-workspace .wb-plugin-instance");
-    host.show("manager");
-    assert.ok(ui.document.querySelector("#inspector-plugins.active .wb-plugin-manager"));
-    assert.equal(ui.document.querySelector(".table-frame").hidden, true);
-    drop(ui, plugins[0].id, '[data-zone="bottom"]');
-    await settle();
-    assert.equal(mounts.length, 3);
-    const movedReviewPanel = ui.document.querySelector('#inspector-plugin-panels [data-presentation-id="inspector"]');
-    assert.equal(reviewPanel.isConnected, false);
-    assert.match(movedReviewPanel.textContent, /selected_view/);
-    assert.equal(ui.document.querySelectorAll(".wb-plugin-zone").length, 6);
-    drop(ui, plugins[0].id, '[data-zone="bottom"] [data-plugin-id="official.table-print"]');
-    await settle();
-    assert.deepEqual(layout.groups.bottom, [plugins[0].id, plugins[1].id]);
-    assert.equal(mounts.length, 3);
-    await host.update(plugins);
-    assert.equal(mounts.length, 3);
-    host.show("table");
-    assert.equal(ui.document.querySelector(".table-frame").hidden, false);
-  } finally { ui.dom.window.close(); }
-});
-
-test("left and right plugin slots are single-pane sidebars with draggable toggles", async () => {
-  const ui = await setup();
-  try {
-    const plugins = [
-      { id: "left.plugin", state: "enabled", contributes: { presentations: [{ id: "left", slots: ["left"], renderer: "left" }] } },
-      { id: "right.plugin", state: "enabled", contributes: { presentations: [{ id: "right", slots: ["right"], renderer: "right" }] } },
-    ];
-    const layout = { revision: 0, groups: { top: [], upper: [], bottom: [], left: ["left.plugin"], right: ["right.plugin"], disabled: [] } };
-    const host = ui.workspace.createPluginWorkspace({ api: async () => structuredClone(layout), postApi: async () => layout, loadPanel: (panel, id) => { panel.textContent = id; }, context: () => ({}) });
-    await host.update(plugins);
-    const workspace = ui.document.querySelector(".wb-plugin-workspace");
-    assert.ok(workspace.classList.contains("has-plugin-left"));
-    assert.ok(workspace.classList.contains("has-plugin-right"));
-    assert.equal(ui.document.querySelectorAll(".wb-plugin-slot-left .wb-plugin-instance").length, 1);
-    assert.equal(ui.document.querySelectorAll(".wb-plugin-slot-right .wb-plugin-instance").length, 1);
-    assert.equal(ui.document.querySelectorAll(".wb-plugin-slot-toggle").length, 2);
-    const toggle = ui.document.querySelector(".wb-plugin-slot-left .wb-plugin-slot-toggle");
-    workspace.getBoundingClientRect = () => ({ top: 0, left: 0, width: 900, height: 700 });
-    toggle.getBoundingClientRect = () => ({ top: 200, left: 220, width: 22, height: 72 });
-    const pointer = (type, x, y) => {
-      const event = new ui.dom.window.Event(type, { bubbles: true, cancelable: true });
-      Object.defineProperties(event, { pointerId: { value: 7 }, clientX: { value: x }, clientY: { value: y } });
-      toggle.dispatchEvent(event);
-    };
-    pointer("pointerdown", 220, 200); pointer("pointermove", 260, 240); pointer("pointerup", 260, 240);
-    assert.equal(workspace.style.getPropertyValue("--plugin-left-width"), "260px");
-    assert.equal(ui.document.documentElement.style.getPropertyValue("--region-left-size"), "260px");
-    assert.equal(workspace.style.getPropertyValue("--plugin-left-toggle-top"), "240px");
-    toggle.click();
-    assert.equal(workspace.classList.contains("plugin-left-collapsed"), false);
-    toggle.click();
-    assert.equal(workspace.classList.contains("plugin-left-collapsed"), true);
-    host.dispose();
-  } finally { ui.dom.window.close(); }
-});
-
-test("visible plugin panels refresh on activation and global language/theme context", async () => {
-  const ui = await setup();
-  try {
-    const plugin = { id: "study.review-table", state: "enabled", contributes: { presentations: [{ id: "full", slots: ["top"], renderer: "review" }] } };
-    const layout = { revision: 0, groups: { top: [plugin.id], upper: [], bottom: [], disabled: [] } };
-    const reasons = [];
-    const host = ui.workspace.createPluginWorkspace({ api: async () => layout, postApi: async () => layout, loadPanel: (panel) => {
-      panel.refreshContext = ({ reason }) => reasons.push("context:" + reason);
-      panel.refresh = async ({ reason }) => reasons.push("refresh:" + reason);
-    }, context: () => ({}) });
-    await host.update([plugin]);
-    host.show(plugin.id); await settle();
-    ui.document.dispatchEvent(new ui.dom.window.CustomEvent("workbench:languagechange"));
-    ui.document.dispatchEvent(new ui.dom.window.CustomEvent("workbench:themechange"));
-    await host.refreshVisible({ reason: "global" });
-    assert.ok(reasons.includes("context:activate"));
-    assert.ok(reasons.includes("context:languagechange"));
-    assert.ok(reasons.includes("context:themechange"));
-    assert.ok(reasons.includes("refresh:global"));
-    host.show("table"); await settle();
-    const before = reasons.length;
-    await host.refreshVisible({ reason: "hidden" });
-    assert.equal(reasons.length, before);
-    host.dispose();
-  } finally { ui.dom.window.close(); }
-});
-
-test("ordinary and official plugins share disabled placement and icon fallback", async () => {
-  const ui = await setup();
-  try {
-    const plugin = { id: "official.sqlite-triggers", state: "enabled", builtin: true, icon: "icon.svg", contributes: { panels: [{ id: "triggers", label: "Triggers", location: "inspector" }] } };
-    let layout = { revision: 0, groups: { top: [plugin.id], upper: [], bottom: [], disabled: [] } };
-    const host = ui.workspace.createPluginWorkspace({ api: async () => layout, postApi: async (url, payload) => { layout = { ...payload, revision: 1 }; return layout; }, loadPanel: () => {}, context: () => ({}) });
-    await host.update([plugin]);
-    const image = ui.document.querySelector(".wb-plugin-navigation img");
-    image.dispatchEvent(new ui.dom.window.Event("error"));
-    assert.equal(ui.document.querySelector(".wb-plugin-navigation img"), null);
-    host.show(plugin.id);
-    host.show("manager");
-    drop(ui, plugin.id, '[data-zone="disabled"]'); await settle();
-    assert.equal(layout.groups.disabled[0], plugin.id);
-    host.show("table");
-    assert.equal(ui.document.querySelector(".table-frame").hidden, false);
-    assert.equal(ui.document.querySelectorAll(".wb-plugin-zone-disabled article").length, 1);
-  } finally { ui.dom.window.close(); }
-});
-
-test("empty upper slot remains visible with a stable placeholder", async () => {
-  const ui = await setup();
-  try {
-    const plugin = { id: "study.review-table", state: "enabled", contributes: { presentations: [{ id: "full", slots: ["top"], renderer: "review" }] } };
-    const layout = { revision: 0, groups: { top: [plugin.id], upper: [], bottom: [], disabled: [] } };
-    const host = ui.workspace.createPluginWorkspace({ api: async () => layout, postApi: async () => layout, loadPanel: () => {}, context: () => ({}) });
-    await host.update([plugin]);
-    assert.equal(ui.document.querySelector("#metric-area").hidden, false);
-    assert.match(ui.document.querySelector(".wb-upper-strip").textContent, /顶栏暂无插件/);
-    assert.ok(ui.document.querySelector(".wb-plugin-upper-empty[role=status]"));
-    host.dispose();
-  } finally { ui.dom.window.close(); }
-});
-
-test("mobile density is owned by the host and removes nested plugin shell padding", () => {
-  assert.match(workbenchCss, /--wb-plugin-workspace-padding:4px/);
-  assert.match(workbenchCss, /--wb-plugin-instance-padding:0px/);
-  assert.equal(workspaceCss.includes("padding:var(--wb-plugin-workspace-padding,16px);"), true);
-  assert.equal(workspaceCss.includes("padding:var(--wb-plugin-instance-padding,10px);"), true);
-});
-
-test("adaptive grid selects variants from container cells instead of slot names", async () => {
-  const ui = await setup();
-  try {
-    assert.deepEqual({ ...ui.workspace.gridMetrics(360, 600).cells }, { cols: 5, rows: 20 });
-    const plugin = { id: "study.timer", contributes: { presentations: [
-      { id: "micro", renderer: "timer", mode: "micro", when: { maxCols: 5, maxRows: 4 }, priority: 40 },
-      { id: "strip", renderer: "timer", mode: "compact", when: { minCols: 6, maxRows: 4 }, priority: 30 },
-      { id: "phone", renderer: "timer", mode: "phone", when: { maxCols: 7, minRows: 5 }, priority: 20 },
-      { id: "full", renderer: "timer", mode: "full", when: { minCols: 8, minRows: 5 }, priority: 10 },
-      { id: "default", renderer: "timer", mode: "compact", default: true },
-    ] } };
-    assert.equal(ui.workspace.presentationFor(plugin, "top", ui.workspace.gridMetrics(360, 600)).mode, "phone");
-    assert.equal(ui.workspace.presentationFor(plugin, "upper", ui.workspace.gridMetrics(1440, 90)).mode, "compact");
-    assert.equal(ui.workspace.presentationFor(plugin, "bottom", ui.workspace.gridMetrics(1200, 720)).mode, "full");
-    assert.equal(ui.workspace.presentationFor(plugin, "upper", ui.workspace.gridMetrics(300, 90)).mode, "micro");
-  } finally { ui.dom.window.close(); }
-});
-
-test("adaptive workspace remounts only when a resize crosses variant boundaries", async () => {
-  const ui = await setup();
-  try {
-    const plugin = { id: "study.timer", state: "enabled", contributes: { presentations: [
-      { id: "phone", renderer: "timer", mode: "phone", when: { maxCols: 7, minRows: 5 }, priority: 20 },
-      { id: "full", renderer: "timer", mode: "full", when: { minCols: 8, minRows: 5 }, priority: 10 },
-      { id: "default", renderer: "timer", mode: "compact", default: true },
-    ] } };
-    const layout = { revision: 0, groups: { top: [plugin.id], upper: [], bottom: [], disabled: [] } };
-    const modes = [];
-    const host = ui.workspace.createPluginWorkspace({ api: async () => layout, postApi: async () => layout, loadPanel: (_panel, _id, _renderer, context) => modes.push(context.presentationMode), context: () => ({}) });
-    await host.update([plugin]);
-    assert.equal(modes.at(-1), "full");
-    const observer = ui.resizeObservers.find((item) => item.target?.dataset.pluginId === undefined && item.target?.dataset.slot === "top");
-    observer.emit(360, 600);
-    assert.equal(modes.at(-1), "phone");
-    const count = modes.length;
-    observer.emit(400, 620);
-    assert.equal(modes.length, count);
-    observer.emit(1000, 700);
-    assert.equal(modes.at(-1), "full");
-    host.dispose();
-    assert.equal(observer.disconnected, true);
-  } finally { ui.dom.window.close(); }
-});
-
-test("upper bar accepts one lightweight plugin and displaces the previous plugin", async () => {
-  const ui = await setup();
-  try {
-    const upper = (id) => ({ id, state: "enabled", contributes: { panels: [{ id, label: id, location: "upper" }] } });
-    const plugins = [upper("study.metrics"), upper("study.pomodoro"), upper("study.stopwatch")];
-    let layout = { revision: 0, groups: { top: [], upper: ["study.metrics"], bottom: [], disabled: ["study.pomodoro", "study.stopwatch"] } };
-    const host = ui.workspace.createPluginWorkspace({
-      api: async () => structuredClone(layout),
-      postApi: async (_url, payload) => { layout = { ...payload, revision: payload.revision + 1 }; return layout; },
-      loadPanel: (panel, id) => { panel.textContent = id; },
-      context: () => ({}),
-    });
-    await host.update(plugins);
-    assert.match(ui.document.querySelector(".wb-upper-strip").textContent, /study.metrics/);
-    host.show("manager");
-    drop(ui, "study.pomodoro", '[data-zone="upper"]'); await settle();
-    assert.equal(JSON.stringify(layout.groups.upper), JSON.stringify(["study.pomodoro"]));
-    assert.ok(layout.groups.disabled.includes("study.metrics"));
-    assert.match(ui.document.querySelector(".wb-upper-strip").textContent, /study.pomodoro/);
-    assert.doesNotMatch(ui.document.querySelector(".wb-upper-strip").textContent, /study.metrics/);
-    assert.equal(ui.document.querySelectorAll('[data-zone="upper"] .wb-plugin-card').length, 1);
-    host.dispose();
-  } finally { ui.dom.window.close(); }
-});
-
 test("internal manager returns to the original live panel and keeps dirty edits when cancelled", async () => {
   const ui = await setup();
   try {
@@ -414,20 +156,6 @@ test("internal manager returns to the original live panel and keeps dirty edits 
     [...root.querySelectorAll("button")].find((node) => node.textContent === "返回").click();
     assert.equal(root.firstChild, original);
     assert.equal(original.value, "running state");
-  } finally { ui.dom.window.close(); }
-});
-
-test("layout save failure restores placement and reports the error", async () => {
-  const ui = await setup();
-  try {
-    const plugin = { id: "test.print", state: "enabled", contributes: { panels: [{ id: "print", location: "inspector" }] } };
-    const layout = { revision: 0, groups: { top: [], upper: [], bottom: [plugin.id], disabled: [] } };
-    const host = ui.workspace.createPluginWorkspace({ api: async () => structuredClone(layout), postApi: async () => { throw new Error("conflict"); }, loadPanel: () => {}, context: () => ({}) });
-    await host.update([plugin]); host.show("manager");
-    drop(ui, plugin.id, '[data-zone="top"]'); await settle();
-    assert.ok(ui.document.querySelector('[data-zone="bottom"] .wb-plugin-card'));
-    assert.match(ui.document.querySelector(".wb-plugin-error").textContent, /conflict/);
-    assert.equal(ui.document.querySelectorAll("#inspector-plugin-panels .wb-plugin-instance").length, 1);
   } finally { ui.dom.window.close(); }
 });
 
@@ -529,22 +257,6 @@ test("shared previews cap long columns and wrap long values", async () => {
     assert.match(workspaceCss, /wb-preview-frame td\.wb-preview-long-text/);
   } finally { ui.dom.window.close(); }
 });
-
-test("collapsed inspector hides active plugin container despite consumer ID flex rule", async () => {
-  const ui = await setup();
-  try {
-    const style = ui.document.createElement("style");
-    style.textContent = '#inspector-plugin-panels { display:flex; } body.inspector-hidden .inspector-pane > :not(.inspector-toggle) { display:none; }\n' + workspaceCss;
-    ui.document.head.append(style);
-    ui.document.body.classList.add("inspector-hidden");
-    const bottom = ui.document.querySelector("#inspector-plugin-panels");
-    bottom.innerHTML = '<section class="wb-plugin-instance"><h3>打印当前表格</h3></section>';
-    assert.equal(ui.dom.window.getComputedStyle(bottom).display, "none");
-    ui.document.body.classList.remove("inspector-hidden");
-    assert.equal(ui.dom.window.getComputedStyle(bottom).display, "flex");
-  } finally { ui.dom.window.close(); }
-});
-
 
 test("plan cards expose only selected actions, edit current plan, create new and require preview", async () => {
   const ui = await setup();
@@ -1220,5 +932,199 @@ test("outline rows use child toggle and title content toggle with themed view st
     assert.equal(root.querySelector('[aria-label="切换到树图"]').getAttribute("aria-pressed"), "true");
     assert.equal(root.querySelector('[aria-label="切换到大纲"]').getAttribute("aria-pressed"), "false");
     host.dispose();
+  } finally { ui.dom.window.close(); }
+});
+
+// ---- BSP plugin workspace ---------------------------------------------------
+
+const leaf = (pluginId, instanceId = `${pluginId}#1`) => ({ kind: "leaf", id: `leaf-${instanceId}`, pluginId, instanceId });
+const split = (first, second, ratio = 0.5) => ({ kind: "split", id: `split-${first.id}-${second.id}`, orientation: "vertical", ratio, first, second });
+const sized = (id, extra = {}) => ({
+  id,
+  state: "enabled",
+  contributes: { presentations: [
+    { id: "compact", label: id, mode: "compact", when: { maxCols: 5 }, priority: 10 },
+    { id: "default", label: id, default: true },
+  ] },
+  ...extra,
+});
+// Renderers run asynchronously after a presentation switch; wait for them.
+const emitPane = async (ui, instance, width, height) => {
+  const observer = ui.resizeObservers.find((item) => item.target === instance && !item.disconnected);
+  observer.callback([{ target: instance, borderBoxSize: [{ inlineSize: width, blockSize: height }] }]);
+  await settle();
+};
+
+function bspWorkspace(ui, { tree, renderers, postApi } = {}) {
+  let layout = { schema: "workbench.layout.bsp/v1", revision: 3, tree };
+  const posts = [];
+  const host = ui.workspace.createPluginWorkspace({
+    api: async () => structuredClone(layout),
+    postApi: postApi ? (url, payload) => postApi(url, payload, posts, (next) => { layout = next; }) : async (url, payload) => {
+      posts.push(payload);
+      layout = { ...payload, revision: payload.revision + 1 };
+      return structuredClone(layout);
+    },
+    container: ui.document.querySelector("#workbench"),
+    topbar: ui.document.querySelector(".topbar"),
+    renderers,
+  });
+  return { host, posts, layout: () => layout };
+}
+
+test("workspace mounts every leaf through the renderer registry without host DOM", async () => {
+  const ui = await setup();
+  try {
+    const mounts = [];
+    const render = (panel, context) => {
+      assert.equal(typeof context.api, "function", "panes always receive the host api");
+      assert.equal(typeof context.postApi, "function");
+      mounts.push(`${context.pluginId}:${context.presentationId}:${context.pane.width}`);
+      panel.textContent = context.instanceId;
+    };
+    const { host } = bspWorkspace(ui, {
+      tree: split(leaf("demo.catalog"), leaf("demo.grid")),
+      renderers: { "demo.catalog": render, "demo.grid": render },
+    });
+    await host.update([sized("demo.catalog"), sized("demo.grid")]);
+    const instances = [...ui.document.querySelectorAll(".wb-bsp-leaf > .wb-plugin-instance")];
+    assert.equal(instances.length, 2);
+    assert.equal(mounts.length, 0, "panes render once their size is observed");
+    await emitPane(ui, instances[0], 300, 600);
+    await emitPane(ui, instances[1], 900, 600);
+    assert.deepEqual(mounts, ["demo.catalog:compact:narrow", "demo.grid:default:wide"]);
+    assert.equal(instances[0].dataset.presentation, "compact");
+    assert.equal(instances[0].dataset.paneWidth, "narrow");
+    assert.equal(instances[1].dataset.paneWidth, "wide");
+    assert.equal(instances[0].textContent, "demo.catalog#1");
+    assert.equal(ui.document.querySelectorAll("#left-column,.data-pane,.inspector-pane").length, 0);
+  } finally { ui.dom.window.close(); }
+});
+
+test("presentation follows the pane size and remounts only across a boundary", async () => {
+  const ui = await setup();
+  try {
+    const modes = [];
+    const { host } = bspWorkspace(ui, {
+      tree: leaf("demo.timer"),
+      renderers: { "demo.timer": (panel, context) => { modes.push(context.presentationMode); } },
+    });
+    await host.update([sized("demo.timer")]);
+    const instance = ui.document.querySelector(".wb-plugin-instance");
+    await emitPane(ui, instance, 300, 400);
+    await emitPane(ui, instance, 420, 400);
+    await emitPane(ui, instance, 600, 400);
+    await emitPane(ui, instance, 700, 400);
+    await emitPane(ui, instance, 431, 400);
+    assert.deepEqual(modes, ["compact", "default", "compact"]);
+    assert.equal(instance.dataset.paneHeight, "tall");
+    await emitPane(ui, instance, 431, 200);
+    assert.equal(instance.dataset.paneHeight, "short");
+    assert.deepEqual(modes, ["compact", "default", "compact"], "a class change alone does not remount");
+  } finally { ui.dom.window.close(); }
+});
+
+test("a renderer failure is marked on its panel instead of failing silently", async () => {
+  const ui = await setup();
+  try {
+    const { host } = bspWorkspace(ui, { tree: leaf("demo.broken"), renderers: { "demo.broken": () => { throw new Error("boom"); } } });
+    const errors = [];
+    const original = console.error;
+    console.error = (...args) => errors.push(args.join(" "));
+    try {
+      await host.update([sized("demo.broken")]);
+      await emitPane(ui, ui.document.querySelector(".wb-plugin-instance"), 600, 400);
+      await settle();
+    } finally { console.error = original; }
+    const panel = ui.document.querySelector(".wb-plugin-content");
+    assert.equal(panel.dataset.failed, "true");
+    assert.equal(panel.textContent, "boom");
+    assert.ok(errors.some((line) => line.includes("demo.broken")));
+  } finally { ui.dom.window.close(); }
+});
+
+test("dock offers enabled plugins only and drops a broken icon", async () => {
+  const ui = await setup();
+  try {
+    const { host } = bspWorkspace(ui, { tree: leaf("demo.a"), renderers: { "demo.a": () => {} } });
+    await host.update([sized("demo.a", { icon: "icon.svg" }), sized("demo.off", { state: "disabled" })]);
+    const items = [...ui.document.querySelectorAll(".wb-bsp-dock-item")];
+    assert.deepEqual(items.map((item) => item.dataset.pluginId), ["demo.a"]);
+    const icon = items[0].querySelector("img");
+    icon.dispatchEvent(new ui.dom.window.Event("error"));
+    assert.equal(items[0].querySelector("img"), null);
+    assert.equal(items[0].textContent, "demo.a");
+  } finally { ui.dom.window.close(); }
+});
+
+test("an empty workspace shows one drop target instead of panes", async () => {
+  const ui = await setup();
+  try {
+    const { host } = bspWorkspace(ui, { tree: null, renderers: {} });
+    await host.update([sized("demo.a")]);
+    assert.ok(ui.document.querySelector(".wb-bsp-host > .wb-bsp-empty"));
+    assert.equal(ui.document.querySelectorAll(".wb-bsp-leaf").length, 0);
+  } finally { ui.dom.window.close(); }
+});
+
+test("a stale layout revision is retried once against the fresh revision", async () => {
+  const ui = await setup();
+  try {
+    const { host, posts } = bspWorkspace(ui, {
+      tree: null,
+      renderers: {},
+      postApi: async (url, payload, posts, store) => {
+        posts.push(payload);
+        if (posts.length === 1) throw new Error("插件布局已被其他窗口修改，请刷新后重试");
+        const next = { ...payload, revision: payload.revision + 1 };
+        store(next);
+        return structuredClone(next);
+      },
+    });
+    await host.update([sized("demo.a")]);
+    // Drag a Dock plugin onto the empty workspace: the first pane is saved.
+    const data = new Map();
+    const dataTransfer = { setData: (key, value) => data.set(key, value), getData: (key) => data.get(key) || "", types: [] };
+    const dragstart = new ui.dom.window.Event("dragstart", { bubbles: true });
+    Object.defineProperty(dragstart, "dataTransfer", { value: dataTransfer });
+    ui.document.querySelector('.wb-bsp-dock-item[data-plugin-id="demo.a"]').dispatchEvent(dragstart);
+    const drop = new ui.dom.window.Event("drop", { bubbles: true, cancelable: true });
+    Object.defineProperty(drop, "dataTransfer", { value: dataTransfer });
+    ui.document.querySelector(".wb-bsp-empty").dispatchEvent(drop);
+    for (let i = 0; i < 5; i += 1) await settle();
+    assert.equal(posts.length, 2, "the stale save is retried once");
+    assert.equal(posts[1].revision, 3);
+    assert.equal(posts[1].tree.pluginId, "demo.a");
+    assert.equal(ui.document.querySelectorAll(".wb-bsp-leaf").length, 1);
+  } finally { ui.dom.window.close(); }
+});
+
+test("a persisted layout is shown as stored and never rewritten", async () => {
+  const ui = await setup();
+  try {
+    const nested = split(leaf("demo.a"), split(leaf("demo.b"), split(leaf("demo.c"), leaf("demo.d"))));
+    const { host, posts } = bspWorkspace(ui, { tree: nested, renderers: {} });
+    await host.update(["demo.a", "demo.b", "demo.c", "demo.d"].map((id) => sized(id)));
+    assert.equal(posts.length, 0);
+    assert.equal(ui.document.querySelectorAll(".wb-bsp-leaf").length, 4);
+  } finally { ui.dom.window.close(); }
+});
+
+test("refreshVisible refreshes mounted panels and dispose removes the chrome", async () => {
+  const ui = await setup();
+  try {
+    let refreshed = 0;
+    const { host } = bspWorkspace(ui, {
+      tree: leaf("demo.a"),
+      renderers: { "demo.a": (panel) => { panel.refresh = async () => { refreshed += 1; }; } },
+    });
+    await host.update([sized("demo.a")]);
+    await emitPane(ui, ui.document.querySelector(".wb-plugin-instance"), 600, 400);
+    await host.refreshVisible({ reason: "global" });
+    assert.equal(refreshed, 1);
+    host.dispose();
+    assert.equal(ui.document.querySelector(".wb-bsp-dock"), null);
+    assert.equal(ui.document.querySelector(".wb-app-menu"), null);
+    assert.ok(ui.resizeObservers.every((observer) => observer.disconnected || observer.target === undefined));
   } finally { ui.dom.window.close(); }
 });

@@ -51,19 +51,22 @@ class ImportOutlineMdTests(unittest.TestCase):
     def test_import_outline_markdown_syncs_topic_card(self) -> None:
         imported = study_kb.import_outline_markdown(self.con, markdown=SAMPLE_MD, book_title="测试书")
         self.con.commit()
-        topic_nodes = [
+        # Unified model: each outline topic is imported as one schedulable card item.
+        parsed_topic = parse_outline_markdown(SAMPLE_MD)[0].children[0].children[0]
+        topic_cards = [
             row
-            for row in self.con.execute("SELECT id, role, answer_md FROM study_node WHERE role='topic'")
+            for row in self.con.execute(
+                """SELECT i.id, i.title, i.content_md FROM study_knowledge_item i
+                   JOIN study_knowledge_schedule f ON f.item_id = i.id
+                   WHERE i.item_type = 'card' AND i.status = 'active'"""
+            )
         ]
-        self.assertGreaterEqual(len(topic_nodes), 1)
-        topic_id = topic_nodes[0]["id"]
-        card = self.con.execute(
-            "SELECT front, back FROM study_card WHERE node_id = ? AND status = 'active'",
-            (topic_id,),
-        ).fetchone()
+        self.assertGreaterEqual(len(topic_cards), 1)
+        card = next((row for row in topic_cards if row["title"] == parsed_topic.title), None)
         self.assertIsNotNone(card)
-        self.assertEqual(card["back"], topic_nodes[0]["answer_md"])
-        self.assertIn(imported["scope"]["id"], {row["id"] for row in self.con.execute("SELECT id FROM study_scope")})
+        self.assertEqual(card["content_md"], parsed_topic.answer_md)
+        self.assertEqual(0, self.con.execute("SELECT COUNT(*) FROM study_knowledge_item WHERE item_type = 'topic'").fetchone()[0])
+        self.assertIn(imported["scope"]["id"], {row["id"] for row in self.con.execute("SELECT id FROM study_knowledge_scope")})
 
     def test_parsed_to_import_dict_children(self) -> None:
         roots = parse_outline_markdown(SAMPLE_MD)

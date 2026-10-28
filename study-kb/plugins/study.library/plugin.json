@@ -2,12 +2,34 @@
   "id": "study.library",
   "icon": "icon.svg",
   "version": "1.0.0",
-  "api": {"host": ">=1.0 <2.0"},
-  "activation": ["onStartupFinished"],
+  "api": {
+    "host": ">=1.0 <2.0"
+  },
+  "activation": [
+    "onStartupFinished"
+  ],
   "contributes": {
     "presentations": [
-      {"id": "default", "label": "库同步", "renderer": "library", "default": true}
+      {
+        "id": "compact",
+        "label": "库同步",
+        "renderer": "library",
+        "mode": "compact",
+        "when": {
+          "maxCols": 5
+        },
+        "priority": 10
+      },
+      {
+        "id": "default",
+        "label": "库同步",
+        "renderer": "library",
+        "default": true
+      }
     ]
   },
-  "permissions": ["data.read:study_card", "data.write:study_card"]
+  "permissions": [
+    "data.read:study_card",
+    "data.write:study_card"
+  ]
 }

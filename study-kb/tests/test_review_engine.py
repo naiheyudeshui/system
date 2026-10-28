@@ -44,13 +44,13 @@ class ReviewEngineTests(unittest.TestCase):
         self.tmp.cleanup()
 
     def test_catalog_and_preview_do_not_change_scheduling(self):
-        before = list(self.con.execute("SELECT * FROM study_card_fsrs"))
+        before = list(self.con.execute("SELECT * FROM study_knowledge_schedule"))
         catalog = review_catalog()
         self.assertIn("v_study_node_cards", [view["name"] for view in catalog["views"]])
         preview = prepare_review(self.config, preview=True)
         self.assertEqual((preview["matched"], preview["selected"]), (2, 2))
-        self.assertEqual(list(self.con.execute("SELECT * FROM study_card_fsrs")), before)
-        self.assertEqual(self.con.execute("SELECT COUNT(*) FROM study_review_session").fetchone()[0], 0)
+        self.assertEqual(list(self.con.execute("SELECT * FROM study_knowledge_schedule")), before)
+        self.assertEqual(self.con.execute("SELECT COUNT(*) FROM study_knowledge_review_session").fetchone()[0], 0)
 
     def test_due_and_all_node_subtree(self):
         self.config["mode"] = "due"
@@ -59,19 +59,19 @@ class ReviewEngineTests(unittest.TestCase):
         self.config["mode"] = "all"
         all_cards = prepare_review(self.config)
         self.assertEqual(all_cards["total"], 2)
-        self.assertEqual(all_cards["card"]["key"], self.cards[0]["id"])
+        self.assertEqual(all_cards["card"]["key"], "card:" + self.cards[0]["id"])
 
     def test_default_card_answer_falls_back_only_when_empty(self):
-        self.con.execute("UPDATE study_node SET answer_md='Fallback' WHERE id=?", (self.child["id"],))
+        self.con.execute("UPDATE study_knowledge_item SET content_md='Fallback' WHERE id=?", ("node:" + self.child["id"],))
         self.con.commit()
         self.assertEqual(prepare_review(self.config)["card"]["back"], "A question answer")
-        self.con.execute("UPDATE study_card SET back='' WHERE id=?", (self.cards[0]["id"],))
+        self.con.execute("UPDATE study_knowledge_item SET content_md='' WHERE id=?", ("card:" + self.cards[0]["id"],))
         self.con.commit()
         self.assertEqual(prepare_review(self.config)["card"]["back"], "Fallback")
 
     def test_snapshot_grade_resume_and_idempotency(self):
         session = prepare_review(self.config)
-        self.con.execute("UPDATE study_card SET front='Changed question' WHERE id=?", (self.cards[1]["id"],))
+        self.con.execute("UPDATE study_knowledge_item SET title='Changed question' WHERE id=?", ("card:" + self.cards[1]["id"],))
         create_card(self.con, node_id=self.child["id"], front="New", back="New", due_at="2000-01-01 00:00:00")
         self.con.commit()
         graded = grade_session(session_id=session["session_id"], position=0, rating=1)
@@ -86,8 +86,8 @@ class ReviewEngineTests(unittest.TestCase):
         self.assertIsNone(finished["next"]["card"])
         self.assertEqual(finished["next"]["completed"], 2)
         self.assertNotEqual(finished["graded"]["due_at"], "2099-01-01 00:00:00")
-        self.assertEqual(self.con.execute("SELECT COUNT(*) FROM study_review_log").fetchone()[0], 2)
-        self.assertEqual(self.con.execute("SELECT due_at FROM study_card_fsrs WHERE card_id=?", (self.cards[2]["id"],)).fetchone()[0], "2000-01-02 00:00:00")
+        self.assertEqual(self.con.execute("SELECT COUNT(*) FROM study_knowledge_review_log").fetchone()[0], 2)
+        self.assertEqual(self.con.execute("SELECT due_at FROM study_knowledge_schedule WHERE item_id=?", ("card:" + self.cards[2]["id"],)).fetchone()[0], "2000-01-02 00:00:00")
 
     def test_concurrent_duplicate_grade_updates_once(self):
         session = prepare_review(self.config)
@@ -96,7 +96,7 @@ class ReviewEngineTests(unittest.TestCase):
         with ThreadPoolExecutor(max_workers=2) as pool:
             results = list(pool.map(lambda _: submit(), range(2)))
         self.assertEqual(sum(bool(result.get("replayed")) for result in results), 1)
-        self.assertEqual(self.con.execute("SELECT COUNT(*) FROM study_review_log").fetchone()[0], 1)
+        self.assertEqual(self.con.execute("SELECT COUNT(*) FROM study_knowledge_review_log").fetchone()[0], 1)
 
     def test_filters_sort_limit_and_empty_collection(self):
         self.config["root_id"] = None
@@ -130,12 +130,12 @@ class ReviewEngineTests(unittest.TestCase):
 
     def test_invalid_config_rejected(self):
         mutations = [
-            {"view": "study_card"}, {"view": 'bad"; DROP TABLE study_card;--'},
+            {"view": "study_knowledge_item"}, {"view": 'bad"; DROP TABLE study_knowledge_item;--'},
             {"mapping": {"key": "card_id", "front": "missing", "back": "back"}},
             {"order": [{"field": "front", "direction": "desc;--"}]},
             {"filters": [{"field": "front", "op": "SQL", "value": "1"}]},
             {"limit": 0}, {"limit": 5001}, {"limit": True}, {"mode": "unknown"}, {"root_id": "missing"},
-            {"scheduler": {"kind": "interval", "table": "study_card_fsrs", "key": "card_id", "due": "due_at", "days": [1, 2, 3, 4]}},
+            {"scheduler": {"kind": "interval", "table": "study_knowledge_schedule", "key": "item_id", "due": "due_at", "days": [1, 2, 3, 4]}},
         ]
         for mutation in mutations:
             with self.subTest(mutation=mutation), self.assertRaises(ValueError):
@@ -147,11 +147,11 @@ class ReviewEngineTests(unittest.TestCase):
             with self.subTest(position=position, rating=rating), self.assertRaises(ValueError):
                 grade_session(session_id=session["session_id"], position=position, rating=rating, elapsed_ms=elapsed)
         self.assertEqual(get_review_session(session["session_id"])["completed"], 0)
-        self.assertEqual(self.con.execute("SELECT COUNT(*) FROM study_review_log").fetchone()[0], 0)
+        self.assertEqual(self.con.execute("SELECT COUNT(*) FROM study_knowledge_review_log").fetchone()[0], 0)
 
     def test_failed_grade_rolls_back_and_allows_restart(self):
         session = prepare_review(self.config)
-        self.con.execute("UPDATE study_card SET status='suspended' WHERE id=?", (session["card"]["key"],))
+        self.con.execute("UPDATE study_knowledge_item SET status='suspended' WHERE id=?", (session["card"]["key"],))
         self.con.commit()
         with self.assertRaises(ValueError):
             grade_session(session_id=session["session_id"], position=0, rating=3)
@@ -181,7 +181,7 @@ class ReviewEngineTests(unittest.TestCase):
         row = self.con.execute("SELECT * FROM custom_schedule WHERE record_id=1").fetchone()
         self.assertEqual(row["next_review"], result["graded"]["due_at"])
         self.assertEqual(row["untouched"], "keep")
-        self.assertEqual(self.con.execute("SELECT COUNT(*) FROM study_review_log").fetchone()[0], 0)
+        self.assertEqual(self.con.execute("SELECT COUNT(*) FROM study_knowledge_review_log").fetchone()[0], 0)
 
     def test_custom_target_removed_and_invalid_intervals(self):
         config = self.custom_config()

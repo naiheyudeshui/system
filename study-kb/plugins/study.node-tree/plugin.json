@@ -2,16 +2,47 @@
   "id": "study.node-tree",
   "icon": "icon.svg",
   "version": "1.0.0",
-  "api": {"host": ">=1.0 <2.0"},
-  "activation": ["onStartupFinished"],
+  "api": {
+    "host": ">=1.0 <2.0"
+  },
+  "activation": [
+    "onStartupFinished"
+  ],
   "contributes": {
-    "sqlModules": [{"id": "trees", "label": "章节树方案", "contract": "tree-nodes/v1"}],
-    "presentations": [
-      {"id": "default", "renderer": "node-tree", "label": "章节树图", "default": true}
+    "sqlModules": [
+      {
+        "id": "trees",
+        "label": "章节树方案",
+        "contract": "tree-nodes/v1"
+      }
     ],
     "commands": [
-      {"id": "tree.refresh", "label": "刷新章节树"}
+      {
+        "id": "tree.refresh",
+        "label": "刷新章节树"
+      }
+    ],
+    "presentations": [
+      {
+        "id": "outline",
+        "label": "章节树图",
+        "renderer": "node-tree",
+        "mode": "outline",
+        "when": {
+          "maxCols": 7
+        },
+        "priority": 10
+      },
+      {
+        "id": "default",
+        "label": "章节树图",
+        "renderer": "node-tree",
+        "default": true
+      }
     ]
   },
-  "permissions": ["data.read:study_node", "data.read:v_study_scope_tree"]
+  "permissions": [
+    "data.read:study_node",
+    "data.read:v_study_scope_tree"
+  ]
 }

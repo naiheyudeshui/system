@@ -168,11 +168,8 @@ def assemble() -> Path:
         payload = (json.dumps(metadata, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
         copied["contract-v2-build.json"] = _copy_bytes(DEST_ROOT / "contract-v2-build.json", payload)
     _copy_tree(STUDIO_ROOT / "3dworkbench" / "web", "3dStudio/3dworkbench/web", copied)
-    _copy_tree(
-        STUDIO_ROOT / "3dworkbench" / "plugins" / "official" / "sqlite-triggers",
-        "3dStudio/3dworkbench/plugins/official/sqlite-triggers",
-        copied,
-    )
+    # Study discovers every platform plugin (sqlite-triggers, table-print).
+    _copy_tree(STUDIO_ROOT / "3dworkbench" / "plugins" / "official", "3dStudio/3dworkbench/plugins/official", copied)
 
     required = (
         "study-kb/tools/serve_workbench.py",
@@ -183,6 +180,9 @@ def assemble() -> Path:
         "3dStudio/3dworkbench/python/tree_model.py",
         "3dStudio/3dworkbench/python/workbench_plugins.py",
         "3dStudio/3dworkbench/web/workbench.css",
+        "3dStudio/3dworkbench/web/pluginWorkspace.mjs",
+        "3dStudio/3dworkbench/web/components/tableGrid.mjs",
+        "3dStudio/3dworkbench/plugins/official/table-print/plugin.json",
         SQLITE_REL,
     )
     missing = [item for item in required if item not in copied]

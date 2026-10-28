@@ -11,26 +11,22 @@ STUDY_PLUGIN_ROOT = Path(__file__).resolve().parents[1] / "plugins"
 
 def install() -> None:
     from study_knowledge_edit import KnowledgeConflict
+    # study_sql_configs puts the shared workbench modules on sys.path.
     from study_sql_configs import register_study_modules
+    from study_layout import register_study_layout
 
     register_study_modules()
+    register_study_layout()
     import plugin_host
     import workbench_server
 
-    original_discover = plugin_host.discover_plugins
-    original_from = plugin_host._discover_from
-
+    # Study shows the platform plugins (3dworkbench/plugins) and its own;
+    # 3dStudio's product plugins (orders, QR labels, printing) are not part
+    # of this product.
     def discover_plugins(root: Path | None = None) -> list[dict]:
-        manifests = original_discover(root if root is not None else plugin_host.PLUGIN_ROOT)
-        study_manifests = original_from(STUDY_PLUGIN_ROOT) if STUDY_PLUGIN_ROOT.is_dir() else []
-        # The factory checkout may carry manifest copies so it can validate a
-        # product in isolation.  The Study consumer owns its renderers and
-        # therefore wins duplicate IDs when both roots are scanned; exposing
-        # both copies would make startup fail before /api/plugins is served.
-        study_ids = {item["id"] for item in study_manifests}
-        manifests = [item for item in manifests if item["id"] not in study_ids]
+        manifests = plugin_host._discover_from(plugin_host.WORKBENCH_PLUGIN_ROOT)
         seen = {item["id"] for item in manifests}
-        for item in study_manifests:
+        for item in plugin_host._discover_from(STUDY_PLUGIN_ROOT):
             if item["id"] in seen:
                 raise ValueError(f"Duplicate plugin id: {item['id']}")
             manifests.append(item)

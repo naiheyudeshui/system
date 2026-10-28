@@ -63,7 +63,17 @@ LEFT JOIN study_knowledge_schedule f ON f.item_id=i.id GROUP BY s.id,s.label;
 
 DROP VIEW IF EXISTS v_study_knowledge_nodes;
 CREATE VIEW v_study_knowledge_nodes AS
-SELECT i.id AS node_id,i.parent_id,i.title,i.content_md,i.content_md AS answer_md,
+-- parent_id is the nearest active ancestor: children of a suspended or
+-- archived item stay in the tree instead of becoming orphans.
+SELECT i.id AS node_id,
+       CASE WHEN i.parent_id IS NULL OR p.status='active' THEN i.parent_id ELSE (
+         WITH RECURSIVE up(id,parent_id,status,depth) AS (
+           SELECT id,parent_id,status,1 FROM study_knowledge_item WHERE id=i.parent_id
+           UNION ALL
+           SELECT a.id,a.parent_id,a.status,up.depth+1 FROM study_knowledge_item a JOIN up ON a.id=up.parent_id
+           WHERE up.status<>'active' AND up.depth<256)
+         SELECT id FROM up WHERE status='active' LIMIT 1) END AS parent_id,
+       i.title,i.content_md,i.content_md AS answer_md,
        CASE WHEN i.item_type='card' THEN 'card' ELSE 'node' END AS source_type,
        COALESCE(i.legacy_node_id,i.legacy_card_id) AS source_id,
        CASE WHEN i.item_type='card' THEN i.parent_id ELSE i.legacy_node_id END AS owner_node_id,

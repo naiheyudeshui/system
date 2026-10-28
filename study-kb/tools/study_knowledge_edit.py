@@ -118,12 +118,8 @@ def edit_knowledge(con, payload):
         con.execute("UPDATE study_knowledge_item SET parent_id=?,sort_order=(SELECT COALESCE(MAX(sort_order),0)+1 FROM study_knowledge_item WHERE parent_id=?),updated_at=datetime('now','localtime') WHERE id=?", (destination_key, destination_key, node_key))
         key = node["node_id"]
     elif operation == "delete":
-        if node["source_type"] == "card":
-            con.execute("UPDATE study_knowledge_item SET status='archived',updated_at=datetime('now','localtime') WHERE id=?", (node["node_id"],))
-            result = {"node": {"node_id": node["node_id"], "deleted": True}}
-            con.execute("INSERT INTO study_knowledge_edit(request_id,request_hash,operation,before_json,result_json) VALUES (?,?,?,?,?)", (request_id, request_hash, operation, encoded(before), encoded(result)))
-            return result
-        from study_kb import get_node
+        # Cards and nodes follow the same delete modes: a card can have children
+        # (sub-questions), which are reparented ("self") or archived ("recursive").
         source_ids = [node["node_id"]]
         if payload["delete_mode"] == "recursive":
             pending = list(source_ids)

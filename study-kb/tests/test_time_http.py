@@ -47,10 +47,11 @@ class StudyTimeHttpTests(unittest.TestCase):
             try:
                 plugins = {item['id']: item for item in request('/api/plugins')['plugins']}
                 layout = request('/api/plugin/layout')
-                assert layout['groups']['upper'] == ['study.metrics']
-                assert plugins['study.metrics']['state'] == 'enabled'
-                assert plugins['study.pomodoro']['state'] == 'disabled'
-                assert plugins['study.stopwatch']['state'] == 'disabled'
+                # A fresh workspace starts with Study's default BSP tree;
+                # plugin state is independent of placement.
+                assert layout['schema'] == 'workbench.layout.bsp/v1'
+                assert [layout['tree']['first']['pluginId'], layout['tree']['second']['pluginId']] == ['study.table-catalog', 'study.table-grid']
+                assert all(plugins[key]['state'] == 'enabled' for key in ('study.metrics', 'study.pomodoro', 'study.stopwatch'))
                 assert request('/api/study/time?kind=stopwatch')['current'] is None
                 running = request('/api/study/time', {'kind': 'stopwatch', 'action': 'start'})
                 assert running['current']['status'] == 'running'

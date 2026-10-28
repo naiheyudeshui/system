@@ -34,7 +34,7 @@ def build_knowledge_tree(con: sqlite3.Connection, *, scope_id: str | None = None
 
     rows = con.execute("""
         SELECT * FROM v_study_knowledge_nodes
-        WHERE ? IS NULL OR owner_node_id IN (
+        WHERE ? IS NULL OR node_id IN (
             SELECT node_id FROM v_study_scope_tree WHERE scope_id = ?
         )
         ORDER BY sort_order, title, node_id

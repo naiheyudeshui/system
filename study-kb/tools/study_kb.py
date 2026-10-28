@@ -411,12 +411,20 @@ def build_markmap_markdown(
     scope_id: str | None = None,
     root_id: str | None = None,
 ) -> str:
-    """Build heading-only markdown for markmap from study_node tree."""
+    """Build heading-only markdown for markmap from the knowledge tree.
+
+    Items are walked by their full id (`node:...` / `card:...`); comments keep
+    the bare node id.  A card (a question; `topic` in the outline vocabulary)
+    is written as `<!-- node:<parent node id> card:<card id> topic -->`.
+    """
+
+    def bare(item_id: str) -> str:
+        return item_id.split(":", 1)[1] if ":" in item_id else item_id
 
     def children_of(parent_id: str) -> list[sqlite3.Row]:
         return con.execute(
             """
-            SELECT id, title, item_type AS role
+            SELECT id, title, item_type, legacy_card_id
             FROM study_knowledge_item
             WHERE parent_id = ? AND status='active'
             ORDER BY sort_order, title, id
@@ -429,69 +437,46 @@ def build_markmap_markdown(
     def heading_prefix(depth: int) -> str:
         return "#" * max(1, min(6, depth))
 
-    def append_node(row: sqlite3.Row, depth: int) -> None:
-        role_tag = "topic" if row["role"] == "topic" else "outline"
-        lines.append(f"{heading_prefix(depth)} {row['title']} <!-- node:{row['id']} {role_tag} -->")
-
-    def append_card_leaves(node_id: str, depth: int) -> None:
-        cards = con.execute(
-            """
-            SELECT legacy_card_id AS id, title AS front
-            FROM study_knowledge_item
-            WHERE parent_id = ? AND item_type='card' AND status = 'active'
-            ORDER BY created_at, id
-            """,
-            (node_id,),
-        ).fetchall()
-        prefix = heading_prefix(depth + 1)
-        for card in cards:
-            title = str(card["front"] or "卡片").strip().splitlines()[0][:160]
-            lines.append(f"{prefix} {title} <!-- node:{node_id} card:{card['id']} topic -->")
+    def append_item(row: sqlite3.Row, depth: int, parent_id: str | None) -> None:
+        if row["item_type"] == "card":
+            title = str(row["title"] or "卡片").strip().splitlines()[0][:160]
+            owner = bare(parent_id) if parent_id else bare(row["id"])
+            lines.append(f"{heading_prefix(depth)} {title} <!-- node:{owner} card:{row['legacy_card_id']} topic -->")
+            return
+        role_tag = "topic" if row["item_type"] == "topic" else "outline"
+        lines.append(f"{heading_prefix(depth)} {row['title']} <!-- node:{bare(row['id'])} {role_tag} -->")
 
     def walk(parent_id: str, depth: int) -> None:
         for child in children_of(parent_id):
-            append_node(child, depth)
-            child_rows = children_of(child["id"])
-            if child_rows:
-                walk(child["id"], depth + 1)
-            elif child["role"] == "topic":
-                append_card_leaves(child["id"], depth)
+            append_item(child, depth, parent_id)
+            walk(child["id"], depth + 1)
 
-    if scope_id:
-        anchor = con.execute(
-            "SELECT substr(anchor_item_id,6) AS anchor_node_id FROM study_knowledge_scope WHERE id = ?",
-            (scope_id,),
+    def item(item_id: str) -> sqlite3.Row | None:
+        return con.execute(
+            "SELECT id, title, item_type, legacy_card_id FROM study_knowledge_item WHERE id = ? AND status='active'",
+            (item_id,),
         ).fetchone()
-        if not anchor:
-            return ""
-        root = con.execute(
-            "SELECT substr(id,6) AS id, title, item_type AS role FROM study_knowledge_item WHERE id = 'node:' || ?",
-            (anchor["anchor_node_id"],),
-        ).fetchone()
+
+    if scope_id or root_id:
+        if scope_id:
+            anchor = con.execute("SELECT anchor_item_id FROM study_knowledge_scope WHERE id = ?", (scope_id,)).fetchone()
+            root = item(anchor["anchor_item_id"]) if anchor else None
+        else:
+            root = item(root_id if ":" in root_id else "node:" + root_id)
         if not root:
             return ""
-        append_node(root, 1)
-        walk(root["id"], 2)
-    elif root_id:
-        root = con.execute(
-            "SELECT substr(id,6) AS id, title, item_type AS role FROM study_knowledge_item WHERE id = 'node:' || ?",
-            (root_id,),
-        ).fetchone()
-        if not root:
-            return ""
-        append_node(root, 1)
+        append_item(root, 1, None)
         walk(root["id"], 2)
     else:
-        roots = con.execute(
+        for root in con.execute(
             """
-            SELECT substr(id,6) AS id, title, item_type AS role
+            SELECT id, title, item_type, legacy_card_id
             FROM study_knowledge_item
             WHERE parent_id IS NULL AND status='active' AND item_type <> 'card'
             ORDER BY sort_order, title, id
             """
-        ).fetchall()
-        for root in roots:
-            append_node(root, 1)
+        ).fetchall():
+            append_item(root, 1, None)
             walk(root["id"], 2)
 
     return "\n".join(lines) + ("\n" if lines else "")

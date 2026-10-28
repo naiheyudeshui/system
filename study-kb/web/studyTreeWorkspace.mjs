@@ -23,7 +23,7 @@ function requestId() {
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
 
-export async function renderNodeTreePanel(panel, { api, postApi }) {
+export async function renderNodeTreePanel(panel, { api, postApi, presentationMode }) {
   panel.classList.add("study-tree-panel", "study-tree-workspace");
   const home = make("section");
   home.dataset.helpPage = "plans";
@@ -304,7 +304,7 @@ export async function renderNodeTreePanel(panel, { api, postApi }) {
     session?.dispose();
     page(viewer);
     const canEditKnowledge = !source?.config_id || data.editing?.provider === "study-knowledge/v1";
-    session = createTreeWorkspace(viewer, { roots, detailFields: data.detail_fields, renderMarkdown, initialRoot, initialMode: state?.mode, initialState: state,
+    session = createTreeWorkspace(viewer, { roots, detailFields: data.detail_fields, renderMarkdown, initialRoot, initialMode: presentationMode === "outline" ? "outline" : state?.mode, initialState: state,
       onEdit: canEditKnowledge ? editNode : null,
       onMove: canEditKnowledge ? async (sourceId, targetId) => {
         if (String(sourceId) === String(targetId)) throw new Error("不能移动到自身");

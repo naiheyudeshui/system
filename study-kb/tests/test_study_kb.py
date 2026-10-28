@@ -30,11 +30,10 @@ class StudyKbTest(unittest.TestCase):
             for row in self.con.execute("SELECT name FROM sqlite_master WHERE type='table'")
         }
         expected = (
-            "study_node",
-            "study_scope",
-            "study_card",
-            "study_card_fsrs",
-            "study_review_log",
+            "study_knowledge_item",
+            "study_knowledge_scope",
+            "study_knowledge_schedule",
+            "study_knowledge_review_log",
         )
         for name in expected:
             self.assertIn(name, tables)
@@ -78,13 +77,17 @@ class StudyKbTest(unittest.TestCase):
             answer_md="Free Spaced Repetition Scheduler。",
         )
         self.con.commit()
+        # Unified model: a topic is itself one schedulable card item (no synced child card).
         card = self.con.execute(
-            "SELECT front, back FROM study_card WHERE node_id = ? AND status = 'active'",
+            """SELECT i.title, i.content_md, f.item_id FROM study_knowledge_item i
+               JOIN study_knowledge_schedule f ON f.item_id = i.id
+               WHERE i.legacy_card_id = ? AND i.item_type = 'card' AND i.status = 'active'""",
             (topic["id"],),
         ).fetchone()
         self.assertIsNotNone(card)
-        self.assertEqual("什么是 FSRS？", card["front"])
-        self.assertEqual("Free Spaced Repetition Scheduler。", card["back"])
+        self.assertEqual("什么是 FSRS？", card["title"])
+        self.assertEqual("Free Spaced Repetition Scheduler。", card["content_md"])
+        self.assertEqual(1, self.con.execute("SELECT COUNT(*) FROM study_knowledge_item").fetchone()[0])
 
         study_kb.create_node(self.con, title="outline only", kind="section", role="outline")
         with self.assertRaises(ValueError):

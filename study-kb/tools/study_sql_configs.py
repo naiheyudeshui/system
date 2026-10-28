@@ -207,7 +207,8 @@ def sql_review(payload, *, preview=False):
                 nodes = {node["id"]: node for node in con.execute("SELECT legacy_node_id AS id, substr(parent_id,6) AS parent_id,title FROM study_knowledge_item WHERE item_type <> 'card'")}
                 for node_id in {row.get("node_id") for row in result["rows"]}:
                     path, visited = [], set()
-                    current = node_id
+                    # Review rows carry item ids ("node:<id>"); the lookup is keyed by node id.
+                    current = node_id[5:] if isinstance(node_id, str) and node_id.startswith("node:") else node_id
                     while current in nodes and current not in visited:
                         visited.add(current)
                         path.append(nodes[current]["title"])

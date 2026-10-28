@@ -9,7 +9,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "3dStudio" / "3dwor
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
 
 from study_kb import open_db
-from workbench_plugins import ConflictError, apply_layout, configs, delete_config, ensure_storage, layout_state, query_rows, save_config, seed_configs, validate_result
+import json
+
+import workbench_plugins
+from study_layout import register_study_layout
+from workbench_plugins import ConflictError, apply_bsp_layout, bsp_layout_state, configs, delete_config, ensure_storage, query_rows, save_config, seed_configs, validate_result
 
 
 class WorkbenchPluginsTest(unittest.TestCase):
@@ -31,20 +35,20 @@ class WorkbenchPluginsTest(unittest.TestCase):
         self.con.close()
         self.tmp.cleanup()
 
-    def test_layout_single_placement_revision_and_atomic_validation(self):
-        state = layout_state(self.con, self.plugins)
-        self.assertEqual(state["groups"]["top"], ["study.review-table"])
-        self.assertEqual(state["groups"]["upper"], ["study.metrics"])
-        self.assertIn("study.pomodoro", state["groups"]["disabled"])
-        state["groups"] = {"top": ["official.table-print"], "upper": ["study.pomodoro"], "bottom": [], "disabled": ["study.review-table", "study.metrics"]}
-        updated = apply_layout(self.con, self.plugins, state)
-        self.assertEqual(updated["revision"], 1)
+    def test_study_layout_replaces_retired_core_table_with_catalog_and_grid(self):
+        register_study_layout()
+        plugins = [{"id": plugin_id, "state": "enabled"} for plugin_id in ("study.table-catalog", "study.table-grid", "study.metrics", "study.pomodoro")]
+        legacy = {"groups": {"top": ["core.table"], "upper": ["core.metrics"], "disabled": ["study.pomodoro"]}}
+        self.con.execute("INSERT INTO workbench_plugin_layout(id,revision,value) VALUES (1,4,?)", (json.dumps(legacy),))
+        state = bsp_layout_state(self.con, plugins)
+        leaves = workbench_plugins.validate_bsp_tree(state["tree"], {plugin["id"] for plugin in plugins})
+        self.assertTrue(leaves["valid"], leaves["errors"])
+        self.assertEqual(["study.table-catalog", "study.table-grid", "study.metrics"], [leaf["pluginId"] for leaf in leaves["leaves"]])
+        self.assertEqual(5, state["revision"])
+        saved = apply_bsp_layout(self.con, plugins, {"schema": state["schema"], "revision": state["revision"], "tree": state["tree"]})
         with self.assertRaises(ConflictError):
-            apply_layout(self.con, self.plugins, state)
-        with self.assertRaises(ValueError):
-            apply_layout(self.con, self.plugins, {"revision": 1, "groups": {"top": ["official.table-print"], "upper": ["study.metrics"], "bottom": ["official.table-print"], "disabled": ["study.review-table", "study.pomodoro"]}})
-        moved = {"revision": updated["revision"], "groups": {"top": ["study.metrics"], "upper": [], "bottom": ["official.table-print"], "disabled": ["study.review-table", "study.pomodoro"]}}
-        self.assertEqual(apply_layout(self.con, self.plugins, moved)["groups"]["top"], ["study.metrics"])
+            apply_bsp_layout(self.con, plugins, {"schema": state["schema"], "revision": state["revision"], "tree": state["tree"]})
+        self.assertEqual(saved, bsp_layout_state(self.con, plugins))
 
     def test_queries_reject_writes_multiple_statements_and_dangerous_functions(self):
         for sql in ["DELETE FROM study_card", "SELECT 1; SELECT 2", "PRAGMA user_version", "ATTACH ':memory:' AS other", "SELECT load_extension('bad')", "CREATE TABLE injected (id)"]:

@@ -2,16 +2,47 @@
   "id": "study.review-table",
   "icon": "icon.svg",
   "version": "1.0.0",
-  "api": {"host": ">=1.0 <2.0"},
-  "activation": ["onStartupFinished"],
+  "api": {
+    "host": ">=1.0 <2.0"
+  },
+  "activation": [
+    "onStartupFinished"
+  ],
   "contributes": {
-    "sqlModules": [{"id": "reviews", "label": "复习方案", "contract": "review-cards/v1"}],
-    "presentations": [
-      {"id": "default", "renderer": "review-table", "label": "表格复习", "default": true}
+    "sqlModules": [
+      {
+        "id": "reviews",
+        "label": "复习方案",
+        "contract": "review-cards/v1"
+      }
     ],
     "commands": [
-      {"id": "review.next", "label": "下一张到期卡"},
-      {"id": "review.grade", "label": "打分并跳下一张"}
+      {
+        "id": "review.next",
+        "label": "下一张到期卡"
+      },
+      {
+        "id": "review.grade",
+        "label": "打分并跳下一张"
+      }
+    ],
+    "presentations": [
+      {
+        "id": "compact",
+        "label": "表格复习",
+        "renderer": "review-table",
+        "mode": "compact",
+        "when": {
+          "maxCols": 7
+        },
+        "priority": 10
+      },
+      {
+        "id": "default",
+        "label": "表格复习",
+        "renderer": "review-table",
+        "default": true
+      }
     ]
   },
   "permissions": [

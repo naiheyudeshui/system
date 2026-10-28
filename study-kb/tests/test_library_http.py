@@ -25,10 +25,10 @@ class StudyLibraryHttpTests(unittest.TestCase):
             path = Path(sys.argv[1])
             import db
             db.DB_PATH = path
+            from study_kb import create_card, create_node
             con = db.connect(path)
-            con.executescript((root / 'study-kb' / 'schema' / 'study_kb.sql').read_text(encoding='utf-8'))
-            con.execute("INSERT INTO study_node(id, kind, title) VALUES ('n1', 'topic', 'Node')")
-            con.execute("INSERT INTO study_card(id, node_id, front, back) VALUES ('c1', 'n1', 'original', 'answer')")
+            create_node(con, title='Node', kind='topic', node_id='n1')
+            create_card(con, node_id='n1', front='original', back='answer', card_id='c1')
             con.commit()
             con.close()
 
@@ -65,7 +65,7 @@ class StudyLibraryHttpTests(unittest.TestCase):
                 copy = path.with_name('incoming.sqlite')
                 copy.write_bytes(blob)
                 edit = sqlite3.connect(copy)
-                edit.execute("UPDATE study_card SET front='replaced' WHERE id='c1'")
+                edit.execute("UPDATE study_knowledge_item SET title='replaced' WHERE id='card:c1'")
                 edit.commit()
                 edit.close()
                 status, body, _headers = request('/api/study/library/import', copy.read_bytes())
@@ -74,19 +74,18 @@ class StudyLibraryHttpTests(unittest.TestCase):
                 assert payload['ok'] is True
                 assert (path.parent / 'backups' / payload['backup']).is_file()
                 check = sqlite3.connect(path)
-                assert check.execute("SELECT front FROM study_card WHERE id='c1'").fetchone()[0] == 'replaced'
+                assert check.execute("SELECT title FROM study_knowledge_item WHERE id='card:c1'").fetchone()[0] == 'replaced'
                 check.close()
                 status, body, _headers = request('/api/study/library/import', b'not a database')
                 assert status == 400
                 assert 'SQLite' in json.loads(body)['detail']
                 check = sqlite3.connect(path)
-                assert check.execute("SELECT front FROM study_card WHERE id='c1'").fetchone()[0] == 'replaced'
+                assert check.execute("SELECT title FROM study_knowledge_item WHERE id='card:c1'").fetchone()[0] == 'replaced'
                 check.close()
                 knowledge = path.with_name('knowledge.sqlite')
                 knowledge.write_bytes(blob)
                 know = sqlite3.connect(knowledge)
-                know.execute("DROP TABLE IF EXISTS study_card")
-                know.commit()
+                # Fresh libraries are knowledge-only: no legacy study_card table to drop.
                 assert know.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='study_card'").fetchone() is None
                 assert know.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='study_knowledge_item'").fetchone() is not None
                 know.close()
