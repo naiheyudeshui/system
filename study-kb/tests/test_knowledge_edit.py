@@ -62,6 +62,60 @@ class KnowledgeEditTests(unittest.TestCase):
         stored = self.con.execute("SELECT title, content_md FROM study_knowledge_item WHERE legacy_card_id=?", (self.card["id"],)).fetchone()
         self.assertEqual(tuple(stored), ("Renamed question", "Next"))
 
+    def test_undo_redo_and_conflict_preserve_reviews(self):
+        key = "card:" + self.card["id"]
+        logs = list(self.con.execute("SELECT * FROM study_knowledge_review_log"))
+        schedule = list(self.con.execute("SELECT * FROM study_knowledge_schedule"))
+        payload = self.payload(key, "content", content_md="Changed")
+        save_knowledge_node(payload)
+        undo = {"operation": "history", "request_id": str(uuid.uuid4()), "target_request_id": payload["request_id"]}
+        save_knowledge_node(undo)
+        self.assertEqual(read_node(self.con, key)["node"]["content_md"], "Original")
+        redo = {"operation": "history", "request_id": str(uuid.uuid4()), "target_request_id": undo["request_id"]}
+        save_knowledge_node(redo)
+        self.assertEqual(read_node(self.con, key)["node"]["content_md"], "Changed")
+        save_knowledge_node(self.payload(key, "content", content_md="Other device"))
+        with self.assertRaises(KnowledgeConflict):
+            save_knowledge_node({"operation": "history", "request_id": str(uuid.uuid4()), "target_request_id": redo["request_id"]})
+        self.assertEqual(list(self.con.execute("SELECT * FROM study_knowledge_schedule")), schedule)
+        self.assertEqual(list(self.con.execute("SELECT * FROM study_knowledge_review_log")), logs)
+
+    def test_undo_creation_and_recursive_archive(self):
+        key = "node:" + self.root["id"]
+        payload = self.payload(key, "child")
+        created = save_knowledge_node(payload)["node"]["node_id"]
+        save_knowledge_node({"operation": "history", "request_id": str(uuid.uuid4()), "target_request_id": payload["request_id"]})
+        with self.assertRaises(ValueError):
+            read_node(self.con, created)
+        delete = self.payload(key, "delete", delete_mode="recursive")
+        save_knowledge_node(delete)
+        save_knowledge_node({"operation": "history", "request_id": str(uuid.uuid4()), "target_request_id": delete["request_id"]})
+        self.assertEqual(read_node(self.con, key)["node"]["title"], "Root")
+
+    def test_history_reorder_move_and_idempotency(self):
+        root = "node:" + self.root["id"]
+        a = save_knowledge_node(self.payload(root, "child", title="A"))["node"]["node_id"]
+        b = save_knowledge_node(self.payload(root, "child", title="B"))["node"]["node_id"]
+        original = [tuple(row) for row in self.con.execute("SELECT id,parent_id,sort_order FROM study_knowledge_item ORDER BY id")]
+        payload = self.payload(b, "reorder", target_node_id=a, position="before")
+        save_knowledge_node(payload)
+        undo = {"operation": "history", "request_id": str(uuid.uuid4()), "target_request_id": payload["request_id"]}
+        result = save_knowledge_node(undo)
+        self.assertEqual(result, save_knowledge_node(undo))
+        self.assertEqual(original, [tuple(row) for row in self.con.execute("SELECT id,parent_id,sort_order FROM study_knowledge_item ORDER BY id")])
+        move = self.payload(b, "move", target_node_id=a)
+        save_knowledge_node(move)
+        save_knowledge_node({"operation": "history", "request_id": str(uuid.uuid4()), "target_request_id": move["request_id"]})
+        self.assertEqual(read_node(self.con, b)["node"]["parent_id"], root)
+
+    def test_history_refuses_archiving_other_users_new_children(self):
+        root = "node:" + self.root["id"]
+        payload = self.payload(root, "child")
+        child = save_knowledge_node(payload)["node"]["node_id"]
+        save_knowledge_node(self.payload(child, "child"))
+        with self.assertRaises(KnowledgeConflict):
+            save_knowledge_node({"operation": "history", "request_id": str(uuid.uuid4()), "target_request_id": payload["request_id"]})
+
     def test_content_idempotency_conflict_and_history(self):
         grade_card(self.con, card_id=self.card["id"], rating=3)
         self.con.commit()

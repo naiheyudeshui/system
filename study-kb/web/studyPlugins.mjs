@@ -4,9 +4,9 @@ import { renderMetricsPanel } from "/3dworkbench/components/metricsPanel.mjs?v=2
 import { renderTablePrintPanel } from "/3dworkbench/components/tablePrintPanel.mjs?v=20261028-bsp1";
 import { renderSqliteTriggerPanel } from "/3dworkbench/sqliteTriggerPanel.mjs?v=20261028-bsp1";
 import { renderLibrarySyncPanel } from "./studyLibrarySync.mjs?v=20261005-library";
-import { renderReviewTablePanel } from "./studySqlReview.mjs?v=20261005-review-toolbar";
-import { renderTimerPanel } from "./studyTimers.mjs?v=20261028-bsp1";
-import { renderNodeTreePanel } from "./studyTreeWorkspace.mjs?v=20261006-request-id";
+import { renderReviewTablePanel } from "./studySqlReview.mjs?v=20261028-main-port1";
+import { renderTimerPanel } from "./studyTimers.mjs?v=20261028-main-port1";
+import { renderNodeTreePanel } from "./studyTreeWorkspace.mjs?v=20261028-main-port1";
 
 // Shown until the server has stored metric definitions.
 const STUDY_METRICS = [

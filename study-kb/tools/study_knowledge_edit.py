@@ -19,6 +19,45 @@ def fingerprint(value):
     return hashlib.sha256(encoded(value).encode("utf-8")).hexdigest()
 
 
+HISTORY_FIELDS = ("id", "parent_id", "sort_order", "title", "content_md", "status")
+
+
+def history_snapshot(con):
+    return {row["id"]: {key: row[key] for key in HISTORY_FIELDS}
+            for row in con.execute("SELECT * FROM study_knowledge_item")}
+
+
+def history_restore(con, payload):
+    record = con.execute("SELECT before_json FROM study_knowledge_edit WHERE request_id=?",
+                         (payload.get("target_request_id"),)).fetchone()
+    delta = json.loads(record[0]).get("history_delta") if record else None
+    if not delta:
+        raise ValueError("该操作没有可撤销的历史")
+    current = history_snapshot(con)
+    for change in delta:
+        if current.get(change["after"]["id"]) != change["after"]:
+            raise KnowledgeConflict("相关节点已被其他操作修改，请刷新；未覆盖当前数据")
+    expected = {change["before"]["id"]: change["before"] for change in delta}
+    for row in expected.values():
+        if row["status"] == "active" and row["parent_id"]:
+            parent = expected.get(row["parent_id"], current.get(row["parent_id"]))
+            if not parent or parent["status"] != "active":
+                raise KnowledgeConflict("原父节点已被停用，不能恢复到不可见位置；请先恢复父节点")
+    archiving = {key for key, row in expected.items() if row["status"] != "active"}
+    if any(row["status"] == "active" and row["parent_id"] in archiving
+           for key, value in current.items() for row in [expected.get(key, value)]):
+        raise KnowledgeConflict("节点下出现了新的活动子节点，不能撤销；未覆盖当前数据")
+    for change in delta:
+        row = change["before"]
+        con.execute("""UPDATE study_knowledge_item
+            SET parent_id=?,sort_order=?,title=?,content_md=?,status=?,updated_at=datetime('now','localtime')
+            WHERE id=?""", tuple(row[key] for key in HISTORY_FIELDS[1:]) + (row["id"],))
+    from study_api import build_knowledge_tree
+    build_knowledge_tree(con)
+    return {"node": {"node_id": delta[0]["before"]["id"]}, "history_available": True}, [
+        {"before": change["after"], "after": change["before"]} for change in delta]
+
+
 def read_node(con, key):
     if not isinstance(key, str) or len(key) > 200:
         raise ValueError("节点 ID 不合法")
@@ -43,7 +82,7 @@ def edit_knowledge(con, payload):
     if not isinstance(payload, dict):
         raise ValueError("请求必须是对象")
     operation = payload.get("operation")
-    if operation not in {"child", "sibling", "content", "move", "reorder", "delete"}:
+    if operation not in {"child", "sibling", "content", "move", "reorder", "delete", "history"}:
         raise ValueError("未知的节点操作")
     request_id = payload.get("request_id")
     if not isinstance(request_id, str) or not 8 <= len(request_id) <= 100:
@@ -65,6 +104,12 @@ def edit_knowledge(con, payload):
         if previous["request_hash"] != request_hash:
             raise KnowledgeConflict("请求 ID 已用于其他修改，请重新打开编辑器")
         return json.loads(previous["result_json"])
+    if operation == "history":
+        result, delta = history_restore(con, payload)
+        con.execute("INSERT INTO study_knowledge_edit(request_id,request_hash,operation,before_json,result_json) VALUES (?,?,?,?,?)",
+                    (request_id, request_hash, operation, encoded({"history_delta": delta}), encoded(result)))
+        return result
+    items_before = history_snapshot(con)
     before = read_node(con, payload.get("node_id"))
     if payload.get("version") != before["version"]:
         raise KnowledgeConflict("节点已被修改，请重新打开编辑器；当前草稿未覆盖数据库")
@@ -118,8 +163,7 @@ def edit_knowledge(con, payload):
         con.execute("UPDATE study_knowledge_item SET parent_id=?,sort_order=(SELECT COALESCE(MAX(sort_order),0)+1 FROM study_knowledge_item WHERE parent_id=?),updated_at=datetime('now','localtime') WHERE id=?", (destination_key, destination_key, node_key))
         key = node["node_id"]
     elif operation == "delete":
-        # Cards and nodes follow the same delete modes: a card can have children
-        # (sub-questions), which are reparented ("self") or archived ("recursive").
+        # Preserve reviews: archive items and reparent children for self-only deletion.
         source_ids = [node["node_id"]]
         if payload["delete_mode"] == "recursive":
             pending = list(source_ids)
@@ -139,6 +183,14 @@ def edit_knowledge(con, payload):
         con.execute(f"UPDATE study_knowledge_item SET status='archived',updated_at=datetime('now','localtime') WHERE id IN ({placeholders})", source_ids)
         key = node["node_id"]
     result = {"node": {"node_id": key, "deleted": True}} if operation == "delete" else read_node(con, key)
+    delta = []
+    for item_id, after in history_snapshot(con).items():
+        old = items_before.get(item_id)
+        if old != after:
+            # Undo creation by archiving, never deleting schedules or review logs.
+            delta.append({"before": old if old else {**after, "status": "archived"}, "after": after})
+    before["history_delta"] = delta
+    result["history_available"] = bool(delta)
     con.execute("INSERT INTO study_knowledge_edit(request_id,request_hash,operation,before_json,result_json) VALUES (?,?,?,?,?)",
                 (request_id, request_hash, operation, encoded(before), encoded(result)))
     return result

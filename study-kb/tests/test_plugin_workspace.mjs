@@ -416,11 +416,14 @@ test("tree editor saves canonical content and retries toolbar refresh without du
     await settle();
     const input = root.querySelector('[aria-label="编辑节点 Markdown"]');
     const titleInput = root.querySelector('[aria-label="编辑节点标题"]');
-    assert.equal(titleInput.readOnly, false);
-    assert.equal(titleInput.value, "Root");
-    titleInput.value = "Renamed";
-    assert.equal(input.value, "Original");
-    input.value = "**Changed**";
+    assert.equal(root.querySelector(".study-tree-note").hidden, true);
+    assert.equal(root.querySelector(".study-tree-editor-preview").hidden, false);
+    button("预览 Markdown").click();
+    assert.equal(titleInput.getAttribute("contenteditable"), "true");
+    assert.equal(titleInput.textContent, "Root");
+    titleInput.textContent = "Renamed";
+    assert.equal(input.textContent, "Original");
+    input.textContent = "**Changed**";
     input.dispatchEvent(new ui.dom.window.Event("input", { bubbles: true }));
     input.dispatchEvent(new ui.dom.window.KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
     assert.equal(saves, 0);
@@ -428,11 +431,11 @@ test("tree editor saves canonical content and retries toolbar refresh without du
     saveButton.click(); saveButton.click(); await settle(); await settle();
     assert.equal(saves, 1);
     assert.equal(root.querySelector(".study-tree-editor"), null);
-    assert.match(root.textContent, /节点已保存，但树图刷新失败/);
+    assert.match(root.textContent, /后台校验失败/);
     root.querySelector('[aria-label="刷新"]').click(); await settle(); await settle();
     assert.equal(saves, 1);
     assert.equal(root.querySelector(".study-tree-editor"), null);
-    root.querySelector('[aria-label="展开或收起内容 Renamed"]').dispatchEvent(new ui.dom.window.Event("click"));
+    assert.equal(root.querySelector('[aria-label="展开或收起内容 Renamed"]').getAttribute("aria-expanded"), "true");
     assert.match(root.querySelector(".wb-tree-inline-content").textContent, /Changed/);
     assert.equal(requests[1][1].version, "version-1");
     assert.equal(requests[1][1].title, "Renamed");
@@ -441,6 +444,80 @@ test("tree editor saves canonical content and retries toolbar refresh without du
   } finally { ui.dom.window.close(); }
 });
 
+
+test("tree editor retries the same write and replays undo and redo through the history API", async () => {
+  const ui = await setup();
+  try {
+    const root = ui.document.createElement("section"); ui.document.body.append(root);
+    let title = "Before", attempts = 0, failRefresh = false;
+    const writes = [], history = [];
+    const payload = () => ({ roots: [{ id: "node:root", title, data: { content_md: "Body" }, children: [] }], rows: [{ node_id: "node:root", parent_id: null, title, content_md: "Body" }], columns: ["node_id", "parent_id", "title", "content_md"], detail_fields: [{ column: "content_md", format: "markdown" }], editing: { provider: "study-knowledge/v1" }, validation: { kind: "tree", root_count: 1, max_depth: 1, warnings: [] }, scopes: [] });
+    ui.dom.window.fetch = async (url, options) => {
+      const values = JSON.parse(options.body); writes.push(values);
+      if (++attempts === 1) throw new Error("response lost");
+      title = values.title;
+      return { ok: true, json: async () => ({ node: { node_id: "node:root", title, content_md: "Body" }, version: "v2", history_available: true }) };
+    };
+    await ui.treeAdapter.renderNodeTreePanel(root, {
+      api: async (url) => {
+        if (url.includes("/configs?")) return { configs: [] };
+        if (failRefresh) { failRefresh = false; throw new Error("refresh offline"); }
+        return payload();
+      },
+      postApi: async (url, values) => {
+        if (url.endsWith("/read")) return { node: { node_id: "node:root", title, content_md: "Body" }, version: "v1" };
+        assert.equal(values.operation, "history"); history.push(values);
+        title = history.length === 1 ? "Before" : "After";
+        failRefresh = history.length === 1;
+        return { node: { node_id: "node:root" }, history_available: true };
+      },
+    });
+    const button = (label) => [...root.querySelectorAll("button")].find((node) => node.textContent === label);
+    button("预览并筛选").click(); await settle(); button("打开树图").click();
+    assert.equal(root.querySelector('[aria-label="撤销 Ctrl+Z"]').disabled, true);
+    root.querySelector(".wb-tree-graph-node").dispatchEvent(new ui.dom.window.Event("click"));
+    root.querySelector(".wb-tree-graph-node").dispatchEvent(new ui.dom.window.KeyboardEvent("keydown", { key: "Enter", shiftKey: true, bubbles: true, cancelable: true }));
+    await settle(); button("预览 Markdown").click();
+    root.querySelector('[aria-label="编辑节点标题"]').textContent = "After";
+    button("保存").click(); await settle();
+    assert.match(root.textContent, /保存未确认/);
+    button("重试保存").click(); await settle(); await settle();
+    assert.deepEqual(writes[1], writes[0]);
+    assert.equal(root.querySelector('[aria-label="撤销 Ctrl+Z"]').disabled, false);
+    root.querySelector('[aria-label="撤销 Ctrl+Z"]').click(); await settle(); await settle();
+    assert.equal(history[0].target_request_id, writes[0].request_id);
+    assert.match(root.textContent, /操作已完成，但视图刷新失败/);
+    assert.equal(root.querySelector('[aria-label="撤销 Ctrl+Z"]').disabled, true);
+    assert.equal(root.querySelector('[aria-label="重做 Ctrl+Y"]').disabled, false);
+    root.querySelector('[aria-label="重做 Ctrl+Y"]').click(); await settle(); await settle();
+    assert.equal(history[1].target_request_id, history[0].request_id);
+    assert.notEqual(history[1].request_id, history[0].request_id);
+    assert.equal(root.querySelector('[aria-label="重做 Ctrl+Y"]').disabled, true);
+    assert.equal(root.querySelector('[aria-label="撤销 Ctrl+Z"]').disabled, false);
+    assert.equal(root.querySelector(".wb-tree-graph-node").getAttribute("aria-label"), "After");
+    root.dispose();
+  } finally { ui.dom.window.close(); }
+});
+
+test("tree outline presentation remains pane-selected and disposal cancels its delete dialog", async () => {
+  const ui = await setup();
+  try {
+    const root = ui.document.createElement("section"); ui.document.body.append(root);
+    let writes = 0;
+    const payload = { roots: [{ id: "node:root", title: "Root", children: [] }], rows: [{ node_id: "node:root", title: "Root" }], columns: ["node_id", "title"], detail_fields: [], validation: { kind: "tree", root_count: 1, max_depth: 1, warnings: [] }, scopes: [] };
+    await ui.treeAdapter.renderNodeTreePanel(root, { presentationMode: "outline", api: async (url) => url.includes("/configs?") ? { configs: [] } : payload, postApi: async () => { writes++; return {}; } });
+    const button = (label) => [...root.querySelectorAll("button")].find((node) => node.textContent === label);
+    button("预览并筛选").click(); await settle(); button("打开树图").click();
+    assert.equal(root.querySelector(".wb-tree-outline").hidden, false);
+    root.querySelector('[aria-label="切换到树图"]').click();
+    root.querySelector(".wb-tree-graph-node").dispatchEvent(new ui.dom.window.Event("click"));
+    root.querySelector(".wb-tree-graph-node").dispatchEvent(new ui.dom.window.KeyboardEvent("keydown", { key: "Delete", bubbles: true, cancelable: true }));
+    await settle(); assert.ok(ui.document.querySelector(".study-tree-delete-dialog"));
+    root.dispose(); await settle();
+    assert.equal(ui.document.querySelector(".study-tree-delete-dialog"), null);
+    assert.equal(writes, 0);
+  } finally { ui.dom.window.close(); }
+});
 
 test("deleting a tree node stays on the tree and removes only that node", async () => {
   const ui = await setup();
@@ -477,11 +554,39 @@ test("deleting a tree node stays on the tree and removes only that node", async 
     assert.equal(root.querySelector(".study-tree-viewer").hidden, false);
     assert.equal(root.querySelectorAll(".wb-tree-graph-node").length, 1);
     assert.equal(root.querySelector(".wb-tree-graph-node").dataset.nodeId, "node:a");
-    assert.match(root.textContent, /节点已删除/);
+    assert.match(root.textContent, /树数据已完成后台校验/);
     root.dispose();
   } finally { ui.dom.window.close(); }
 });
 
+
+test("late tree validation cannot replace a disposed plugin panel", async () => {
+  const ui = await setup();
+  try {
+    const root = ui.document.createElement("section"); ui.document.body.append(root);
+    let deleted = false, finishValidation;
+    const validation = new Promise((resolve) => { finishValidation = resolve; });
+    const payload = { roots: [{ id: "node:root", title: "Root", children: [] }], rows: [{ node_id: "node:root", title: "Root" }], columns: ["node_id", "title"], detail_fields: [], validation: { kind: "tree", root_count: 1, max_depth: 1, warnings: [] }, scopes: [] };
+    await ui.treeAdapter.renderNodeTreePanel(root, {
+      api: async (url) => url.includes("/configs?") ? { configs: [] } : deleted ? validation : structuredClone(payload),
+      postApi: async (url) => {
+        if (url.endsWith("/read")) return { node: { node_id: "node:root" }, version: "v1" };
+        deleted = true; return { node: { node_id: "node:root", deleted: true } };
+      },
+    });
+    const button = (label) => [...ui.document.querySelectorAll("button")].find((node) => node.textContent === label);
+    button("预览并筛选").click(); await settle(); button("打开树图").click();
+    root.querySelector(".wb-tree-graph-node").dispatchEvent(new ui.dom.window.Event("click"));
+    root.querySelector(".wb-tree-graph-node").dispatchEvent(new ui.dom.window.KeyboardEvent("keydown", { key: "Delete", bubbles: true, cancelable: true }));
+    await settle(); button("删除该节点").click(); await settle();
+    assert.equal(root.querySelectorAll(".wb-tree-graph-node").length, 0);
+    assert.match(root.textContent, /正在后台校验/);
+    root.dispose(); root.replaceChildren(ui.document.createTextNode("Replacement plugin"));
+    finishValidation(structuredClone(payload)); await settle(); await settle();
+    assert.equal(root.textContent, "Replacement plugin");
+    assert.equal(root.querySelector(".wb-tree-browser"), null);
+  } finally { ui.dom.window.close(); }
+});
 
 test("editable tree shortcuts are scoped and content background reaches rounded edge", async () => {
   const ui = await setup();

@@ -1,7 +1,7 @@
 import { addConfigCardControls, confirmWorkbenchAction, openConfigManager } from "/3dworkbench/pluginConfigManager.mjs";
 import { createSearchableCombobox } from "/3dworkbench/searchableCombobox.mjs";
 import { renderTablePreview } from "/3dworkbench/tablePreview.mjs";
-import { renderMarkdown } from "./studyMarkdown.mjs";
+import { renderMarkdown } from "./studyMarkdown.mjs?v=20261028-main-port1";
 
 function make(tag, text, className) {
   const node = document.createElement(tag);

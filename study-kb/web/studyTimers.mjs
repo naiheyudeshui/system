@@ -8,6 +8,103 @@ function make(tag, text, className) {
   return element;
 }
 
+// A small, accessible picker used where the native select popup is difficult
+// to style consistently across desktop browsers and mobile WebViews.
+function makeChoiceDropdown({ label, className = "" } = {}) {
+  const root = make("div", null, `study-time-choice ${className}`.trim());
+  const trigger = make("button", "", "study-time-choice-trigger");
+  trigger.setAttribute("type", "button");
+  trigger.setAttribute("aria-label", label || "选择");
+  trigger.setAttribute("aria-haspopup", "listbox");
+  trigger.setAttribute("aria-expanded", "false");
+  const menu = make("div", null, "study-time-choice-menu");
+  menu.hidden = true;
+  menu.setAttribute("role", "listbox");
+  root.append(trigger, menu);
+  let options = [];
+  let selected = "";
+  let disabled = false;
+  const close = () => {
+    menu.hidden = true;
+    root.append(menu);
+    trigger.setAttribute("aria-expanded", "false");
+  };
+  const open = () => {
+    if (disabled) return;
+    // A body-level overlay escapes BSP pane clipping. Only the overlay uses
+    // viewport bounds; the timer's presentation remains pane-selected.
+    const bounds = trigger.getBoundingClientRect();
+    const view = root.ownerDocument.defaultView;
+    const viewportHeight = root.ownerDocument.documentElement.clientHeight || view.innerHeight;
+    const viewportWidth = root.ownerDocument.documentElement.clientWidth || view.innerWidth;
+    const below = viewportHeight - bounds.bottom - 10;
+    const above = bounds.top - 10;
+    const upwards = below < 140 && above > below;
+    Object.assign(menu.style, {
+      position: "fixed", margin: "0", top: upwards ? "auto" : `${bounds.bottom + 5}px`,
+      bottom: upwards ? `${viewportHeight - bounds.top + 5}px` : "auto",
+      left: `${Math.max(5, Math.min(bounds.left, viewportWidth - bounds.width - 5))}px`,
+      width: `${Math.min(bounds.width, viewportWidth - 10)}px`,
+      maxHeight: `${Math.max(36, Math.min(320, upwards ? above : below))}px`,
+      overflowY: "auto",
+    });
+    root.ownerDocument.body.append(menu);
+    menu.hidden = false;
+    trigger.setAttribute("aria-expanded", "true");
+  };
+  const render = () => {
+    const current = options.find((item) => item.value === selected) || options[0] || { value: "", label: "" };
+    if (!options.some((item) => item.value === selected)) selected = current.value;
+    trigger.textContent = current.label;
+    menu.replaceChildren();
+    for (const item of options) {
+      const option = make("button", item.label, "study-time-choice-option");
+      option.setAttribute("type", "button");
+      option.setAttribute("role", "option");
+      option.setAttribute("aria-selected", String(item.value === selected));
+      option.classList.toggle("active", item.value === selected);
+      option.addEventListener("click", () => {
+        selected = item.value;
+        render();
+        close();
+        root.dispatchEvent(new root.ownerDocument.defaultView.Event("change", { bubbles: true }));
+      });
+      menu.append(option);
+    }
+  };
+  trigger.addEventListener("click", () => {
+    if (disabled) return;
+    if (menu.hidden) open(); else close();
+  });
+  trigger.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") close();
+    if (event.key === "ArrowDown") {
+      event.preventDefault(); open();
+      menu.querySelector('[aria-selected="true"]')?.focus();
+    }
+  });
+  menu.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") { event.preventDefault(); close(); trigger.focus(); }
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      event.preventDefault();
+      const items = [...menu.querySelectorAll('[role="option"]')];
+      const index = items.indexOf(document.activeElement);
+      items[(index + (event.key === "ArrowDown" ? 1 : -1) + items.length) % items.length]?.focus();
+    }
+  });
+  root._outsideHandler = (event) => { if (!root.contains(event.target) && !menu.contains(event.target)) close(); };
+  document.addEventListener("click", root._outsideHandler);
+  window.addEventListener("resize", close);
+  const onScroll = (event) => { if (!menu.contains(event.target)) close(); };
+  document.addEventListener("scroll", onScroll, true);
+  root.setOptions = (next) => { options = Array.isArray(next) ? next : []; render(); };
+  root.setDisabled = (next) => { disabled = Boolean(next); trigger.disabled = disabled; root.classList.toggle("is-disabled", disabled); if (disabled) close(); };
+  root.dispose = () => { close(); menu.remove(); document.removeEventListener("click", root._outsideHandler); document.removeEventListener("scroll", onScroll, true); window.removeEventListener("resize", close); };
+  Object.defineProperty(root, "value", { get: () => selected, set: (next) => { selected = next == null ? "" : String(next); render(); } });
+  root.setOptions([]);
+  return root;
+}
+
 function secondsLabel(value) {
   const seconds = Math.max(0, Math.floor(Number(value) || 0));
   const hours = Math.floor(seconds / 3600);
@@ -80,7 +177,7 @@ export async function renderTimerPanel(panel, { api, postApi, kind, mode = "comp
   const controller = make("section", null, "study-time-controller");
   const icon = make("span", pomodoro ? "🍅" : "⏱", "study-time-icon");
   const task = make("input"); task.maxLength = 500; task.placeholder = "所做事宜"; task.className = "study-time-field"; task.setAttribute("aria-label", "所做事宜");
-  const project = make("select"); project.className = "study-time-field"; project.setAttribute("aria-label", "计时项目");
+  const project = makeChoiceDropdown({ label: "计时项目", className: "study-time-project-picker" });
   const clock = make("input"); clock.type = "text"; clock.inputMode = "numeric"; clock.value = pomodoro ? "25" : "00:00"; clock.className = "study-time-clock"; clock.setAttribute("aria-label", pomodoro ? "番茄钟分钟数" : "计时时间");
   const state = make("span", "准备开始", "study-time-state");
   const progress = make("i"); const progressTrack = make("span", null, "study-time-progress"); progressTrack.append(progress);
@@ -100,9 +197,9 @@ export async function renderTimerPanel(panel, { api, postApi, kind, mode = "comp
   const idleMinutes = () => Math.max(1, Math.min(720, Number.parseInt(clock.value, 10) || Math.round(Number(payload?.preferences?.planned_seconds || 1500) / 60)));
   const renderProjects = () => {
     const selected = payload?.current?.project_id || project.value;
-    const option = (label, value) => { const item = make("option", label); item.value = value; return item; };
-    project.replaceChildren(option("无项目", ""));
-    for (const item of payload?.projects || []) if (item.status === "active" || item.id === selected) project.append(option(item.name, item.id));
+    const options = [{ label: "无项目", value: "" }];
+    for (const item of payload?.projects || []) if (item.status === "active" || item.id === selected) options.push({ label: item.name, value: item.id });
+    project.setOptions(options);
     project.value = selected || "";
   };
   const renderDashboard = () => {
@@ -185,12 +282,12 @@ export async function renderTimerPanel(panel, { api, postApi, kind, mode = "comp
     if (!current) {
       if (pomodoro && document.activeElement !== clock) clock.value = String(idleMinutes());
       else if (!pomodoro) clock.value = "00:00";
-      state.textContent = "准备开始"; task.disabled = false; project.disabled = false; clock.disabled = !pomodoro; start.textContent = "开始"; start.disabled = false; start.hidden = false; pause.hidden = finish.hidden = abandon.hidden = true; progress.style.width = "0%"; renderProjects(); return;
+      state.textContent = "准备开始"; task.disabled = false; project.setDisabled(false); clock.disabled = !pomodoro; start.textContent = "开始"; start.disabled = false; start.hidden = false; pause.hidden = finish.hidden = abandon.hidden = true; progress.style.width = "0%"; renderProjects(); return;
     }
     const used = elapsed(); const planned = Number(current.planned_seconds || 0);
     const shown = pomodoro ? Math.max(0, planned - used) : used;
     clock.value = secondsLabel(shown); state.textContent = current.status === "paused" ? "已暂停" : "进行中";
-    task.value = current.task_text; task.disabled = true; project.disabled = true; clock.disabled = true; renderProjects();
+    task.value = current.task_text; task.disabled = true; project.setDisabled(true); clock.disabled = true; renderProjects();
     start.textContent = "继续"; start.disabled = false; start.hidden = current.status === "running";
     pause.hidden = current.status !== "running"; finish.hidden = abandon.hidden = false;
     progress.style.width = pomodoro && planned ? `${Math.min(100, used / planned * 100)}%` : "100%";
@@ -231,6 +328,7 @@ export async function renderTimerPanel(panel, { api, postApi, kind, mode = "comp
   panel.dispose = () => {
     if (interval) window.clearInterval(interval);
     document.removeEventListener("visibilitychange", onVisibilityChange);
+    project.dispose();
   };
   await sync();
 }

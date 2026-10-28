@@ -85,6 +85,40 @@ test("pomodoro panel allows an empty task and sends the selected duration", asyn
   } finally { ui.dom.window.close(); }
 });
 
+test("timer project picker is custom and preserves the selected project in start requests", async () => {
+  const ui = await setup();
+  try {
+    const requests = [];
+    const state = { current: null, projects: [{ id: "project_1", name: "论文", status: "active" }], history: [], preferences: { planned_seconds: 1500 } };
+    await ui.timers.renderTimerPanel(ui.panel, {
+      api: async () => state,
+      postApi: async (_path, body) => { requests.push(body); return { ...state, current: { status: "running", task_text: body.task_text, project_id: body.project_id, elapsed_seconds: 0, planned_seconds: body.planned_seconds } }; },
+      kind: "pomodoro",
+    });
+    assert.equal(ui.panel.querySelector(".study-time-project-picker select"), null);
+    const picker = ui.panel.querySelector(".study-time-project-picker");
+    const trigger = picker.querySelector(".study-time-choice-trigger");
+    assert.equal(trigger.textContent, "无项目");
+    trigger.click();
+    const menu = ui.dom.window.document.querySelector(".study-time-choice-menu:not([hidden])");
+    assert.equal(menu.parentElement, ui.dom.window.document.body);
+    assert.equal(menu.querySelectorAll('[role="option"]').length, 2);
+    [...menu.querySelectorAll('[role="option"]')].find((item) => item.textContent === "论文").click();
+    assert.equal(picker.value, "project_1");
+    assert.equal(trigger.textContent, "论文");
+    trigger.dispatchEvent(new ui.dom.window.KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }));
+    assert.equal(ui.dom.window.document.activeElement.textContent, "论文");
+    menu.dispatchEvent(new ui.dom.window.KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    assert.equal(ui.dom.window.document.activeElement, trigger);
+    assert.equal(menu.hidden, true);
+    ui.panel.querySelector(".study-time-actions .primary").click();
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.equal(requests[0].project_id, "project_1");
+    ui.panel.dispose();
+    assert.equal(menu.isConnected, false);
+  } finally { ui.dom.window.close(); }
+});
+
 test("running timer continues from the server snapshot without double counting", async () => {
   const ui = await setup();
   try {

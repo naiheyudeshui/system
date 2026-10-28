@@ -1,4 +1,4 @@
-import { attachMarkdownToggle } from "./studyMarkdown.mjs";
+import { attachMarkdownToggle } from "./studyMarkdown.mjs?v=20261028-main-port1";
 
 const STORAGE = "study.review.config.v1";
 const SESSION = "study.review.session.v1";

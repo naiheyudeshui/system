@@ -4,7 +4,7 @@ import { createEditingServices, createHttpApi } from "/3dworkbench/hostServices.
 import { createRefreshCoordinator } from "/3dworkbench/refreshCoordinator.mjs";
 import { applyIconButtons, setupLanguageSelect, setupThemeToggle, t } from "/3dworkbench/workbenchPlatform.mjs?v=20261028-bsp1";
 import { studyHelpTopics } from "./studyHelp.mjs";
-import { createStudyRenderers } from "./studyPlugins.mjs?v=20261028-bsp1";
+import { createStudyRenderers } from "./studyPlugins.mjs?v=20261028-main-port1";
 
 // Study host: a top bar plus one BSP workspace.  Every feature is a plugin in
 // its own pane; the host keeps only the load state and the shared services.
