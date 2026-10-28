@@ -2,7 +2,7 @@
 // isolated headless Chrome with --remote-debugging-port=19283 before running.
 // All plugin data is mocked; this check makes no Study data writes.
 import assert from "node:assert/strict";
-import { writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 
 const base = process.env.STUDY_SMOKE_URL || "http://127.0.0.1:8033";
 const targets = await (await fetch("http://127.0.0.1:19283/json/list")).json();
@@ -43,7 +43,7 @@ try {
     document.head.innerHTML = "";
     document.body.innerHTML = "";
     document.body.style.cssText = "display:block;margin:0;padding:16px;height:auto;overflow:auto";
-    for (const href of ["/styles.css?v=20261028-main-port1", "/3dworkbench/pluginWorkspace.css?v=20261028-bsp1"]) {
+    for (const href of ["/styles.css?v=20261028-mobile2", "/3dworkbench/pluginWorkspace.css?v=20261028-mobile2"]) {
       const link = document.createElement("link"); link.rel = "stylesheet"; link.href = href;
       const loaded = new Promise((resolve, reject) => { link.onload = resolve; link.onerror = reject; });
       document.head.append(link); await loaded;
@@ -86,7 +86,24 @@ try {
     option.click();
     const selected = panel.querySelector(".study-time-choice-trigger").textContent;
     panel.dispose();
-    return { samples, editorSamples, menuVisible, selected };
+    pane.remove();
+    const spacingNodes = [];
+    for (const [width, mode] of [[1000, "full"], [380, "phone"]]) {
+      const leaf = document.createElement("div"); leaf.className = "wb-bsp-leaf";
+      leaf.style.cssText = `width:${width}px;height:600px;flex:none`; document.body.append(leaf);
+      const instance = document.createElement("div"); instance.className = "wb-plugin-instance"; leaf.append(instance);
+      const timer = document.createElement("section"); timer.className = "wb-plugin-content"; instance.append(timer);
+      await renderTimerPanel(timer, { kind: "pomodoro", mode, api: async () => ({ current: null, projects: [], history: [] }), postApi: async () => { throw new Error("Fixture must not write"); } });
+      spacingNodes.push({ leaf, instance, timer });
+    }
+    await frame();
+    window.__spacingSamples = () => spacingNodes.map(({ leaf, instance, timer }) => ({
+      paneWidth: leaf.clientWidth, instancePadding: getComputedStyle(instance).paddingLeft,
+      timerPadding: getComputedStyle(timer).paddingLeft,
+      cardPadding: getComputedStyle(timer.querySelector(".study-time-summary article")).paddingLeft,
+      cardRadius: getComputedStyle(timer.querySelector(".study-time-summary article")).borderTopLeftRadius,
+    }));
+    return { samples, editorSamples, menuVisible, selected, spacing: window.__spacingSamples() };
   }.toString()})()`);
   console.log(JSON.stringify(result, null, 2));
   if (process.env.STUDY_SMOKE_SCREENSHOT) {
@@ -105,5 +122,27 @@ try {
   assert.ok(result.editorSamples.every((sample) => sample.viewport === 1280 && sample.paneHeight === 600));
   assert.equal(result.menuVisible, true, "Project menu must escape pane clipping");
   assert.equal(result.selected, "Project Two");
+  assert.deepEqual(result.spacing.map((sample) => [sample.instancePadding, sample.timerPadding, sample.cardPadding, sample.cardRadius]), [
+    ["10px", "16px", "16px", "12px"], ["0px", "10px", "10px", "7px"],
+  ]);
+  await send("Emulation.setDeviceMetricsOverride", { width: 700, height: 900, deviceScaleFactor: 1, mobile: false });
+  await evaluate("new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))");
+  assert.deepEqual(await evaluate("window.__spacingSamples()"), result.spacing, "Fixed panes must keep spacing when the browser narrows");
+  // Exercise the actual observer Java injects, including restored/custom themes.
+  const activity = await readFile(new URL("../android/app/src/main/java/local/studykb/MainActivity.java", import.meta.url), "utf8");
+  const block = activity.split("view.evaluateJavascript(")[1].split("null")[0];
+  const observer = [...block.matchAll(/"(?:\\.|[^"\\])*"/g)].map((match) => JSON.parse(match[0])).join("");
+  const themes = await evaluate(`(async () => {
+    const calls = []; window.StudyNative = { onThemeChanged() { calls.push(getComputedStyle(document.documentElement).getPropertyValue('--page').trim()); } };
+    const frame = () => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    document.documentElement.dataset.theme = 'dark'; await frame();
+    (0,eval)(${JSON.stringify(observer)});
+    document.documentElement.dataset.theme = 'light'; await frame();
+    document.documentElement.dataset.theme = 'dark'; await frame();
+    document.documentElement.style.setProperty('--page','#abcdef'); await frame();
+    return calls;
+  })()`);
+  assert.deepEqual(themes, ["#f2f0eb", "#0a1814", "#abcdef"]);
+  console.log(JSON.stringify({ fixedPaneSpacingAt700px: result.spacing, nativeThemeObserver: themes }));
   console.log("Real Chromium migration smoke passed");
 } finally { socket.close(); }

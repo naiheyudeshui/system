@@ -4,6 +4,7 @@ plugins {
 }
 
 val contractV2 = providers.gradleProperty("contractV2").orNull == "true"
+val showContractDiagnostics = contractV2 && providers.gradleProperty("showContractDiagnostics").orNull == "true"
 val buildPythonPath = System.getenv("STUDY_BUILD_PYTHON") ?: "python"
 val contractWheels = rootProject.layout.buildDirectory.dir("contract-wheels").get().asFile
 
@@ -18,10 +19,13 @@ android {
         versionCode = 1
         versionName = "1.0"
         if (contractV2) {
+            versionCode = 3
+            versionName = "1.0.2"
             applicationIdSuffix = ".contractv2"
             versionNameSuffix = "-contract-v2"
         }
         buildConfigField("boolean", "CONTRACT_V2", contractV2.toString())
+        buildConfigField("boolean", "SHOW_CONTRACT_DIAGNOSTICS", showContractDiagnostics.toString())
         buildConfigField("int", "SERVER_PORT", if (contractV2) "18033" else "8033")
         manifestPlaceholders["appLabel"] = if (contractV2) "学习库 · 重构测试" else "@string/app_name"
         ndk {

@@ -3,7 +3,7 @@
     android:id="@+id/root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#111111"
+    android:background="@color/app_background"
     android:orientation="vertical">
 
     <TextView
@@ -36,7 +36,7 @@
         android:id="@+id/status"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="#111111"
+        android:background="@color/app_background"
         android:gravity="center"
         android:padding="24dp"
         android:text="@string/starting"

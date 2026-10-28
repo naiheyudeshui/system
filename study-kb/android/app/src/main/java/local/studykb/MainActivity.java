@@ -7,6 +7,8 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
+import android.graphics.Color;
+import android.webkit.JavascriptInterface;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -33,6 +35,7 @@ public class MainActivity extends ComponentActivity {
     private static final int NOTIFICATION_REQUEST = 1;
 
     private WebView webView;
+    private View rootView;
     private TextView statusView;
     private boolean pageLoaded;
     private final StudyServerState.Listener listener = this::render;
@@ -43,10 +46,12 @@ public class MainActivity extends ComponentActivity {
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         setContentView(R.layout.activity_main);
         View root = findViewById(R.id.root);
+        rootView = root;
         applySystemInsets(root);
         webView = findViewById(R.id.web);
         statusView = findViewById(R.id.status);
-        if (BuildConfig.CONTRACT_V2) {
+        webView.setBackgroundColor(getColor(R.color.app_background));
+        if (BuildConfig.SHOW_CONTRACT_DIAGNOSTICS) {
             setTitle("学习库 · 重构测试版");
             Button tests = findViewById(R.id.contract_tests);
             tests.setVisibility(View.VISIBLE);
@@ -59,6 +64,12 @@ public class MainActivity extends ComponentActivity {
         webView.getSettings().setSupportZoom(true);
         webView.getSettings().setBuiltInZoomControls(true);
         webView.getSettings().setDisplayZoomControls(false);
+        webView.addJavascriptInterface(new Object() {
+            @JavascriptInterface
+            public void onThemeChanged() {
+                runOnUiThread(MainActivity.this::syncSystemBarColor);
+            }
+        }, "StudyNative");
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
@@ -68,6 +79,17 @@ public class MainActivity extends ComponentActivity {
             @Override
             public void onPageFinished(WebView view, String url) {
                 pageLoaded = true;
+                syncSystemBarColor();
+                view.evaluateJavascript(
+                    "(function(){if(window.__studyNativeThemeObserver)return;" +
+                    "window.__studyNativeThemeObserver=true;let pending=false;" +
+                    "new MutationObserver(function(){if(pending)return;pending=true;" +
+                    "requestAnimationFrame(function(){pending=false;" +
+                    "if(window.StudyNative)window.StudyNative.onThemeChanged();});})" +
+                    ".observe(document.documentElement,{attributes:true," +
+                    "attributeFilter:['data-theme','style','class']});})()",
+                    null
+                );
                 statusView.setVisibility(android.view.View.GONE);
             }
         });
@@ -99,6 +121,7 @@ public class MainActivity extends ComponentActivity {
         super.onStart();
         StudyServerState.addListener(listener);
         render();
+        if (pageLoaded) syncSystemBarColor();
     }
 
     @Override
@@ -118,7 +141,7 @@ public class MainActivity extends ComponentActivity {
             }
             if (StudyServerState.READY.equals(status)) {
                 String detail = StudyServerState.detail();
-                if (BuildConfig.CONTRACT_V2) {
+                if (BuildConfig.SHOW_CONTRACT_DIAGNOSTICS) {
                     TextView address = findViewById(R.id.contract_address);
                     address.setText(detail + "\n仅限可信局域网，允许访问测试副本，不连接正式主库");
                     address.setVisibility(View.VISIBLE);
@@ -187,6 +210,38 @@ public class MainActivity extends ComponentActivity {
             return WindowInsetsCompat.CONSUMED;
         });
         ViewCompat.requestApplyInsets(root);
+    }
+
+    private void syncSystemBarColor() {
+        if (webView == null || isFinishing() || isDestroyed()) return;
+        webView.evaluateJavascript(
+            "getComputedStyle(document.documentElement).getPropertyValue('--page').trim()",
+            value -> {
+                if (value == null || isFinishing() || isDestroyed()) return;
+                String css = value.trim();
+                if (css.length() >= 2 && css.startsWith("\"") && css.endsWith("\"")) {
+                    css = css.substring(1, css.length() - 1);
+                }
+                try {
+                    int color = Color.parseColor(css);
+                    rootView.setBackgroundColor(color);
+                    webView.setBackgroundColor(color);
+                    statusView.setBackgroundColor(color);
+                    // On edge-to-edge Android versions the root paints behind
+                    // the bars; on older versions these also color the bars.
+                    getWindow().setStatusBarColor(color);
+                    getWindow().setNavigationBarColor(color);
+                    boolean light = ((Color.red(color) * 299
+                        + Color.green(color) * 587
+                        + Color.blue(color) * 114) / 1000) > 160;
+                    WindowInsetsControllerCompat controller = WindowCompat.getInsetsController(getWindow(), rootView);
+                    controller.setAppearanceLightStatusBars(light);
+                    controller.setAppearanceLightNavigationBars(light);
+                } catch (IllegalArgumentException ignored) {
+                    // Keep the initial theme if --page is not a supported color.
+                }
+            }
+        );
     }
 
     private static boolean isLocal(Uri uri) {

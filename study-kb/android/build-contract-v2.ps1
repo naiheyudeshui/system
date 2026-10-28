@@ -2,7 +2,8 @@ param(
     [Parameter(Mandatory=$true)][string]$StudioRoot,
     [Parameter(Mandatory=$true)][string]$PlanFile,
     [string]$AndroidSdk = $env:ANDROID_HOME,
-    [string]$Python = $env:STUDY_BUILD_PYTHON
+    [string]$Python = $env:STUDY_BUILD_PYTHON,
+    [switch]$ShowDiagnostics
 )
 
 $ErrorActionPreference = 'Stop'
@@ -29,7 +30,8 @@ try {
     $env:STUDY_STUDIO_ROOT = $studio
     $env:STUDY_CONTRACT_PLAN_ROOT = $plan
     $env:ANDROID_HOME = $sdk
-    & ./gradlew.bat :app:assembleDebug -PcontractV2=true --console=plain
+    $diagnostics = $ShowDiagnostics.IsPresent.ToString().ToLowerInvariant()
+    & ./gradlew.bat :app:assembleDebug -PcontractV2=true "-PshowContractDiagnostics=$diagnostics" --console=plain
     if ($LASTEXITCODE -ne 0) { throw 'Contract-v2 Gradle build failed.' }
     $artifact = Join-Path $PSScriptRoot 'app/build/outputs/apk/debug/app-debug.apk'
     $verifier = Get-ChildItem -LiteralPath (Join-Path $sdk 'build-tools') -Directory |

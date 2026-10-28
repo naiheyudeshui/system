@@ -12,9 +12,11 @@
   -PlanFile D:/worktrees/rsim-workbench-contract-v2/readme/skills/plan/records/2026-10-20-X-standardize-workbench-plugin-contract.md
 ```
 
-需要 JDK 17、Android SDK 35、Python 3.14；SDK/Python 可以通过参数或环境变量指定。输出为 `study-kb/android/app/build/outputs/apk/debug/study-kb-contract-v2-debug.apk`。包名 `local.studykb.contractv2`、名称“学习库 · 重构测试”，与正式版并存；服务监听 `0.0.0.0:18033`，不占用正式服务的 8033。手机 App 及通知显示局域网地址，同网设备访问 `http://手机IP:18033/`；手机自身仍使用 `http://127.0.0.1:18033/`。首次安装从分支本地镜像初始化自己的副本，不复制或修改已安装正式版的私有数据，也不连接手机主库。沿用现有 `--trusted-lan-write`，同网访问可改动测试副本，仅限可信 Wi-Fi，禁止公网映射；这不代表已完成新协议的权限和安全门禁。
+需要 JDK 17、Android SDK 35、Python 3.14；SDK/Python 可以通过参数或环境变量指定。输出为 `study-kb/android/app/build/outputs/apk/debug/study-kb-contract-v2-debug.apk`。包名 `local.studykb.contractv2`、名称“学习库 · 重构测试”，与正式版并存；服务监听 `0.0.0.0:18033`，不占用正式服务的 8033。服务通知显示局域网地址，App 内的诊断提示栏可选开启，同网设备访问 `http://手机IP:18033/`；手机自身仍使用 `http://127.0.0.1:18033/`。首次安装从分支本地镜像初始化自己的副本，不复制或修改已安装正式版的私有数据，也不连接手机主库。沿用现有 `--trusted-lan-write`，同网访问可改动测试副本，仅限可信 Wi-Fi，禁止公网映射；这不代表已完成新协议的权限和安全门禁。
 
-打开后点击顶部“重构分支自测”。它执行分支原始后端 fixture 和共享 Schema 样本，所有数据库操作发生在会删除的临时库。手机没有可执行的 Python CLI 子进程，因此三项 CLI 测试明确跳过（须在电脑另测），不是伪报通过。当前新命令未接入业务界面和真实授权；此入口用于验证打包的后端，而不是新版插件设置界面。主题、语言、帮助等后续 UI 计划仍待实现。
+默认构建隐藏顶部局域网提示栏和“重构分支自测”按钮，外层背景与页面同色，系统安全区仍保留。需要诊断界面时给构建脚本添加 `-ShowDiagnostics`。该开关仅控制诊断界面，不改变独立包名、18033 服务端口或测试数据隔离；地址仍可在服务通知中查看。
+
+启用诊断界面后点击顶部“重构分支自测”。它执行分支原始后端 fixture 和共享 Schema 样本，所有数据库操作发生在会删除的临时库。手机没有可执行的 Python CLI 子进程，因此三项 CLI 测试明确跳过（须在电脑另测），不是伪报通过。
 
 Android 使用单独的 `requirements-contract-android.txt`：`jsonschema 4.17.3`（仍为 Draft 2020-12）、`attrs 26.1.0`、纯 Python `pyrsistent 0.20.0`。桌面 `jsonschema 4.25.1` 所依赖的 `rpds-py` 无对应 Android wheel；不打包 Windows `.pyd`，也不篡改桌面锁文件。构建时通过上游 `PYRSISTENT_SKIP_EXTENSION=1` 生成纯 Python wheel。验证须同时运行未改动的 49 项后端测试与 14 组共享 Schema 样本；依赖版本变化后需重新验证，不能仅以 APK 编译成功作为兼容证据。
 
