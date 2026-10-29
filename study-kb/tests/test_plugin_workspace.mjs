@@ -62,11 +62,16 @@ async function setup() {
   const load = async (url) => {
     const key = url.href;
     if (modules.has(key)) return modules.get(key);
-    const stub = Object.entries(stubs).find(([name]) => key.includes(name));
-    const module = stub ? stub[1]() : new vm.SourceTextModule(await readUiSource(url), { context, identifier: key });
-    if (stub) Object.defineProperty(module, "identifier", { value: key });
-    modules.set(key, module);
-    return module;
+    // Reserve before awaiting the read: sibling imports must share stateful
+    // modules such as dragGesture, just as they do in the browser.
+    const pending = (async () => {
+      const stub = Object.entries(stubs).find(([name]) => key.includes(name));
+      const module = stub ? stub[1]() : new vm.SourceTextModule(await readUiSource(url), { context, identifier: key });
+      if (stub) Object.defineProperty(module, "identifier", { value: key });
+      return module;
+    })();
+    modules.set(key, pending);
+    return pending;
   };
   const link = async (url) => {
     const module = await load(url);
@@ -1076,6 +1081,46 @@ function bspWorkspace(ui, { tree, renderers, postApi } = {}) {
   });
   return { host, posts, layout: () => layout };
 }
+
+test("trash closes the targeted pane in both directions and protects the last pane", async () => {
+  const ui = await setup();
+  try {
+    const { host, posts, layout } = bspWorkspace(ui, {
+      tree: split(leaf("demo.a", "a"), split(leaf("demo.b", "b"), leaf("demo.c", "c"))), renderers: {},
+    });
+    await host.update(["demo.a", "demo.b", "demo.c"].map(id => sized(id)));
+    const button = ui.document.querySelector(".wb-layout-clear-button");
+    const dataTransfer = { setData() {}, getData() { return ""; }, types: [] };
+    const fire = (target, type) => {
+      const event = new ui.dom.window.Event(type, { bubbles: true, cancelable: true });
+      Object.assign(event, { dataTransfer, clientX: 50, clientY: 50 }); target.dispatchEvent(event);
+    };
+    fire(button, "dragstart");
+    const b = ui.document.querySelector('[data-leaf-id="leaf-b"]');
+    fire(b, "dragover"); assert.ok(b.querySelector(".wb-pane-delete-preview"));
+    fire(b, "drop"); fire(b, "drop"); fire(button, "dragend");
+    for (let i = 0; i < 5; i++) await settle();
+    assert.equal(posts.length, 1); assert.equal(posts[0].revision, 3);
+    assert.equal(JSON.stringify(layout().tree).includes('"instanceId":"b"'), false);
+    assert.equal(ui.document.querySelectorAll(".wb-bsp-leaf").length, 2);
+
+    fire(ui.document.querySelector('[data-leaf-id="leaf-c"] .wb-bsp-move-handle'), "dragstart");
+    assert.equal(ui.document.documentElement.dataset.wbDrag, "layout", "pane handle starts a layout drag");
+    fire(button, "dragover"); assert.equal(button.dataset.deleteTarget, "leaf-c");
+    fire(button, "drop"); fire(button, "dragend");
+    for (let i = 0; i < 5; i++) await settle();
+    assert.equal(posts.length, 2); assert.equal(layout().tree.instanceId, "a");
+
+    fire(button, "dragstart"); fire(ui.document.querySelector(".wb-bsp-leaf"), "dragover");
+    assert.ok(ui.document.querySelector(".wb-pane-delete-preview.is-blocked"));
+    fire(ui.document.querySelector(".wb-bsp-leaf"), "drop"); fire(button, "dragend");
+    for (let i = 0; i < 5; i++) await settle();
+    assert.equal(posts.length, 2, "last-pane refusal never writes the layout");
+    assert.equal(layout().tree.instanceId, "a");
+    host.dispose();
+    assert.equal(ui.document.querySelector(".wb-pane-delete-preview,.wb-trash-drag-ghost,.wb-layout-clear-button"), null);
+  } finally { ui.dom.window.close(); }
+});
 
 test("workspace mounts every leaf through the renderer registry without host DOM", async () => {
   const ui = await setup();

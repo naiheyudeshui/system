@@ -47,19 +47,26 @@ test("search matches Unicode, names, aliases and ID, with all tokens required", 
   assert.deepEqual(found(""), ["demo.table", "demo.timer"]);
 });
 
-test("both entry points share a directory; pin controls never activate or hide an app", async () => {
+test("all apps opens without search or input focus; second click reveals search; pins do not activate", async () => {
   const ui = setup();
   try {
     ui.q(".app-launcher-button").click();
     const panel = ui.q(".wb-app-menu");
     assert.equal(panel.hidden, false);
+    assert.equal(ui.q(".wb-launcher-search"), null);
+    assert.equal(ui.q(".wb-launcher-compact-search"), null);
+    assert.equal(ui.q(".wb-launcher-panel-search").hidden, true);
+    assert.notEqual(ui.document.activeElement.tagName, "INPUT");
     assert.equal(panel.querySelectorAll(".wb-launcher-result").length, 2);
     assert.equal(ui.document.querySelectorAll(".wb-bsp-dock-item").length, 2);
     ui.q('[data-application-id="demo.table"][data-action="pin"]').click();
     assert.deepEqual(ui.activated, []);
     assert.equal(ui.document.querySelectorAll(".wb-launcher-result").length, 2);
     assert.deepEqual(ui.launcher.getPinnedIds(), ["demo.timer"]);
-    const search = ui.q(".wb-launcher-search");
+    ui.q(".wb-launcher-search-toggle").click();
+    const search = ui.q(".wb-launcher-panel-search");
+    assert.equal(search.hidden, false);
+    assert.equal(ui.document.activeElement, search);
     search.value = "表格"; search.dispatchEvent(new ui.dom.window.Event("input"));
     assert.equal(ui.q(".wb-app-menu"), panel);
     assert.equal(panel.querySelectorAll(".wb-launcher-result").length, 1);
@@ -67,14 +74,19 @@ test("both entry points share a directory; pin controls never activate or hide a
     ui.q(".wb-launcher-result").click(); await settle();
     assert.deepEqual(ui.activated, ["demo.table"]);
     assert.equal(panel.hidden, true);
+    ui.q(".app-launcher-button").click();
+    assert.equal(search.hidden, true);
+    assert.equal(search.value, "");
+    assert.notEqual(ui.document.activeElement, search);
   } finally { ui.launcher.dispose(); ui.dom.window.close(); }
 });
 
-test("IME Enter is ignored; arrows navigate; Escape closes and restores search without reopening", async () => {
+test("IME Enter is ignored; arrows navigate; Escape returns to all apps without reopening search", async () => {
   const ui = setup();
   try {
-    const search = ui.q(".wb-launcher-search");
-    search.focus();
+    ui.q(".app-launcher-button").click();
+    ui.q(".wb-launcher-search-toggle").click();
+    const search = ui.q(".wb-launcher-panel-search");
     search.dispatchEvent(new ui.dom.window.CompositionEvent("compositionstart"));
     search.value = "番茄";
     search.dispatchEvent(new ui.dom.window.Event("input"));
@@ -86,8 +98,8 @@ test("IME Enter is ignored; arrows navigate; Escape closes and restores search w
     assert.equal(ui.document.activeElement.dataset.pluginId, "demo.timer");
     ui.document.activeElement.dispatchEvent(new ui.dom.window.KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
     assert.equal(ui.q(".wb-app-menu").hidden, true);
-    assert.equal(ui.document.activeElement, search);
-    assert.equal(search.getAttribute("aria-expanded"), "false");
+    assert.equal(ui.document.activeElement, ui.q(".app-launcher-button"));
+    assert.equal(search.hidden, true);
   } finally { ui.launcher.dispose(); ui.dom.window.close(); }
 });
 
@@ -129,7 +141,7 @@ test("storage failure is nonfatal; dynamic catalog and labels preserve query; di
     ui.launcher.open({ query: "Table" });
     ui.launcher.setLabels(applicationLauncherLabels.en);
     assert.equal(ui.q(".app-launcher-button").getAttribute("aria-label"), "All apps");
-    assert.equal(ui.q(".wb-launcher-search").value, "Table");
+    assert.equal(ui.q(".wb-launcher-panel-search").value, "Table");
     ui.launcher.setApplications(applications.filter((app) => app.applicationId !== "demo.table"));
     assert.equal(ui.q(".wb-launcher-result"), null);
     assert.match(ui.q(".wb-launcher-empty").textContent, /No apps/);
