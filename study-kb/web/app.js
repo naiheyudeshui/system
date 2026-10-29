@@ -1,4 +1,4 @@
-import { createPluginWorkspace } from "/3dworkbench/pluginWorkspace.mjs?v=20261029-dock1";
+import { createPluginWorkspace } from "/3dworkbench/pluginWorkspace.mjs?v=20261029-source-preview2";
 import { installHostHelp } from "/3dworkbench/hostHelp.mjs";
 import { createEditingServices, createHttpApi } from "/3dworkbench/hostServices.mjs?v=20261028-bsp1";
 import { createRefreshCoordinator } from "/3dworkbench/refreshCoordinator.mjs";

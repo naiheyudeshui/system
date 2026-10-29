@@ -144,11 +144,14 @@ def assemble() -> Path:
     if CONTRACT_V2:
         _copy_tree(STUDIO_ROOT / "3dworkbench/python", "3dStudio/3dworkbench/python", copied)
         _copy_tree(STUDIO_ROOT / "3dworkbench/contracts", "3dStudio/3dworkbench/contracts", copied)
+        _copy_tree(STUDIO_ROOT / "packages/contracts", "3dStudio/packages/contracts", copied)
+        _copy_tree(STUDIO_ROOT / "tooling/sync-contracts", "3dStudio/tooling/sync-contracts", copied)
         _copy_tree(STUDIO_ROOT / "3dworkbench/docs", "3dStudio/3dworkbench/docs", copied)
         for name in ("requirements-contracts.txt", "requirements-contracts-lock.txt"):
             _copy_file(STUDIO_ROOT / "3dworkbench" / name, f"3dStudio/3dworkbench/{name}", copied)
         for rel in ("tests/test_data_platform_v2.py", "tests/test_data_schema_parity.py",
                     "tests/contracts/schema-fixtures.json", "tests/contracts/schema-parity.mjs",
+                    "tests/contracts/platform-fixtures.json", "tests/contracts/help-fixtures.json",
                     "tests/contracts/package.json", "tests/contracts/package-lock.json"):
             _copy_file(STUDIO_ROOT / rel, "3dStudio/" + rel, copied)
         plan_root = os.environ.get("STUDY_CONTRACT_PLAN_ROOT")
@@ -158,6 +161,8 @@ def assemble() -> Path:
             for name in ("protocol.md", "acceptance.md", "data-bindings.md", "foundation-progress.md"):
                 _copy_file(plan.with_suffix("") / name, "contract-v2-docs/" + name, copied)
         metadata = {"profile": "contract-v2", "studioBranch": branch,
+                    "studyCommit": subprocess.check_output(
+                        ["git", "-C", str(REPO_ROOT), "rev-parse", "HEAD"], text=True).strip(),
                     "studioCommit": subprocess.check_output(
                         ["git", "-C", str(STUDIO_ROOT), "rev-parse", "HEAD"], text=True).strip(),
                     "studioChanges": subprocess.check_output(

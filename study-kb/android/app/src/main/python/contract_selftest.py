@@ -71,5 +71,5 @@ def run(runtime_root: str, cache_root: str) -> str:
                 "数据：仅临时 fixture，不读写正式知识库\n"
                 "结论：" + ("PASS" if result.wasSuccessful() else "FAIL") + "\n"
                 f"通过 {passed}，失败 {len(result.failures)}，错误 {len(result.errors)}，跳过 {len(result.skipped)}\n"
-                "说明：CLI 子进程三项仅在电脑验证；共享 schema 一项包含14组样本。\n\n"
+                "说明：CLI 子进程三项仅在电脑验证；共享 Schema 项逐条验证包内全部样本。\n\n"
                 + stream.getvalue())
