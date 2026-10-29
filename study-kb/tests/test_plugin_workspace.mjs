@@ -1158,7 +1158,66 @@ test("dock offers enabled plugins only and drops a broken icon", async () => {
     const icon = items[0].querySelector("img");
     icon.dispatchEvent(new ui.dom.window.Event("error"));
     assert.equal(items[0].querySelector("img"), null);
-    assert.equal(items[0].textContent, "demo.a");
+    assert.equal(items[0].getAttribute("aria-label"), "demo.a");
+    assert.equal(items[0].querySelector(".wb-launcher-fallback").hidden, false);
+    assert.notEqual(items[0].textContent, "demo.a", "shortcut remains icon-only after icon failure");
+  } finally { ui.dom.window.close(); }
+});
+
+test("launcher focuses the most recent existing instance without writing layout", async () => {
+  const ui = await setup();
+  try {
+    const { host, posts } = bspWorkspace(ui, { tree: split(leaf("demo.a", "a1"), leaf("demo.a", "a2")), renderers: {} });
+    await host.update([sized("demo.a")]);
+    const second = ui.document.querySelector('[data-leaf-id="leaf-a2"]');
+    second.dispatchEvent(new ui.dom.window.Event("pointerdown", { bubbles: true }));
+    ui.document.querySelector(".wb-bsp-dock-item").click();
+    await settle(); await settle();
+    assert.equal(posts.length, 0);
+    assert.equal(ui.document.activeElement, second);
+    assert.equal(ui.document.querySelectorAll(".wb-bsp-leaf").length, 2);
+    host.dispose();
+  } finally { ui.dom.window.close(); }
+});
+
+test("launcher creates only one first pane on rapid clicks and safely splits a large pane", async () => {
+  const ui = await setup();
+  try {
+    const { host, posts } = bspWorkspace(ui, { tree: null, renderers: {} });
+    await host.update([sized("demo.a"), sized("demo.b")]);
+    const a = ui.document.querySelector('[data-plugin-id="demo.a"].wb-bsp-dock-item');
+    a.click(); a.click();
+    for (let i = 0; i < 5; i++) await settle();
+    assert.equal(posts.length, 1);
+    const first = ui.document.querySelector(".wb-bsp-leaf");
+    const originalId = first.dataset.leafId;
+    first.getBoundingClientRect = () => ({ width: 900, height: 600 });
+    ui.document.querySelector('[data-plugin-id="demo.b"].wb-bsp-dock-item').click();
+    for (let i = 0; i < 5; i++) await settle();
+    assert.equal(posts.length, 2);
+    assert.equal(ui.document.querySelectorAll(".wb-bsp-leaf").length, 2);
+    assert.ok(ui.document.querySelector(`[data-leaf-id="${originalId}"]`), "original pane is preserved");
+    assert.equal(ui.document.activeElement.dataset.pluginId, "demo.b");
+    host.dispose();
+  } finally { ui.dom.window.close(); }
+});
+
+test("launcher refuses insufficient pane space without replacing existing content", async () => {
+  const ui = await setup();
+  try {
+    const { host, posts, layout } = bspWorkspace(ui, { tree: leaf("demo.a"), renderers: {} });
+    await host.update([sized("demo.a"), sized("demo.b")]);
+    const before = JSON.stringify(layout());
+    ui.document.querySelector(".wb-bsp-leaf").getBoundingClientRect = () => ({ width: 300, height: 300 });
+    ui.document.querySelector(".app-launcher-button").click();
+    ui.document.querySelector('[data-plugin-id="demo.b"].wb-launcher-result').click();
+    for (let i = 0; i < 5; i++) await settle();
+    assert.equal(posts.length, 0);
+    assert.equal(JSON.stringify(layout()), before);
+    assert.equal(ui.document.querySelectorAll(".wb-bsp-leaf").length, 1);
+    assert.equal(ui.document.querySelector(".wb-app-menu").hidden, false);
+    assert.match(ui.document.querySelector(".wb-launcher-status").textContent, /空间不足/);
+    host.dispose();
   } finally { ui.dom.window.close(); }
 });
 
