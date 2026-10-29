@@ -103,7 +103,7 @@ test("IME Enter is ignored; arrows navigate; Escape returns to all apps without 
   } finally { ui.launcher.dispose(); ui.dom.window.close(); }
 });
 
-test("icon failure retains accessible icon-only shortcut; touch-friendly order buttons persist", () => {
+test("icon failure retains accessible shortcut; keyboard sorting replaces order buttons", () => {
   const ui = setup();
   try {
     const shortcut = ui.q('.wb-bsp-dock-item[data-plugin-id="demo.table"]');
@@ -111,11 +111,55 @@ test("icon failure retains accessible icon-only shortcut; touch-friendly order b
     assert.equal(shortcut.querySelector("img"), null);
     assert.equal(shortcut.querySelector(".wb-launcher-fallback").hidden, false);
     assert.equal(shortcut.getAttribute("aria-label"), "表格");
-    ui.q('[data-application-id="demo.timer"][data-action="earlier"]').click();
+    assert.equal(ui.q('.wb-launcher-move'), null);
+    ui.q('.wb-bsp-dock-item[data-plugin-id="demo.timer"]').dispatchEvent(new ui.dom.window.KeyboardEvent("keydown", { key: "ArrowLeft", altKey: true, bubbles: true, cancelable: true }));
     assert.deepEqual(ui.launcher.getPinnedIds(), ["demo.timer", "demo.table"]);
-    ui.q('[data-application-id="demo.timer"][data-action="later"]').click();
+    ui.q('.wb-bsp-dock-item[data-plugin-id="demo.timer"]').dispatchEvent(new ui.dom.window.KeyboardEvent("keydown", { key: "ArrowRight", altKey: true, bubbles: true, cancelable: true }));
     assert.deepEqual(ui.launcher.getPinnedIds(), ["demo.table", "demo.timer"]);
     assert.deepEqual(JSON.parse(ui.dom.window.localStorage.getItem("test")).pinnedIds, ["demo.table", "demo.timer"]);
+  } finally { ui.launcher.dispose(); ui.dom.window.close(); }
+});
+
+test("placing pins is atomic, persists once, skips no-ops and leaves the directory intact", () => {
+  let saved = JSON.stringify({ version: 2, pinnedIds: ["demo.timer"] }), writes = 0;
+  const state = createApplicationLauncherState({ storageKey: "test", storage: { getItem: () => saved, setItem: (_, value) => { saved = value; writes++; } } });
+  state.setApplications(applications);
+  assert.equal(state.placePinned("demo.table", "demo.timer"), true);
+  assert.equal(writes, 1);
+  assert.deepEqual(state.pinnedIds(), ["demo.table", "demo.timer"]);
+  assert.equal(state.placePinned("demo.table", "demo.timer"), false);
+  assert.equal(state.placePinned("demo.off", null), false);
+  assert.equal(writes, 1);
+  assert.deepEqual(state.applications().map(app => app.applicationId), ["demo.table", "demo.timer"]);
+});
+
+test("directory order persists independently, retains unavailable preferences and appends new apps", () => {
+  let saved = JSON.stringify({ version: 2, pinnedIds: ["demo.table"], directoryIds: ["demo.timer", "missing", "demo.table"] }), writes = 0;
+  const storage = { getItem: () => saved, setItem: (_, value) => { saved = value; writes++; } };
+  const state = createApplicationLauncherState({ storageKey: "test", storage });
+  state.setApplications(applications);
+  assert.deepEqual(state.applications().map(app => app.applicationId), ["demo.timer", "demo.table"]);
+  assert.equal(state.placeApplication("demo.table", "demo.timer"), true);
+  assert.equal(writes, 1);
+  assert.deepEqual(state.pinnedIds(), ["demo.table"]);
+  assert.equal(state.placeApplication("demo.table", "demo.timer"), false);
+  assert.equal(state.placeApplication("demo.off"), false);
+  assert.equal(writes, 1);
+  const reloaded = createApplicationLauncherState({ storageKey: "test", storage });
+  reloaded.setApplications([...applications, { applicationId: "missing" }, { applicationId: "new" }]);
+  assert.deepEqual(reloaded.applications().map(app => app.applicationId), ["demo.table", "demo.timer", "missing", "new"]);
+  assert.equal(reloaded.placeApplication("demo.table", "demo.timer", { unpin: true }), true);
+  assert.equal(writes, 2); assert.deepEqual(reloaded.pinnedIds(), []);
+});
+
+test("directory keyboard ordering leaves pins intact and retains focused tile", () => {
+  const ui = setup();
+  try {
+    ui.launcher.open(); const tile = ui.q('.wb-launcher-result[data-plugin-id="demo.table"]'); tile.focus();
+    tile.dispatchEvent(new ui.dom.window.KeyboardEvent("keydown", { key: "ArrowRight", altKey: true, bubbles: true, cancelable: true }));
+    assert.equal(ui.q('.wb-launcher-result').dataset.pluginId, "demo.timer");
+    assert.deepEqual(ui.launcher.getPinnedIds(), ["demo.table", "demo.timer"]);
+    assert.equal(ui.document.activeElement.dataset.pluginId, "demo.table");
   } finally { ui.launcher.dispose(); ui.dom.window.close(); }
 });
 
