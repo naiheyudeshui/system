@@ -1,4 +1,5 @@
 // Study owns the help content. Shared hostHelp has no Study APIs or side effects.
+import { configFieldHelp } from "/3dworkbench/configFieldHelp.mjs";
 const topic = (pluginId, page, zh, en) => ({ pluginId, ...(page ? { page } : {}), locales: {
   zh: { title: zh[0], hint: zh[1], body: zh[2] },
   en: { title: en[0], hint: en[1], body: en[2] },
@@ -6,6 +7,9 @@ const topic = (pluginId, page, zh, en) => ({ pluginId, ...(page ? { page } : {})
 const tree = "study.node-tree";
 const review = "study.review-table";
 export const studyHelpTopics = [
+  ...[tree, review].flatMap(pluginId => Object.entries(configFieldHelp).map(([action, text]) => ({
+    ...topic(pluginId, action.startsWith("manage-") ? "plans" : "config", [text[0], "点击对应字段旁的问号查看说明；帮助不会保存草稿。", text[1]], [text[2], "Use the field's question button for details. Help never saves a draft.", text[3]]), action,
+  }))),
   topic(tree, null,
     ["章节树图", "选择方案并预览校验结果，再进入树图。", "章节树以数据方案提供节点、父子关系和详情内容。先选择方案，预览、筛选后打开树图。方案不等于复制数据库；编辑节点会写入当前服务器，请核对目标。"],
     ["Chapter tree", "Select and validate a plan before opening the tree.", "Plans supply node IDs, parent relationships and details. Preview and filter before opening. Plans do not copy the database. Check the active server before editing nodes."]),

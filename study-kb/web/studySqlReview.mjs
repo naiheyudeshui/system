@@ -1,4 +1,4 @@
-import { addConfigCardControls, confirmWorkbenchAction, openConfigManager } from "/3dworkbench/pluginConfigManager.mjs";
+import { addConfigCardControls, confirmWorkbenchAction, openConfigManager } from "/3dworkbench/pluginConfigManager.mjs?v=20261029-authoring1";
 import { createSearchableCombobox } from "/3dworkbench/searchableCombobox.mjs";
 import { renderTablePreview } from "/3dworkbench/tablePreview.mjs";
 import { renderMarkdown } from "./studyMarkdown.mjs?v=20261028-main-port1";
@@ -11,7 +11,7 @@ function make(tag, text, className) {
   return node;
 }
 
-export async function renderReviewTablePanel(panel, { api, postApi }) {
+export async function renderReviewTablePanel(panel, { api, postApi, instanceId }) {
   panel.classList.add("study-review-panel", "study-sql-review");
   const home = make("section");
   home.dataset.helpPage = "plans";
@@ -33,6 +33,7 @@ export async function renderReviewTablePanel(panel, { api, postApi }) {
     button.replaceChildren(symbol, make("span", label));
   }
   management.append(edit, add);
+  edit.dataset.helpAction = "manage-edit"; add.dataset.helpAction = "manage-add";
   const parameters = make("div", null, "study-review-config");
   const resume = make("button", "继续上次复习");
   resume.hidden = true;
@@ -48,6 +49,8 @@ export async function renderReviewTablePanel(panel, { api, postApi }) {
   const previewTable = make("div");
   const previewSummary = make("p");
   const confirmStart = make("button", "开始一轮学习", "primary");
+  const reshuffle = make("button", "重新随机");
+  reshuffle.title = "生成新的随机种子并重新预览；原复习轮次不变。";
   confirmStart.dataset.action = "confirm-start";
   preparation.append(previewHeader, make("p", "点击列标题搜索或选择条件后应用；筛选作用于全部候选，不只是当前页。搜索根节点后，只保留该节点及其后面整棵子树里的卡片。", "action-hint"), previewTable, previewSummary);
   const learning = make("section", null, "study-learning-card");
@@ -56,7 +59,9 @@ export async function renderReviewTablePanel(panel, { api, postApi }) {
   const learningHeader = make("header", null, "study-review-header");
   const meta = make("p");
   const leave = make("button", "返回方案（保留进度）");
-  learningHeader.append(meta, leave);
+  const endRound = make("button", "结束并归档本轮");
+  endRound.title = "保留本轮快照与已发生的评分，解除未完成轮次的数据占用。";
+  learningHeader.append(meta, leave, endRound);
   const front = make("div", null, "study-review-question");
   const backSection = make("section");
   const back = make("div");
@@ -69,6 +74,19 @@ export async function renderReviewTablePanel(panel, { api, postApi }) {
   panel.replaceChildren(home, preparation, learning, message);
   let entries = [], selectedId = "", state = null, busy = false, started = 0, revealed = false;
   let parameterInputs = {}, previewResult = null, previewPayload = null, previewState = null, filtered = [], reviewOptions = [];
+  const paneId = instanceId || panel.closest("[data-instance-id]")?.dataset.instanceId;
+  let leasedConfig = "", leaseChain = Promise.resolve();
+  const updateLease = (id = selectedId) => {
+    if (!paneId) return;
+    const previous = leasedConfig; leasedConfig = id;
+    leaseChain = leaseChain.catch(() => {}).then(async () => {
+      const scope = { plugin_id: "study.review-table", module_id: "reviews", instance_id: paneId };
+      if (previous && previous !== id) await postApi("/api/plugin/config/lease", { ...scope, id: previous, release: true });
+      if (id) await postApi("/api/plugin/config/lease", { ...scope, id });
+    }).catch(error => { message.textContent = `数据使用登记失败：${error.message}`; });
+  };
+  const leaseTimer = paneId ? window.setInterval(() => updateLease(), 30000) : null;
+  panel.dispose = () => { if (leaseTimer) window.clearInterval(leaseTimer); updateLease(""); rootPicker.dispose?.(); };
   const rootTools = make("div", null, "wb-tree-root-tools");
   const rootPicker = createSearchableCombobox({
     placeholder: "搜索或选择根节点",
@@ -77,7 +95,7 @@ export async function renderReviewTablePanel(panel, { api, postApi }) {
     onSelect: (option) => { rootPicker.setValue(option.label); void prepare({ keepRoot: true }); },
     onInput: (value) => { if (!value.trim()) void prepare({ keepRoot: true }); },
   });
-  rootTools.append(rootPicker, confirmStart);
+  rootTools.append(rootPicker, reshuffle, confirmStart);
   const selectedRootId = () => {
     const value = rootPicker.getValue().trim();
     if (!value) return null;
@@ -127,18 +145,25 @@ export async function renderReviewTablePanel(panel, { api, postApi }) {
       refreshControls();
     }
   };
-  const prepare = ({ keepRoot = false } = {}) => run(async () => {
+  endRound.addEventListener("click", async () => {
+    if (!state?.session_id || busy) return;
+    if (!await confirmWorkbenchAction({ title: "结束本轮？", message: "已发生的评分和记录保留，本轮剩余卡片不再评分。", confirmLabel: "结束并归档", danger: false })) return;
+    void run(async () => { await postApi("/api/study/review/session-end", { session_id: state.session_id }); state = null; localStorage.removeItem("study.review.session.v1"); resume.hidden = true; page(home); });
+  });
+  const prepare = ({ keepRoot = false, shuffle = false } = {}) => run(async () => {
     if (!selected()) throw new Error("请先选择方案");
     const keptFilters = keepRoot ? (previewState?.filters() || []) : [];
     if (!keepRoot) rootPicker.setValue("");
     const request = payload();
+    request.selection_seed = shuffle ? (globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`) : (previewPayload?.config_id === selectedId ? previewPayload.selection_seed : undefined);
     const result = await postApi("/api/study/review/sql-preview", request);
     if (!Array.isArray(result.rows) || !result.preview_hash) throw new Error("服务尚未更新，请重启学习库后刷新");
-    previewPayload = request; previewResult = result;
+    previewPayload = { ...request, selection_seed: result.selection_seed }; previewResult = result;
+    reshuffle.hidden = result.selectionPolicy?.order !== "random";
     previewTitle.textContent = `${selected().name} · 预览与筛选`;
     page(preparation);
     previewState = renderTablePreview(previewTable, { rows: result.rows, columns: result.columns, initialFilters: keptFilters, extraActions: [rootTools],
-      labels: { card_id: "卡片 ID", question: "问题", answer: "答案", hint: "提示", node_id: "章节 ID", node_path: "章节路径", due_at: "到期时间" },
+      labels: { card_id: "卡片 ID", question: "问题", answer: "答案", hint: "提示", node_id: "章节 ID", node_path: "章节路径", due_at: "到期时间", mastery_score: "掌握等级（未评估留空）", learning_enabled: "参与学习", review_count: "复习次数", lapse_count: "失误次数", created_at: "创建时间" },
       onChange: (rows) => {
         filtered = rows;
         previewSummary.textContent = `筛选 ${rows.length} 条 · 本轮最多 ${Math.min(rows.length, result.limit)} 条 · 重复 ${result.duplicates} · 缺少调度 ${result.missing_schedule}。开始后集合固定，评分才更新时间。`;
@@ -146,6 +171,7 @@ export async function renderReviewTablePanel(panel, { api, postApi }) {
       },
     });
   });
+  reshuffle.addEventListener("click", () => { void prepare({ keepRoot: true, shuffle: true }); });
   const startNewRound = async () => {
     let sessionId = state?.session_id;
     if (!sessionId) {
@@ -201,7 +227,7 @@ export async function renderReviewTablePanel(panel, { api, postApi }) {
       choose.setAttribute("aria-pressed", String(entry.id === selectedId));
       choose.addEventListener("click", () => {
         if (busy || selectedId === entry.id) return;
-        selectedId = entry.id; renderParameters(); renderCards(); refreshControls();
+        selectedId = entry.id; updateLease(); renderParameters(); renderCards(); refreshControls();
       });
       card.append(choose, make("small", "已保存的 SQL 复习方案"));
       if (!management.hidden) addConfigCardControls(card, {
@@ -227,6 +253,7 @@ export async function renderReviewTablePanel(panel, { api, postApi }) {
     const previousParameters = Object.fromEntries(Object.entries(parameterInputs).map(([key, input]) => [key, input.value]));
     entries = (await api("/api/plugin/configs?plugin_id=study.review-table&module_id=reviews")).configs;
     selectedId = entries.some((entry) => entry.id === previous) ? previous : entries[0]?.id || "";
+    updateLease();
     renderParameters(); renderCards();
     if (selectedId === previous) for (const [key, value] of Object.entries(previousParameters)) if (parameterInputs[key]) parameterInputs[key].value = value;
     refreshControls();

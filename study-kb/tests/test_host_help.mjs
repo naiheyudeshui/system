@@ -6,6 +6,7 @@ import { JSDOM } from "jsdom";
 
 const source = await readFile(new URL("../../3dStudio/3dworkbench/web/hostHelp.mjs", import.meta.url), "utf8");
 const studySource = await readFile(new URL("../web/studyHelp.mjs", import.meta.url), "utf8");
+const fieldHelpSource = await readFile(new URL("../../3dStudio/3dworkbench/web/configFieldHelp.mjs", import.meta.url), "utf8");
 const fixtures = JSON.parse(await readFile(new URL("../../3dStudio/tests/contracts/schema-fixtures.json", import.meta.url), "utf8"));
 const settle = () => new Promise((resolve) => setImmediate(resolve));
 const texts = (title) => ({ zh: { title, hint: title + "提示", body: title + "正文" }, en: { title: title + " EN", hint: "Hint", body: "Body" } });
@@ -19,7 +20,9 @@ async function setup() {
   const module = new vm.SourceTextModule(source, { context });
   await module.link(() => {}); await module.evaluate();
   const study = new vm.SourceTextModule(studySource, { context });
-  await study.link(() => {}); await study.evaluate();
+  const fields = new vm.SourceTextModule(fieldHelpSource, { context });
+  await fields.link(() => {});
+  await study.link(specifier => { assert.equal(specifier, "/3dworkbench/configFieldHelp.mjs"); return fields; }); await study.evaluate();
   const api = module.namespace;
   const topics = [
     { pluginId: "sample", locales: texts("Plugin") },
@@ -42,6 +45,22 @@ test("help registry resolves action, page, plugin then host with language fallba
     assert.equal(registry.resolve({ pluginId: "missing" }).title, "工作台帮助");
     assert.equal(registry.resolve({ pluginId: "sample", page: "plans" }, "en").title, "Plans EN");
     assert.equal(registry.resolve({ pluginId: "sample" }, "unknown").title, "Plugin");
+  } finally { ui.dom.window.close(); }
+});
+
+test("package help registrations are shared across panes and released independently", async () => {
+  const ui = await setup();
+  try {
+    const host = ui.install(), topic = { pluginId: "package.example", locales: texts("Package") };
+    const releaseA = ui.api.registerHostHelpTopics([topic]);
+    const releaseB = ui.api.registerHostHelpTopics([topic]);
+    assert.equal(host.registry.resolve({ pluginId: topic.pluginId }).title, "Package");
+    releaseA(); releaseA();
+    assert.equal(host.registry.resolve({ pluginId: topic.pluginId }, "en").title, "Package EN");
+    assert.throws(() => ui.api.registerHostHelpTopics([{ ...topic, locales: texts("Conflict") }]), /Conflicting/);
+    releaseB();
+    assert.equal(host.registry.resolve({ pluginId: topic.pluginId }).title, "工作台帮助");
+    host.dispose();
   } finally { ui.dom.window.close(); }
 });
 

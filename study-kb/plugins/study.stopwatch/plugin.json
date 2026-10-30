@@ -5,6 +5,7 @@
   "api": {"host": ">=1.0 <2.0"},
   "activation": ["onStartupFinished"],
   "contributes": {
+    "unitTypes": [{"id":"timer-default","label":"秒表计时器","dataInputs":[{"id":"timer-storage","contract":"study.stopwatch/v1","access":"write"}]}],
     "presentations": [
       {"id": "micro", "label": "计时器", "renderer": "timer", "mode": "micro", "when": {"maxCols": 5, "maxRows": 4}, "priority": 40},
       {"id": "strip", "label": "计时器", "renderer": "timer", "mode": "compact", "when": {"minCols": 6, "maxRows": 8}, "priority": 30},
@@ -13,5 +14,5 @@
       {"id": "default", "label": "计时器", "renderer": "timer", "mode": "compact", "default": true}
     ]
   },
-  "permissions": ["data.read:study_time_session", "data.write:study_time_session"]
+  "permissions": ["data.read:installation-owned", "data.write:installation-owned", "data.provision:installation-owned"]
 }

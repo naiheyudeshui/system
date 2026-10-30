@@ -1,3 +1,5 @@
+-- Legacy shared timer schema, retained for backup compatibility and migration
+-- fixtures only. New installations use study_time_resources.ensure_plugin_resources.
 CREATE TABLE IF NOT EXISTS study_time_project (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL COLLATE NOCASE CHECK (length(trim(name)) BETWEEN 1 AND 100),

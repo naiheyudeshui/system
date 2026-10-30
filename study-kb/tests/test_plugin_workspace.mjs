@@ -164,6 +164,96 @@ test("internal manager returns to the original live panel and keeps dirty edits 
   } finally { ui.dom.window.close(); }
 });
 
+const visualTreeTemplate = { id: "tree-basic/v1", contract: "tree-nodes/v1", fields: [
+  { name: "node_id", label: "节点 ID", key: true, required: true }, { name: "parent_id", label: "父节点 ID" },
+  { name: "title", label: "标题", required: true }, { name: "content_md", label: "正文", multiline: true },
+] };
+const inputValue = (ui, label, value) => { const input = ui.document.querySelector(`[aria-label="${label}"]`); assert.ok(input, label); input.value = value; input.dispatchEvent(new ui.dom.window.Event("input", { bubbles: true })); return input; };
+const clickText = (root, text) => { const button = [...root.querySelectorAll("button")].find(n => n.textContent === text); assert.ok(button, text); button.click(); };
+
+test("visual authoring previews without writes, explicitly creates once, and reloads owned data", async () => {
+  const ui = await setup();
+  try {
+    const root = ui.document.createElement("section"); ui.document.body.append(root);
+    const posts = []; let saved;
+    await ui.manager.openConfigManager(root, { pluginId: "fixture.tree", moduleId: "nodes",
+      api: async () => ({ definition: { contract: "tree-nodes/v1", dataAuthoring: visualTreeTemplate }, configs: saved ? [saved] : [] }),
+      postApi: async (url, payload) => {
+        posts.push({ url, payload });
+        if (url.endsWith("validate-data")) return { rows: payload.rows, columns: ["node_id", "parent_id", "title", "content_md"] };
+        if (url.endsWith("create-data")) { saved = { id: "owned", revision: 1, name: payload.name, sql: "SELECT * FROM owned", parameters: {}, settings: { dataSource: { mode: "owned", collectionId: "collection1" } } }; return { config: saved, revision: 1 }; }
+        if (url.endsWith("read-data")) return { rows: [{ node_id: "n1", title: "Root" }], revision: 1 };
+        throw new Error("Unexpected request " + url);
+      },
+    });
+    inputValue(ui, "方案名称", "My own tree"); inputValue(ui, "标题 · 第1行", "Root");
+    assert.equal(root.querySelector('.wb-data-modes [aria-pressed="true"]').dataset.mode, "owned");
+    clickText(root, "校验 / 预览"); await settle();
+    assert.deepEqual(posts.map(p => p.url), ["/api/plugin/config/validate-data"]);
+    clickText(root, "保存"); clickText(root, "保存"); await settle();
+    assert.equal(posts.length, 1, "confirmation is required before a collection write");
+    clickText(ui.document.querySelector("dialog"), "确认保存");
+    for (let i = 0; i < 5; i++) await settle();
+    assert.equal(posts.filter(p => p.url.endsWith("create-data")).length, 1);
+    assert.equal(posts[1].payload.rows[0].title, "Root"); assert.ok(posts[1].payload.request_id);
+    assert.equal(root.querySelector('[aria-label="标题 · 第1行"]').value, "Root");
+    assert.match(root.textContent, /已保存/);
+  } finally { ui.dom.window.close(); }
+});
+
+test("review editor submits second filters and ordered rules without storing card order", async () => {
+  const ui = await setup();
+  try {
+    const root = ui.document.createElement("section"); ui.document.body.append(root); const posts = [];
+    const spec = { id: "review-basic/v1", contract: "review-cards/v1", fields: [{ name: "card_id", label: "卡片 ID", key: true }, { name: "question", label: "问题" }, { name: "answer", label: "答案" }, { name: "hint", label: "提示" }] };
+    await ui.manager.openConfigManager(root, { pluginId: "study.review-table", moduleId: "reviews", api: async () => ({ configs: [], definition: { contract: spec.contract, dataAuthoring: spec } }), postApi: async (url, payload) => { posts.push({ url, payload }); return { rows: [], columns: [] }; } });
+    inputValue(ui, "方案名称", "Weak cards"); inputValue(ui, "问题 · 第1行", "Question");
+    inputValue(ui, "掌握程度上限", "50"); inputValue(ui, "本轮最多卡片数", "12");
+    clickText(root, "＋ 多级排序条件"); clickText(root, "＋ 多级排序条件");
+    const fields = root.querySelectorAll('[aria-label="多级排序字段"]'); fields[1].value = "due_at";
+    clickText(root, "移除此排序");
+    clickText(root, "校验 / 预览"); await settle();
+    const policy = posts[0].payload.settings.selectionPolicy;
+    assert.equal(policy.limit, 12); assert.equal(policy.filters[0].field, "mastery_score"); assert.equal(policy.filters[0].value, 50);
+    assert.equal(policy.rules.length, 1); assert.equal(policy.rules[0].field, "due_at");
+    assert.equal(posts[0].payload.rows[0].learning_enabled, true); assert.equal("sort_order" in posts[0].payload.rows[0], false);
+  } finally { ui.dom.window.close(); }
+});
+
+test("unloaded owned data cannot be previewed or overwritten; failed draft stays available", async () => {
+  const ui = await setup();
+  try {
+    const root = ui.document.createElement("section"); ui.document.body.append(root); const posts = [];
+    await ui.manager.openConfigManager(root, { pluginId: "fixture.tree", moduleId: "nodes", initialId: "owned",
+      api: async () => ({ definition: { contract: "tree-nodes/v1", dataAuthoring: visualTreeTemplate }, configs: [{ id: "owned", name: "Preserve me", sql: "SELECT * FROM owned", settings: { dataSource: { mode: "owned", collectionId: "collection" } } }] }),
+      postApi: async (url) => { posts.push(url); throw new Error("offline"); },
+    });
+    assert.match(root.textContent, /保存已阻止/); clickText(root, "校验 / 预览"); await settle();
+    assert.match(root.textContent, /尚未载入成功/); assert.deepEqual(posts, ["/api/plugin/config/read-data"]);
+    assert.equal(root.querySelector('[aria-label="方案名称"]').value, "Preserve me");
+  } finally { ui.dom.window.close(); }
+});
+
+test("SQL editor numbers lines and indents; field help emits no data calls or draft changes", async () => {
+  const ui = await setup();
+  try {
+    const root = ui.document.createElement("section"); ui.document.body.append(root); let posts = 0, help;
+    ui.document.addEventListener("workbench:help", event => { help = event.detail; });
+    await ui.manager.openConfigManager(root, { pluginId: "fixture", moduleId: "nodes", api: async () => ({ configs: [] }), postApi: async () => { posts++; } });
+    const sql = inputValue(ui, "SQL（查询模块只允许只读语句）", "SELECT\n  1 AS value");
+    assert.equal(root.querySelector(".wb-sql-lines").textContent, "1\n2");
+    sql.selectionStart = sql.selectionEnd = 0;
+    sql.dispatchEvent(new ui.dom.window.KeyboardEvent("keydown", { key: "Tab", bubbles: true, cancelable: true }));
+    assert.match(sql.value, /^  SELECT/);
+    root.querySelector('[data-help-action="sql"] .wb-field-help').click();
+    assert.equal(help.title, "高级 SQL"); assert.match(help.body, /只读/); assert.equal(posts, 0);
+    assert.match(sql.value, /^  SELECT/);
+    inputValue(ui, "默认参数（JSON 对象）", "[]");
+    clickText(root, "校验 / 预览"); await settle();
+    assert.match(root.textContent, /默认参数必须是 JSON 对象/); assert.equal(posts, 0);
+  } finally { ui.dom.window.close(); }
+});
+
 test("SQL review removes chapter controls, keeps saved parameters and grades after preview", async () => {
   const ui = await setup();
   try {
@@ -311,6 +401,25 @@ test("plan cards expose only selected actions, edit current plan, create new and
     button("预览并筛选").click(); await settle();
     assert.equal(root.querySelector('[data-action="confirm-start"]').disabled, true);
     assert.match(root.textContent, /筛选 0 条/);
+  } finally { ui.dom.window.close(); }
+});
+
+test("tree and review pane leases follow selected plans and release on disposal", async () => {
+  const ui = await setup();
+  try {
+    for (const [kind, render] of [["tree", ui.treeAdapter.renderNodeTreePanel], ["review", ui.review.renderReviewTablePanel]]) {
+      const root = ui.document.createElement("section"); ui.document.body.append(root);
+      const posts = [];
+      const entries = [{ id: "first", name: "First", parameters: {} }, { id: "second", name: "Second", parameters: {} }];
+      const api = async (url) => url.includes("configs") ? { configs: entries } : { rows: [] };
+      await render(root, { api, postApi: async (url, payload) => { posts.push({ url, payload }); return {}; }, instanceId: kind + "-pane" });
+      const choose = name => [...root.querySelectorAll(".study-plan-select")].find(button => button.textContent === name).click();
+      choose("First"); await settle(); choose("Second"); await settle();
+      root.dispose(); await settle();
+      const leases = posts.filter(post => post.url.endsWith("/lease")).map(post => [post.payload.id, !!post.payload.release, post.payload.instance_id]);
+      assert.equal(JSON.stringify(leases.slice(-4)), JSON.stringify([["first", false, kind + "-pane"], ["first", true, kind + "-pane"], ["second", false, kind + "-pane"], ["second", true, kind + "-pane"]]));
+      root.remove();
+    }
   } finally { ui.dom.window.close(); }
 });
 
@@ -1209,6 +1318,43 @@ test("dock offers enabled plugins only and drops a broken icon", async () => {
   } finally { ui.dom.window.close(); }
 });
 
+test("default system plugin opens as a normal pane from All apps and stays unpinned", async () => {
+  const ui = await setup();
+  try {
+    let mounted = 0;
+    const id = "official.plugin-manager", manager = sized(id);
+    manager.contributes.launcher = { label: { zh: "插件安装和管理", en: "Plugin manager" }, defaultPinned: false, searchTerms: ["安装"] };
+    const { host, posts } = bspWorkspace(ui, { tree: null, renderers: { [id]: () => { mounted++; } } });
+    await host.update([manager]);
+    assert.equal(ui.document.querySelector(".wb-plugin-install-link"), null);
+    assert.equal(ui.document.querySelector(".wb-bsp-dock-item"), null);
+    const menu = ui.document.querySelector(".wb-app-menu");
+    assert.equal(menu.hidden, true);
+    ui.document.querySelector(".app-launcher-button").click();
+    const entry = menu.querySelector('button[data-application-id="official.plugin-manager"][data-action="activate"]');
+    assert.equal(entry.getAttribute("href"), null);
+    assert.equal(entry.querySelector(".wb-launcher-app-name").textContent, "插件安装和管理");
+    assert.ok(entry.closest(".wb-launcher-row").querySelector(".wb-launcher-pin"));
+    assert.equal(menu.querySelector('input[type="search"]').hidden, true);
+    menu.querySelector(".wb-launcher-search-toggle").click();
+    const input = menu.querySelector('input[type="search"]');
+    input.value = "安装";
+    input.dispatchEvent(new ui.dom.window.Event("input", { bubbles: true }));
+    assert.equal(menu.querySelectorAll(".wb-launcher-result").length, 1);
+    ui.document.documentElement.dataset.language = "en";
+    ui.document.dispatchEvent(new ui.dom.window.CustomEvent("workbench:languagechange"));
+    assert.equal(menu.querySelector('[data-action="activate"] .wb-launcher-app-name').textContent, "Plugin manager");
+    assert.equal(posts.length, 0, "opening/searching the manager entry never changes the workspace");
+    menu.querySelector('[data-action="activate"]').click();
+    for (let i = 0; i < 5; i++) await settle();
+    assert.equal(posts.length, 1);
+    assert.equal(ui.document.querySelector(".wb-bsp-leaf").dataset.pluginId, id);
+    await emitPane(ui, ui.document.querySelector(".wb-plugin-instance"), 700, 500);
+    assert.equal(mounted, 1);
+    host.dispose();
+  } finally { ui.dom.window.close(); }
+});
+
 test("launcher focuses the most recent existing instance without writing layout", async () => {
   const ui = await setup();
   try {
@@ -1335,5 +1481,25 @@ test("refreshVisible refreshes mounted panels and dispose removes the chrome", a
     assert.equal(ui.document.querySelector(".wb-bsp-dock"), null);
     assert.equal(ui.document.querySelector(".wb-app-menu"), null);
     assert.ok(ui.resizeObservers.every((observer) => observer.disconnected || observer.target === undefined));
+  } finally { ui.dom.window.close(); }
+});
+
+test("catalogue changes dispose disabled panes and remount changed approved package content", async () => {
+  const ui = await setup();
+  try {
+    let mounts = 0, disposals = 0;
+    const first = sized("demo.a"); first.package = { contentHash: "first", permissions: [], trusted: true };
+    const { host } = bspWorkspace(ui, { tree: leaf("demo.a"), renderers: { "demo.a": (panel) => { mounts++; panel.dispose = () => { disposals++; }; } } });
+    await host.update([first]);
+    await emitPane(ui, ui.document.querySelector(".wb-plugin-instance"), 600, 400);
+    await host.update([first]);
+    assert.equal(mounts, 1); assert.equal(disposals, 0);
+    await host.update([{ ...first, package: { ...first.package, contentHash: "second" } }]);
+    await emitPane(ui, ui.document.querySelector(".wb-plugin-instance"), 600, 400);
+    assert.equal(mounts, 2); assert.equal(disposals, 1);
+    await host.update([{ ...first, state: "disabled" }]);
+    assert.equal(disposals, 2);
+    assert.equal(ui.document.querySelector(".wb-plugin-instance"), null);
+    host.dispose();
   } finally { ui.dom.window.close(); }
 });

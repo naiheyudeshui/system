@@ -1,4 +1,4 @@
-import { addConfigCardControls, confirmWorkbenchAction, openConfigManager } from "/3dworkbench/pluginConfigManager.mjs";
+import { addConfigCardControls, confirmWorkbenchAction, openConfigManager } from "/3dworkbench/pluginConfigManager.mjs?v=20261029-authoring1";
 import { renderTablePreview } from "/3dworkbench/tablePreview.mjs?v=20261019-history-toolbar";
 import { createTreeWorkspace, filterTree, indexTree } from "/3dworkbench/treeWorkspace.mjs?v=20261019-history-toolbar";
 import { renderMarkdown } from "./studyMarkdown.mjs?v=20261028-main-port1";
@@ -25,7 +25,7 @@ function requestId() {
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
 
-export async function renderNodeTreePanel(panel, { api, postApi, presentationMode }) {
+export async function renderNodeTreePanel(panel, { api, postApi, presentationMode, instanceId }) {
   const undoStack = [], redoStack = [], recorded = new Set();
   let historyBusy = false, pendingHistory = null;
   const recordEdit = (payload, result) => {
@@ -53,6 +53,7 @@ export async function renderNodeTreePanel(panel, { api, postApi, presentationMod
   const management = make("div", null, "metric-card study-plan-management"); management.hidden = true;
   const edit = make("button", "编辑已有方案", "metric-card metric-management-card");
   const add = make("button", "新增方案", "metric-card metric-management-card");
+  edit.dataset.helpAction = "manage-edit"; add.dataset.helpAction = "manage-add";
   management.append(edit, add);
   const scopeLabel = make("label", "学习视角", "study-review-field");
   const scopes = make("select"); scopes.setAttribute("aria-label", "学习视角"); scopes.append(new Option("全部节点", "")); scopeLabel.append(scopes);
@@ -76,6 +77,18 @@ export async function renderNodeTreePanel(panel, { api, postApi, presentationMod
   panel.replaceChildren(home, preview, viewer, message);
   let entries = [], selectedId = "", data = null, filtered = [], session = null, source = null, busy = false, previewState = null;
   let messageTimer = null, disposed = false, cancelDelete = null;
+  const paneId = instanceId || panel.closest("[data-instance-id]")?.dataset.instanceId;
+  let leasedConfig = "", leaseChain = Promise.resolve();
+  const updateLease = (id = selectedId) => {
+    if (!paneId) return;
+    const previous = leasedConfig; leasedConfig = id;
+    leaseChain = leaseChain.catch(() => {}).then(async () => {
+      const scope = { plugin_id: "study.node-tree", module_id: "trees", instance_id: paneId };
+      if (previous && previous !== id) await postApi("/api/plugin/config/lease", { ...scope, id: previous, release: true });
+      if (id) await postApi("/api/plugin/config/lease", { ...scope, id });
+    }).catch(error => { if (!disposed) setMessage(`数据使用登记失败：${error.message}`, "error"); });
+  };
+  const leaseTimer = paneId ? window.setInterval(() => updateLease(), 30000) : null;
   const setMessage = (text = "", state = "") => {
     if (disposed) return;
     if (messageTimer) { window.clearTimeout(messageTimer); messageTimer = null; }
@@ -289,7 +302,7 @@ export async function renderNodeTreePanel(panel, { api, postApi, presentationMod
     for (const entry of [{ id: "", name: "学习知识树" }, ...entries]) {
       const card = make("article", null, `metric-card study-plan-card${entry.id === selectedId ? " is-selected" : ""}`);
       const choose = make("button", entry.name, "study-plan-select"); choose.setAttribute("aria-pressed", String(entry.id === selectedId));
-      choose.addEventListener("click", () => { if (!busy) { selectedId = entry.id; renderCards(); } });
+      choose.addEventListener("click", () => { if (!busy) { selectedId = entry.id; updateLease(); renderCards(); } });
       card.append(choose, make("small", entry.id ? "SQL 数据源 · 自定义关系与详情模块" : "统一节点 · 章节与卡片均可筛选"));
       if (entry.id && !management.hidden) addConfigCardControls(card, {
         name: entry.name,
@@ -308,6 +321,7 @@ export async function renderNodeTreePanel(panel, { api, postApi, presentationMod
     const payload = await api("/api/plugin/configs?plugin_id=study.node-tree&module_id=trees");
     entries = payload.configs;
     if (!entries.some((entry) => entry.id === selectedId)) selectedId = "";
+    updateLease();
     renderCards();
   };
   const deletePlan = async (entry) => run(async () => {
@@ -808,7 +822,7 @@ export async function renderNodeTreePanel(panel, { api, postApi, presentationMod
   edit.addEventListener("click", () => { void openManager(selectedId); });
   add.addEventListener("click", () => { void openManager(""); });
   refresh.addEventListener("click", () => { void run(reload); });
-  panel.dispose = () => { disposed = true; ++editorGeneration; ++localMutationRevision; cancelDelete?.(); if (messageTimer) window.clearTimeout(messageTimer); session?.dispose(); rootPicker.dispose?.(); };
+  panel.dispose = () => { disposed = true; if (leaseTimer) window.clearInterval(leaseTimer); updateLease(""); ++editorGeneration; ++localMutationRevision; cancelDelete?.(); if (messageTimer) window.clearTimeout(messageTimer); session?.dispose(); rootPicker.dispose?.(); };
   await run(async () => {
     await reload();
     const payload = await api("/api/study/tree?model=knowledge");

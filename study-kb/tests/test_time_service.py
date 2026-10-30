@@ -12,6 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
 
 import study_time_service as service
 from db import connect
+from study_time_resources import ensure_plugin_resources, quote
 
 
 class StudyTimeServiceTest(unittest.TestCase):
@@ -41,6 +42,13 @@ class StudyTimeServiceTest(unittest.TestCase):
         reset = service.time_action({"kind": "stopwatch", "action": "reset"})
         self.assertIsNone(reset["current"])
         self.assertEqual(reset["laps"], [])
+        con = connect(self.database)
+        try:
+            resources = ensure_plugin_resources(con, "study.stopwatch")
+            for role in ("session", "lap"):
+                self.assertEqual(con.execute("SELECT count(*) FROM " + quote(resources[role])).fetchone()[0], 0)
+        finally:
+            con.close()
 
     def test_pomodoro_abandon_and_single_active_session(self):
         service.time_action({"kind": "pomodoro", "action": "start", "task_text": "阅读章节", "planned_seconds": 60})
@@ -49,6 +57,51 @@ class StudyTimeServiceTest(unittest.TestCase):
         abandoned = service.time_action({"kind": "pomodoro", "action": "abandon"})
         self.assertTrue(abandoned["history"][0]["abandoned"])
         self.assertIsNotNone(abandoned["history"][0]["ended_at"])
+
+    def test_stopwatch_refresh_reset_preserves_pomodoro_and_installation_bindings(self):
+        from plugin_units import lease
+
+        instant = datetime.fromisoformat("2026-10-30T12:00:00+08:00")
+        with patch.object(service, "_now", return_value=instant):
+            service.time_action({"kind": "pomodoro", "action": "start", "task_text": "历史番茄", "planned_seconds": 1500})
+            service.time_action({"kind": "pomodoro", "action": "complete"})
+            service.time_action({"kind": "pomodoro", "action": "start", "task_text": "当前番茄", "planned_seconds": 1500})
+            expected = service.time_state("pomodoro")
+            service.time_action({"kind": "stopwatch", "action": "start"})
+        with patch.object(service, "_now", return_value=instant + timedelta(seconds=12)):
+            service.time_action({"kind": "stopwatch", "action": "lap"})
+            paused = service.time_action({"kind": "stopwatch", "action": "pause"})
+        # Every state call opens a new database connection, matching page refresh.
+        with patch.object(service, "_now", return_value=instant + timedelta(seconds=120)):
+            restored = service.time_state("stopwatch")
+            self.assertEqual(restored["current"], paused["current"])
+            self.assertEqual(restored["laps"], paused["laps"])
+        con = connect(self.database)
+        stopwatch = ensure_plugin_resources(con, "study.stopwatch")
+        lease(con, stopwatch["unit_id"], "test-pane")
+        bindings_before = [tuple(row) for row in con.execute("SELECT * FROM wb_unit_binding WHERE unit_id=? ORDER BY resource_id", (stopwatch["unit_id"],))]
+        con.commit()
+        con.close()
+        with patch.object(service, "_now", return_value=instant):
+            self.assertEqual(service.time_action({"kind": "stopwatch", "action": "reset"})["history"], [])
+            self.assertIsNone(service.time_action({"kind": "stopwatch", "action": "reset"})["current"])
+            self.assertEqual(service.time_state("pomodoro"), expected)
+        con = connect(self.database)
+        try:
+            self.assertEqual(con.execute("SELECT count(*) FROM wb_unit_lease WHERE unit_id=?", (stopwatch["unit_id"],)).fetchone()[0], 0)
+            self.assertEqual([tuple(row) for row in con.execute("SELECT * FROM wb_unit_binding WHERE unit_id=? ORDER BY resource_id", (stopwatch["unit_id"],))], bindings_before)
+            self.assertEqual(con.execute("SELECT count(*) FROM " + quote(stopwatch["session"])).fetchone()[0], 0)
+            self.assertEqual(con.execute("SELECT count(*) FROM " + quote(stopwatch["lap"])).fetchone()[0], 0)
+        finally:
+            con.close()
+
+    def test_database_bootstrap_does_not_provision_either_timer(self):
+        con = connect(self.database)
+        try:
+            tables = [row[0] for row in con.execute("SELECT name FROM sqlite_master WHERE type='table'")]
+            self.assertFalse(any("pomodoro" in name or "stopwatch" in name or name == "study_time_session" for name in tables))
+        finally:
+            con.close()
 
     def test_pomodoro_default_task_history_edit_and_chart_aggregates(self):
         started = service.time_action({"kind": "pomodoro", "action": "start", "task_text": "", "planned_seconds": 60})
@@ -79,7 +132,8 @@ class StudyTimeServiceTest(unittest.TestCase):
     def test_today_hours_use_shanghai_time_and_split_across_hour_boundaries(self):
         now = datetime.fromisoformat("2026-09-30T12:00:00+08:00")
         con = connect(self.database)
-        con.execute("""INSERT INTO study_time_session(
+        session = quote(ensure_plugin_resources(con, "study.pomodoro")["session"])
+        con.execute(f"""INSERT INTO {session}(
             id,timer_kind,task_text,status,planned_seconds,elapsed_seconds,started_at,ended_at
         ) VALUES (?,?,?,?,?,?,?,?)""", (
             "time_split", "pomodoro", "跨小时复习", "completed", 1800, 1800,
@@ -103,13 +157,14 @@ class StudyTimeServiceTest(unittest.TestCase):
         """ISO +08:00 早上会话在 SQLite date(ts) 下会落到昨天，必须用 localtime。"""
         now = datetime.fromisoformat("2026-10-14T10:00:00+08:00")
         con = connect(self.database)
-        con.execute("""INSERT INTO study_time_session(
+        session = quote(ensure_plugin_resources(con, "study.pomodoro")["session"])
+        con.execute(f"""INSERT INTO {session}(
             id,timer_kind,task_text,status,planned_seconds,elapsed_seconds,started_at,ended_at
         ) VALUES (?,?,?,?,?,?,?,?)""", (
             "time_morning", "pomodoro", "早起复习", "completed", 1500, 1500,
             "2026-10-14T07:38:01+08:00", "2026-10-14T08:03:01+08:00",
         ))
-        con.execute("""INSERT INTO study_time_session(
+        con.execute(f"""INSERT INTO {session}(
             id,timer_kind,task_text,status,planned_seconds,elapsed_seconds,started_at,ended_at
         ) VALUES (?,?,?,?,?,?,?,?)""", (
             "time_noon", "pomodoro", "午间复习", "completed", 1500, 1500,

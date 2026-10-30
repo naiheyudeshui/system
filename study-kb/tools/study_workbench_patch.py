@@ -19,6 +19,42 @@ def install() -> None:
     register_study_layout()
     import plugin_host
     import workbench_server
+    from study_time_resources import ensure_plugin_resources
+    plugin_host.register_resource_provider("study.pomodoro",ensure_plugin_resources)
+    plugin_host.register_resource_provider("study.stopwatch",ensure_plugin_resources)
+    from study_library_sync import register_restore_validator
+    from plugin_units import reconcile,register_reconciler,set_metric_plugin
+    set_metric_plugin("study.metrics")
+    from study_review_units import register_session
+    def rebuild_sessions(con):
+        for row in con.execute("SELECT id,config_json FROM study_knowledge_review_session").fetchall():
+            import json
+            config=json.loads(row[1])
+            active=not config.get("ended_at") and con.execute("SELECT 1 FROM study_knowledge_review_session_item WHERE session_id=? AND result_json IS NULL",(row[0],)).fetchone() is not None
+            if active:
+                try:
+                    register_session(con,row[0],config,active=True)
+                    con.execute("DELETE FROM wb_dependency_issue WHERE owner=?",("session:"+row[0],))
+                except Exception as error:
+                    # Legacy malformed snapshots must remain visible as unknown
+                    # dependencies, rather than making restore lose their data.
+                    con.execute("INSERT OR REPLACE INTO wb_dependency_issue VALUES (?,?)",("session:"+row[0],str(error)))
+            else:
+                con.execute("DELETE FROM wb_dependency_issue WHERE owner=?",("session:"+row[0],))
+                from plugin_units import deactivate_unit
+                for unit in con.execute("SELECT id FROM wb_plugin_unit WHERE unit_type='review-session' AND legacy_ref=? AND status='active'",(row[0],)).fetchall():
+                    deactivate_unit(con,unit[0])
+    register_reconciler("study.review-sessions",rebuild_sessions)
+    def rebuild_registry(con):
+        if not con.in_transaction:
+            con.execute("BEGIN IMMEDIATE")
+        reconcile(con)
+    register_restore_validator(rebuild_registry)
+
+    def require_timer(kind):
+        plugin_id={"pomodoro":"study.pomodoro","stopwatch":"study.stopwatch"}.get(kind)
+        if not plugin_id or not any(p["id"]==plugin_id and p["state"]=="enabled" for p in plugin_host.list_plugins()["plugins"]):
+            raise ValueError("请先扫描并安装对应的计时插件")
 
     # Study shows the platform plugins (3dworkbench/plugins) and its own;
     # 3dStudio's product plugins (orders, QR labels, printing) are not part
@@ -62,6 +98,7 @@ def install() -> None:
                         from study_time_service import time_state
 
                         params = self._study_query()
+                        require_timer(str(params.get("kind") or ""))
                         self.send_json(time_state(str(params.get("kind") or "")))
                         return
                     if parsed.path.startswith("/api/study/review/session/"):
@@ -152,19 +189,27 @@ def install() -> None:
                         length = int(self.headers.get("Content-Length") or "0")
                         if length <= 0 or length > MAX_BYTES:
                             raise ValueError("库文件为空或超过 128MB")
-                        self.send_json(import_library(self.rfile.read(length)))
+                        self.send_json(import_library(self.rfile.read(length),reinstall_plugins=self._study_query().get("reinstall_plugins")=="1"))
                         return
                     if parsed.path == "/api/study/time":
                         from study_time_service import time_action
 
                         self.require_external_write_auth()
-                        self.send_json(time_action(self.read_json()))
+                        payload=self.read_json()
+                        require_timer(str(payload.get("kind") or ""))
+                        self.send_json(time_action(payload))
                         return
                     if parsed.path == "/api/study/time/project":
                         from study_time_service import project_action
 
                         self.require_external_write_auth()
+                        require_timer("pomodoro")
                         self.send_json(project_action(self.read_json()))
+                        return
+                    if parsed.path == "/api/study/review/session-end":
+                        from study_review_engine import end_review_session
+                        self.require_external_write_auth()
+                        self.send_json(end_review_session(self.read_json().get("session_id")))
                         return
                     if parsed.path in {"/api/study/knowledge/read", "/api/study/knowledge/save"}:
                         from study_knowledge_edit import read_knowledge_node, save_knowledge_node

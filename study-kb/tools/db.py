@@ -83,8 +83,8 @@ def ensure_schema(con: sqlite3.Connection) -> None:
     if PLATFORM.exists():
         con.executescript(PLATFORM.read_text(encoding="utf-8"))
     con.executescript((ROOT / "schema" / "knowledge_items.sql").read_text(encoding="utf-8"))
-    upgrade_study_time(con)
-    con.executescript(STUDY_TIME.read_text(encoding="utf-8"))
+    # Timer resources are installed independently by their plugins.  Existing
+    # shared timer tables remain untouched until that plugin is installed.
     upgrade_knowledge_tree_config(con)
     if VIEWS.exists():
         _ensure_view_script(con, VIEWS)
@@ -97,7 +97,9 @@ def ensure_schema(con: sqlite3.Connection) -> None:
 def connect(db_path: Path | None = None, *, migrate: bool = True) -> sqlite3.Connection:
     path = db_path or DB_PATH
     path.parent.mkdir(parents=True, exist_ok=True)
-    con = sqlite3.connect(path, timeout=8)
+    from study_storage_guard import connect_guarded
+
+    con = connect_guarded(path, timeout=8)
     con.row_factory = sqlite3.Row
     con.execute("PRAGMA foreign_keys = ON")
     con.execute("PRAGMA busy_timeout = 8000")

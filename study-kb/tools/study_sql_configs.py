@@ -9,10 +9,24 @@ import time
 from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parents[2] / "3dStudio" / "tools"))
+sys.path.append(str(Path(__file__).resolve().parents[2] / "3dStudio" / "3dworkbench" / "python"))
 
 from plugin_workspace import register_module
 from workbench_plugins import configs, query_rows, seed_configs, validate_result
 from study_kb import open_db
+from study_selection import normalize as normalize_policy, select as select_items, digest
+from study_learning import enrich
+from plugin_data_authoring import register_data_delete_guard
+
+
+def validate_content_deletion(con, table, collection_id, removed):
+    if not con.execute("SELECT 1 FROM sqlite_master WHERE name='study_knowledge_review_session_item'").fetchone():
+        return
+    for item in con.execute("SELECT i.item_json,s.config_json FROM study_knowledge_review_session_item i JOIN study_knowledge_review_session s ON s.id=i.session_id WHERE i.result_json IS NULL"):
+        active, config = json.loads(item[0]), json.loads(item[1])
+        if not config.get('ended_at') and (active.get('collection_id') == collection_id or config.get('scheduler', {}).get('table') == table) and active.get('key') in removed:
+            from workbench_plugins import ConflictError
+            raise ConflictError('这些记录仍在未完成的复习中，请先结束该轮')
 
 
 NODE_SUBTREE = """WITH RECURSIVE subtree(id) AS (
@@ -45,13 +59,26 @@ ORDER BY due_at, card_id""", "parameters": {"node_id": None}, "settings": {"sche
 TREE_DEFAULTS = [{"id": "study.tree.default.v1", "name": "全部章节", "sql": "SELECT * FROM v_study_knowledge_nodes ORDER BY sort_order,title,node_id"}]
 
 
+def validate_review_binding(con, payload, result):
+    """A syntactically valid projection must also be usable by the scheduler."""
+    from study_review_engine import validate_config
+    scheduler = payload["settings"].get("scheduler", {"kind": "fsrs"})
+    normalize_policy(payload['settings'].get('selectionPolicy'), legacy_random=payload['settings'].get('random', False), limit=payload['settings'].get('limit', 5000))
+    validate_config(con, {"view": "v_study_node_cards", "mode": "all", "mapping": {"key": "card_id", "front": "front", "back": "back"}, "scheduler": scheduler})
+    if scheduler["kind"] == "fsrs":
+        for row in result["rows"]:
+            if not con.execute("SELECT 1 FROM study_knowledge_item i JOIN study_knowledge_schedule s ON s.item_id=i.id WHERE i.legacy_card_id=? AND i.status='active'", (row["card_id"],)).fetchone():
+                raise ValueError("此表包含不属于学习库的卡片；请选择自定义表的到期时间列，或新建独立复习表")
+
+
 def register_study_modules():
+    register_data_delete_guard('study-review/v1', validate_content_deletion)
     for default in DEFAULTS:
         default["contract_version"] = "review-cards/v1"
     for default in TREE_DEFAULTS:
         default["contract_version"] = "tree-nodes/v1"
-    register_module("study.review-table", "reviews", contract="review-cards/v1", label="复习方案", defaults=DEFAULTS)
-    register_module("study.node-tree", "trees", contract="tree-nodes/v1", label="章节树方案", defaults=TREE_DEFAULTS)
+    register_module("study.review-table", "reviews", contract="review-cards/v1", label="复习方案", defaults=DEFAULTS, data_template="review-basic/v1", binding_validator=validate_review_binding)
+    register_module("study.node-tree", "trees", contract="tree-nodes/v1", label="章节树方案", defaults=TREE_DEFAULTS, data_template="tree-basic/v1")
 
 
 register_study_modules()
@@ -99,7 +126,7 @@ def sql_tree(key):
         if not saved:
             raise ValueError("树方案不存在或已删除")
         from tree_model import tree_result
-        result = tree_result(query_rows(con, saved["sql"], saved["parameters"], limit=5000, seconds=5), saved["settings"])
+        result = tree_result(query_rows(con, saved["sql"], saved["parameters"], limit=5000, seconds=5, byte_limit=16*1048576), saved["settings"])
         if saved["sql"] == TREE_DEFAULTS[0]["sql"] and not saved["parameters"] and not saved["settings"]:
             result["editing"] = {"provider": "study-knowledge/v1"}
         return result
@@ -136,42 +163,21 @@ def sql_review(payload, *, preview=False):
                 if not isinstance(selected_keys, list) or not selected_keys:
                     selected_keys = [item.get("key") for item in items if item.get("key") is not None]
 
-                def _schedule_rank(key):
-                    """未复习(reps=0)优先，再按到期时间升序；开新轮时不能沿用旧会话的固定顺序。"""
-                    if key is None:
-                        return (0, "", "")
-                    candidates = [key]
-                    if isinstance(key, str) and not key.startswith("card:"):
-                        candidates.append("card:" + key)
-                    elif isinstance(key, str) and key.startswith("card:") and key.count(":") == 1:
-                        candidates.append(key[5:])
-                    row = None
-                    for candidate in candidates:
-                        row = con.execute(
-                            "SELECT COALESCE(reps, 0) AS reps, due_at FROM study_knowledge_schedule WHERE item_id=?",
-                            (candidate,),
-                        ).fetchone()
-                        if row:
-                            break
-                    if not row:
-                        return (0, "", str(key))
-                    return (int(row["reps"] or 0), row["due_at"] or "", str(key))
-
-                ranked = []
-                for item in items:
-                    reps, due_at, tie = _schedule_rank(item.get("key"))
-                    if due_at:
-                        item = {**item, "due_at": due_at}
-                    ranked.append((reps, due_at, tie, item))
-                ranked.sort(key=lambda entry: (entry[0], entry[1], entry[2]))
-                items = [entry[3] for entry in ranked]
+                current_saved = read_config(con, configuration.get('config_id'))
+                settings = current_saved['settings']
+                policy = normalize_policy(settings.get('selectionPolicy') or (None if settings.get('random') else {'order': 'legacy_reps_due'}), legacy_random=settings.get('random', False), limit=settings.get('limit', 5000))
+                seed = uuid.uuid4().hex
+                scheduler = configuration['scheduler']
+                items = [updated for item in items if (updated := enrich(con, item, scheduler)) is not None]
+                items, _ = select_items(items, policy, seed)
 
                 configuration = {
                     **configuration,
                     "selected_keys": selected_keys,
                     "source_session_id": source_session_id.strip(),
-                    "reorder": "reps_then_due_at",
+                    "selectionPolicy": policy, "selection_seed": seed,
                 }
+                configuration.pop('ended_at', None)
                 session_id = uuid.uuid4().hex
                 con.execute(
                     "INSERT INTO study_knowledge_review_session (id,config_json) VALUES (?,?)",
@@ -182,6 +188,8 @@ def sql_review(payload, *, preview=False):
                     [(session_id, position, json.dumps(item, ensure_ascii=False)) for position, item in enumerate(items)],
                 )
                 state = session_state(con, session_id)
+                from study_review_units import register_session
+                register_session(con, session_id, configuration, active=bool(items))
                 con.commit()
                 return state
             except Exception:
@@ -197,6 +205,7 @@ def sql_review(payload, *, preview=False):
             configuration = validate_config(con, {
                 "view": "v_study_node_cards", "mode": "all", "mapping": {"key": "card_id", "front": "front", "back": "back"},
                 "limit": settings.get("limit", 5000), "scheduler": settings.get("scheduler", {"kind": "fsrs"}),
+                "selectionPolicy": settings.get('selectionPolicy'), "random": settings.get('random', False),
             })
             result = validate_result(query_rows(con, saved["sql"], parameters, limit=50000, seconds=5, byte_limit=16*1048576), "review-cards/v1")
             if result["truncated"]:
@@ -222,7 +231,8 @@ def sql_review(payload, *, preview=False):
                     raise ValueError("调度关联超过时间限制，请缩小 SQL 范围")
                 key = row["card_id"]
                 target_key = "card:" + key if scheduler["kind"] == "fsrs" else key
-                target = con.execute(f'SELECT {identifier(scheduler["key"])}, {identifier(scheduler["due"])} FROM {identifier(scheduler["table"])} WHERE {identifier(scheduler["key"])}=?', (target_key,)).fetchone()
+                due_expression = 'NULL' if scheduler['kind'] == 'learning' else identifier(scheduler['due'])
+                target = con.execute(f'SELECT {identifier(scheduler["key"])}, {due_expression} FROM {identifier(scheduler["table"])} WHERE {identifier(scheduler["key"])}=?', (target_key,)).fetchone()
                 if not target or (scheduler["kind"] == "fsrs" and not con.execute("SELECT 1 FROM study_knowledge_item WHERE legacy_card_id=? AND status='active'", (key,)).fetchone()):
                     missing += 1
                     continue
@@ -231,36 +241,46 @@ def sql_review(payload, *, preview=False):
                     duplicates += 1
                     continue
                 seen.add(key)
-                preview_row = {**row, "card_id": key, "due_at": target[1]}
+                item = enrich(con, {**row, 'key': key, 'front': row['question'], 'back': row['answer'], 'due_at': target[1]}, scheduler)
+                if item is None:
+                    continue
+                preview_row = {**item, "card_id": key}
                 if node_paths and "node_path" not in preview_row:
                     preview_row["node_path"] = node_paths.get(row.get("node_id"), "")
                 rows.append(preview_row)
-                items.append({"key": key, "front": row["question"], "back": row["answer"], "hint": row.get("hint"), "due_at": target[1]})
-            import hashlib
-            preview_hash = hashlib.sha256(json.dumps({"revision": saved["revision"], "parameters": parameters, "rows": rows}, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
-            matched = len(items)
+                items.append(item)
+            policy = configuration['selectionPolicy']
+            # Stable between preview/recheck, fresh only on explicit reshuffle/new round.
+            seed = payload.get('selection_seed') or digest({'config': saved['id'], 'revision': saved['revision'], 'parameters': parameters})[:24]
+            if not isinstance(seed, str) or len(seed) > 128:
+                raise ValueError('无效的随机种子')
+            preview_hash = digest({"revision": saved["revision"], "parameters": parameters, "rows": rows, 'policy': policy, 'seed': seed})
             selected_keys = payload.get("selected_keys")
             if selected_keys is not None:
                 if not isinstance(selected_keys, list) or not selected_keys or any(not isinstance(key, (str, int, float)) or isinstance(key, bool) for key in selected_keys):
                     raise ValueError("请选择至少一张预览卡片")
                 if payload.get("preview_hash") != preview_hash:
                     raise ValueError("方案或候选数据已变化，请重新预览后开始")
-                if len(selected_keys) != len(set(selected_keys)) or not set(selected_keys).issubset(seen):
+                if len(selected_keys) != len(set(selected_keys)) or not set(selected_keys).issubset({item['key'] for item in items}):
                     raise ValueError("选择的卡片不属于当前预览或存在重复")
                 selected_set = set(selected_keys)
                 items = [item for item in items if item["key"] in selected_set]
-            if settings.get("random"):
-                import random
-                random.SystemRandom().shuffle(items)
-            items = items[:configuration["limit"]]
+            # Recheck selected IDs before ordering/limit; filters apply to the full SQL result.
+            items, matched = select_items(items, policy, seed)
+            all_ordered, _ = select_items([{**item} for item in rows], {**policy, 'limit': 5000}, seed)
+            if len(rows) > 5000:
+                all_ordered, _ = select_items(rows, {**policy, 'limit': len(rows)}, seed)
+            preview_rows = [{k: v for k, v in row.items() if k not in {'front', 'back', 'key'}} for row in all_ordered]
             if preview:
                 con.commit()
-                return {"matched": matched, "selected": len(items), "duplicates": duplicates, "missing_schedule": missing, "sample": items[:5], "rows": rows, "columns": list(dict.fromkeys([*result["columns"], "due_at", *(["node_path"] if node_paths else [])])), "limit": configuration["limit"], "preview_hash": preview_hash}
-            configuration.update({"source": "sql", "config_id": saved["id"], "config_revision": saved["revision"], "view": saved["name"], "sql": saved["sql"], "parameters": parameters, "selected_keys": selected_keys, "preview_hash": payload.get("preview_hash")})
+                return {"matched": matched, "selected": len(items), "duplicates": duplicates, "missing_schedule": missing, "sample": items[:5], "rows": preview_rows, "columns": list(dict.fromkeys([*result["columns"], "due_at", 'learning_enabled', 'mastery_score', 'review_count', 'lapse_count', 'created_at', *(["node_path"] if node_paths else [])])), "limit": policy['limit'], "preview_hash": preview_hash, 'selection_seed': seed, 'selectionPolicy': policy}
+            configuration.update({"source": "sql", "config_id": saved["id"], "config_revision": saved["revision"], "view": saved["name"], "sql": saved["sql"], "parameters": parameters, "selected_keys": selected_keys, "preview_hash": payload.get("preview_hash"), 'selection_seed': seed})
             session_id = uuid.uuid4().hex
             con.execute("INSERT INTO study_knowledge_review_session (id,config_json) VALUES (?,?)", (session_id, json.dumps(configuration)))
             con.executemany("INSERT INTO study_knowledge_review_session_item (session_id,position,item_json) VALUES (?,?,?)", [(session_id, position, json.dumps(item)) for position, item in enumerate(items)])
             state = session_state(con, session_id)
+            from study_review_units import register_session
+            register_session(con, session_id, configuration, active=bool(items))
             con.commit()
             return state
         except Exception:

@@ -10,6 +10,8 @@ from datetime import datetime, timedelta
 from typing import Any
 
 from study_kb import grade_card, open_db
+from study_selection import normalize as normalize_policy, select as select_items, timestamp
+from study_learning import enrich
 
 
 def _resolve_fsrs_card_id(con: sqlite3.Connection, key: str) -> str | None:
@@ -139,6 +141,16 @@ def validate_config(con: sqlite3.Connection, config: dict) -> dict:
         raise ValueError("Invalid scheduler")
     if scheduler.get("kind") == "fsrs":
         config["scheduler"] = {"kind": "fsrs", "table": "study_knowledge_schedule", "key": "item_id", "due": "due_at"}
+    elif scheduler.get("kind") == "learning":
+        table, key = scheduler.get("table"), scheduler.get("key")
+        record = con.execute("SELECT id FROM workbench_plugin_collection WHERE table_name=?", (table,)).fetchone() if con.execute("SELECT 1 FROM sqlite_master WHERE name='workbench_plugin_collection'").fetchone() else None
+        info = columns(con, table, "table")
+        if not record or record['id'] != scheduler.get('collection_id') or key not in [c['name'] for c in info if c['pk']]:
+            raise ValueError("请选择已登记的通用内容集合及其主键")
+        days = scheduler.get("days", [1, 3, 7, 14])
+        if not isinstance(days, list) or len(days) != 4 or any(type(day) not in (int, float) or not 0 < day <= 36500 for day in days):
+            raise ValueError("Four positive rating intervals (days) are required")
+        config["scheduler"] = {**scheduler, "days": days, "state_table": "workbench_content_learning"}
     elif scheduler.get("kind") == "interval":
         target = next((item for item in writable_targets(con) if item["table"] == scheduler.get("table")), None)
         if not target or scheduler.get("key") not in target["keys"] or scheduler.get("due") not in target["time_columns"]:
@@ -149,6 +161,7 @@ def validate_config(con: sqlite3.Connection, config: dict) -> dict:
         config["scheduler"] = scheduler
     else:
         raise ValueError("Unknown scheduler")
+    config['selectionPolicy'] = normalize_policy(config.get('selectionPolicy'), legacy_random=config.get('random', False), limit=config['limit'])
     return config
 
 
@@ -161,7 +174,7 @@ def collection(con: sqlite3.Connection, config: dict) -> tuple[list[dict], int]:
     params: list[Any] = []
     if scheduler["kind"] == "fsrs":
         conditions.append(f"EXISTS (SELECT 1 FROM study_knowledge_item c WHERE c.legacy_card_id={source_key} AND c.status='active')")
-    if config["mode"] == "due":
+    if config["mode"] == "due" and scheduler['kind'] != 'learning':
         conditions.append(f"datetime(t.{identifier(scheduler['due'])}) <= datetime('now', 'localtime')")
     if config.get("root_id"):
         conditions.append(f'''v.{identifier(mapping['node'])} IN (
@@ -189,7 +202,7 @@ def collection(con: sqlite3.Connection, config: dict) -> tuple[list[dict], int]:
     select[0] = f"{target_key} AS key"
     if config["view"] in {"v_study_node_cards", "v_study_due_cards"} and mapping["back"] == "back":
         select[2] = "COALESCE(NULLIF(v.back, ''), v.answer_md) AS back"
-    due_expression = "t.due_at" if scheduler["kind"] == "fsrs" else f't.{identifier(scheduler["due"])}'
+    due_expression = "t.due_at" if scheduler["kind"] == "fsrs" else "NULL" if scheduler['kind'] == 'learning' else f't.{identifier(scheduler["due"])}'
     select.append(f'{due_expression} AS due_at')
     join_condition = f"t.item_id='card:'||{source_key}" if scheduler["kind"] == "fsrs" else f"{target_key}={source_key}"
     query = f'''SELECT {', '.join(select)} FROM {identifier(config['view'])} v
@@ -203,13 +216,16 @@ def collection(con: sqlite3.Connection, config: dict) -> tuple[list[dict], int]:
         if key in seen:
             continue
         seen.add(key)
+        item = enrich(con, item, scheduler)
+        if item is None:
+            continue
+        if config['mode'] == 'due' and scheduler['kind'] == 'learning' and (timestamp(item.get('due_at')) or 0) > datetime.now().astimezone().timestamp():
+            continue
         items.append(item)
         if len(items) > 50000:
             raise ValueError("Too many matches; narrow the filters (maximum 50000)")
-    total = len(items)
-    if config.get("random"):
-        random.SystemRandom().shuffle(items)
-    return items[:config["limit"]], total
+    seed = config.setdefault('selection_seed', uuid.uuid4().hex if config['selectionPolicy']['order'] == 'random' else 'source')
+    return select_items(items, config['selectionPolicy'], seed)
 
 
 def prepare_review(config: dict, *, preview: bool = False) -> dict:
@@ -219,11 +235,13 @@ def prepare_review(config: dict, *, preview: bool = False) -> dict:
         config = validate_config(con, config)
         items, total = collection(con, config)
         if preview:
-            return {"matched": total, "selected": len(items), "sample": items[:5]}
+            return {"matched": total, "selected": len(items), "sample": items[:5], "selection_seed": config['selection_seed'], "selectionPolicy": config['selectionPolicy']}
         session_id = uuid.uuid4().hex
         con.execute("INSERT INTO study_knowledge_review_session (id, config_json) VALUES (?, ?)", (session_id, json.dumps(config)))
         con.executemany("INSERT INTO study_knowledge_review_session_item (session_id, position, item_json) VALUES (?, ?, ?)",
                         [(session_id, position, json.dumps(item)) for position, item in enumerate(items)])
+        from study_review_units import register_session
+        register_session(con, session_id, config, active=bool(items))
         con.commit()
         return session_state(con, session_id)
     finally:
@@ -248,6 +266,23 @@ def get_review_session(session_id: str) -> dict:
         con.close()
 
 
+def end_review_session(session_id: str) -> dict:
+    """Archive an unfinished round, retaining its snapshot and real grades."""
+    con = open_db()
+    try:
+        con.execute('BEGIN IMMEDIATE')
+        state = session_state(con, session_id)
+        config = state['config']
+        config.setdefault('ended_at', datetime.now().astimezone().isoformat())
+        con.execute('UPDATE study_knowledge_review_session SET config_json=? WHERE id=?', (json.dumps(config), session_id))
+        from study_review_units import register_session
+        register_session(con, session_id, config, active=False)
+        con.commit()
+        return {**state, 'config': config, 'ended': True}
+    finally:
+        con.close()
+
+
 def grade_session(*, session_id: str, position: int, rating: int, elapsed_ms: int | None = None) -> dict:
     if type(rating) is not int or rating not in (1, 2, 3, 4) or type(position) is not int or position < 0:
         raise ValueError("Valid position and rating (1–4) are required")
@@ -262,6 +297,8 @@ def grade_session(*, session_id: str, position: int, rating: int, elapsed_ms: in
             raise ValueError("Unknown session item")
         if row["result_json"]:
             return {"graded": json.loads(row["result_json"]), "next": state, "replayed": True}
+        if state['config'].get('ended_at'):
+            raise ValueError('该轮已结束归档，请重新预览并开始新一轮')
         if state["position"] != position:
             raise ValueError("Only the current item may be graded")
         item = json.loads(row["item_json"])
@@ -271,6 +308,14 @@ def grade_session(*, session_id: str, position: int, rating: int, elapsed_ms: in
             if not legacy_id:
                 raise ValueError("Card was removed or suspended; start a new collection")
             result = grade_card(con, card_id=legacy_id, rating=rating, elapsed_ms=elapsed_ms)
+        elif scheduler['kind'] == 'learning':
+            from plugin_learning import grade
+            record = con.execute(f'SELECT 1 FROM {identifier(scheduler["table"])} WHERE {identifier(scheduler["key"])}=?', (item['key'],)).fetchone()
+            if not record:
+                raise ValueError("Scheduling target no longer exists")
+            due_at = (datetime.now().astimezone() + timedelta(days=scheduler['days'][rating - 1])).isoformat()
+            facts = grade(con, scheduler['collection_id'], item['key'], rating, due_at)
+            result = {"key": item['key'], "due_at": due_at, "rating": rating, "elapsed_ms": elapsed_ms, "mastery_score": facts['mastery_score']}
         else:
             target = next((entry for entry in writable_targets(con) if entry["table"] == scheduler["table"]), None)
             if not target or scheduler["key"] not in target["keys"] or scheduler["due"] not in target["time_columns"]:
@@ -280,8 +325,12 @@ def grade_session(*, session_id: str, position: int, rating: int, elapsed_ms: in
             if cursor.rowcount != 1:
                 raise ValueError("Scheduling target no longer exists")
             result = {"key": item["key"], "due_at": due_at, "rating": rating, "elapsed_ms": elapsed_ms}
+            from plugin_learning import grade
+            grade(con, 'legacy:' + scheduler['table'], item['key'], rating, None)
         con.execute("UPDATE study_knowledge_review_session_item SET result_json=? WHERE session_id=? AND position=?", (json.dumps(result), session_id, position))
         next_state = session_state(con, session_id)
+        from study_review_units import register_session
+        register_session(con, session_id, state['config'], active=next_state['card'] is not None)
         con.commit()
         return {"graded": result, "next": next_state}
     except Exception:

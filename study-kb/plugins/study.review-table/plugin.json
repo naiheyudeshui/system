@@ -9,6 +9,7 @@
     "onStartupFinished"
   ],
   "contributes": {
+    "unitTypes": [{"id":"reviews-plan","label":"复习方案","dataInputs":[{"id":"source","contract":"review-cards/v1","access":"read"}]},{"id":"review-session","label":"复习轮次","dataInputs":[{"id":"content","contract":"review-cards/v1","access":"read"},{"id":"learning","contract":"learning-state/v1","access":"read-write"}]}],
     "sqlModules": [
       {
         "id": "reviews",

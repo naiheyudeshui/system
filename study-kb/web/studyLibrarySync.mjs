@@ -4,7 +4,7 @@ export function renderLibrarySyncPanel(panel) {
   heading.textContent = "库同步";
   const intro = document.createElement("p");
   intro.className = "action-hint";
-  intro.textContent = "导出或替换的是当前打开的这一台服务里的学习库。连手机地址就是手机库，连电脑本机就是电脑库。导入会覆盖卡片、复习记录和番茄钟，替换前会先自动备份当前库。";
+  intro.textContent = "导出或恢复当前服务的完整数据库，包含资料、复习记录、计时状态和插件数据绑定。插件安装包另行管理。恢复前会校验备份并自动备份当前库；恢复期间暂停数据库访问。请先结束其他旧版本服务对同一数据库的访问。";
   const actions = document.createElement("div");
   actions.className = "action-group";
   const exportButton = document.createElement("button");
@@ -18,6 +18,12 @@ export function renderLibrarySyncPanel(panel) {
   file.type = "file";
   file.accept = ".sqlite,application/vnd.sqlite3,application/x-sqlite3";
   file.hidden = true;
+  const restoreOptions = document.createElement("label");
+  restoreOptions.className = "action-hint";
+  const reinstall = document.createElement("input");
+  reinstall.type = "checkbox";
+  reinstall.setAttribute("aria-label", "导入资料和方案，插件重新安装");
+  restoreOptions.append(reinstall, document.createTextNode("导入资料和方案，插件重新安装（保留历史与绑定配置，清除插件启用和授权状态）"));
   const message = document.createElement("p");
   message.className = "action-hint";
   message.setAttribute("role", "status");
@@ -25,6 +31,7 @@ export function renderLibrarySyncPanel(panel) {
   const setBusy = (busy) => {
     exportButton.disabled = busy;
     importButton.disabled = busy;
+    reinstall.disabled = busy;
   };
   exportButton.addEventListener("click", async () => {
     setBusy(true);
@@ -50,12 +57,14 @@ export function renderLibrarySyncPanel(panel) {
     const chosen = file.files && file.files[0];
     file.value = "";
     if (!chosen) return;
-    const confirmed = window.confirm(`将用“${chosen.name}”替换当前学习库。当前的卡片、复习记录和番茄钟会被覆盖。替换前会先自动备份当前库。`);
+    const reinstallPlugins = reinstall.checked;
+    const mode = reinstallPlugins ? "插件将停用并清除授权，请通过插件管理逐个扫描安装。" : "保留备份中的插件启用及授权状态。";
+    const confirmed = window.confirm(`将用“${chosen.name}”恢复当前服务的全部数据库内容，包括资料、复习记录、计时状态和插件数据绑定。${mode}当前库将先自动备份。插件安装包不会随数据库文件安装。是否继续？`);
     if (!confirmed) return;
     setBusy(true);
-    message.textContent = "正在替换当前库…";
+    message.textContent = "正在校验备份并等待数据库空闲，随后恢复当前库…";
     try {
-      const response = await fetch("/api/study/library/import", { method: "POST", body: chosen });
+      const response = await fetch("/api/study/library/import" + (reinstallPlugins ? "?reinstall_plugins=1" : ""), { method: "POST", body: chosen });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload.detail || "导入失败");
       message.textContent = `已替换当前库，原库备份为 ${payload.backup || ""}。正在刷新…`;
@@ -66,7 +75,7 @@ export function renderLibrarySyncPanel(panel) {
     }
   });
   actions.append(exportButton, importButton, file);
-  panel.replaceChildren(heading, intro, actions, message);
+  panel.replaceChildren(heading, intro, restoreOptions, actions, message);
 }
 
 function filenameFrom(header) {

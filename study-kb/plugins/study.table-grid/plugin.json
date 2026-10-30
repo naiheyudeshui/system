@@ -9,6 +9,7 @@
     "onStartupFinished"
   ],
   "contributes": {
+    "unitTypes": [{"id":"table-view","label":"表格视图","dataInputs":[{"id":"source","contract":"workbench.table/ref","access":"read"}]}],
     "transfers": {
       "accepts": [
         {

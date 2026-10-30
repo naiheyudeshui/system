@@ -277,8 +277,8 @@ button.danger { background: var(--danger); color: var(--panel); }
 .study-review-preview { white-space: pre-wrap; overflow-wrap: anywhere; }
 
 .study-review-header-actions { align-items:center; margin-left:auto; }
-.study-plan-grid > .study-plan-management { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); align-content:stretch; gap:0; padding:0; overflow:hidden; background:color-mix(in srgb,var(--accent) 6%,var(--panel)); }
-.study-plan-management > .metric-management-card { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; min-width:0; min-height:112px; padding:16px 10px; border:0; border-radius:0; background:transparent; text-align:center; }
+.study-plan-grid > .study-plan-management { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); grid-template-rows:minmax(112px,1fr); align-content:stretch; align-items:stretch; gap:0; padding:0; overflow:hidden; background:color-mix(in srgb,var(--accent) 6%,var(--panel)); }
+.study-plan-management > .metric-management-card { display:flex; flex-direction:column; align-items:center; justify-content:center; align-self:stretch; height:auto; gap:10px; min-width:0; min-height:112px; padding:16px 10px; border:0; border-radius:0; background:transparent; text-align:center; }
 .study-plan-management > .metric-management-card + .metric-management-card { border-left:1px solid var(--border); }
 .study-plan-management > .metric-management-card b { font-size:24px; line-height:1; color:var(--accent); }
 .study-plan-management > .metric-management-card span { font-size:14px; line-height:1.5; font-weight:650; }

@@ -9,6 +9,7 @@
     "onStartupFinished"
   ],
   "contributes": {
+    "unitTypes": [{"id":"trees-plan","label":"章节树方案","dataInputs":[{"id":"source","contract":"tree-nodes/v1","access":"read"}]}],
     "sqlModules": [
       {
         "id": "trees",

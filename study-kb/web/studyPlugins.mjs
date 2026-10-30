@@ -4,9 +4,10 @@ import { renderMetricsPanel } from "/3dworkbench/components/metricsPanel.mjs?v=2
 import { renderTablePrintPanel } from "/3dworkbench/components/tablePrintPanel.mjs?v=20261028-bsp1";
 import { renderSqliteTriggerPanel } from "/3dworkbench/sqliteTriggerPanel.mjs?v=20261028-bsp1";
 import { renderLibrarySyncPanel } from "./studyLibrarySync.mjs?v=20261005-library";
-import { renderReviewTablePanel } from "./studySqlReview.mjs?v=20261028-main-port1";
+import { renderReviewTablePanel } from "./studySqlReview.mjs?v=20261030-collections";
 import { renderTimerPanel } from "./studyTimers.mjs?v=20261028-main-port1";
-import { renderNodeTreePanel } from "./studyTreeWorkspace.mjs?v=20261028-main-port1";
+import { renderNodeTreePanel } from "./studyTreeWorkspace.mjs?v=20261030-collections";
+import { renderPluginManager } from "/api/plugin/resource/official.plugin-manager/main.mjs";
 
 // Shown until the server has stored metric definitions.
 const STUDY_METRICS = [
@@ -23,6 +24,7 @@ const STUDY_METRICS = [
  */
 export function createStudyRenderers(services) {
   return {
+    "official.plugin-manager": renderPluginManager,
     "study.table-catalog": (panel, context) => renderTableCatalog(panel, {
       ...context,
       // Keeps the favourites saved before the catalog became a shared component.

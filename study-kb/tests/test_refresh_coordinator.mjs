@@ -47,3 +47,19 @@ test("host failure releases the single-flight lock and can be retried", async ()
   assert.equal(coordinator.running, false);
   assert.equal(await coordinator.run(), 2);
 });
+
+test("plugin mutations arriving during refresh coalesce into a subsequent catalogue read", async () => {
+  let release, reads = 0;
+  const calls = [], gate = new Promise(resolve => { release = resolve; });
+  const coordinator = createRefreshCoordinator({
+    refreshHost: async ({ reason }) => { calls.push(reason); if (++reads === 1) await gate; return reads; },
+  });
+  const first = coordinator.run({ reason: "global" });
+  await Promise.resolve();
+  assert.equal(coordinator.run({ reason: "plugins" }), first);
+  assert.equal(coordinator.run({ reason: "plugins" }), first);
+  release();
+  assert.equal(await first, 2);
+  assert.deepEqual(calls, ["global", "plugins"]);
+  assert.equal(coordinator.running, false);
+});

@@ -9,6 +9,7 @@
     "onStartupFinished"
   ],
   "contributes": {
+    "unitTypes": [{"id":"metric-definition","label":"指标定义","dataInputs":[{"id":"source","contract":"scalar-number/v1","access":"read"}]}],
     "presentations": [
       {
         "id": "strip",

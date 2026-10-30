@@ -33,7 +33,8 @@ def _install_db_shim() -> None:
     sys.path.insert(0, str(STUDY_TOOLS))
     import db as study_db  # noqa: WPS433
 
-    study_db.connect(STUDY_DB)
+    study_db.DB_PATH = STUDY_DB
+    study_db.connect(STUDY_DB).close()
 
     shim = types.ModuleType("db")
     shim.DB_PATH = STUDY_DB
@@ -54,46 +55,21 @@ def _install_workbench_study_shim() -> None:
     install()
 
 
-def _free_port(port: int) -> None:
-    if os.name != "nt":
-        return
-    import subprocess
-
-    result = subprocess.run(
-        ["netstat", "-ano"],
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="ignore",
-        check=False,
-    )
-    suffix = f":{port}"
-    for line in result.stdout.splitlines():
-        if "LISTENING" not in line or suffix not in line:
-            continue
-        parts = line.split()
-        if len(parts) < 5:
-            continue
-        pid = parts[-1]
-        if pid.isdigit() and int(pid) not in {0, os.getpid()}:
-            subprocess.run(
-                ["taskkill", "/F", "/PID", pid],
-                capture_output=True,
-                check=False,
-            )
-
-
 def main(argv: list[str] | None = None) -> int:
+    global STUDY_DB
     parser = argparse.ArgumentParser(description="Open Study Knowledge Base")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8033)
     parser.add_argument("--no-open", action="store_true")
+    parser.add_argument("--db", type=Path, default=STUDY_DB,
+                        help="explicit SQLite file (use an isolated copy for acceptance tests)")
     parser.add_argument(
         "--trusted-lan-write",
         action="store_true",
         help="allow LAN clients full write access without authentication",
     )
     args = parser.parse_args(argv)
+    STUDY_DB = args.db.expanduser().resolve()
 
     if not STUDIO_ROOT.exists():
         print(f"未找到 3dStudio 软链接：{STUDIO_ROOT}", file=sys.stderr)
@@ -125,14 +101,13 @@ def main(argv: list[str] | None = None) -> int:
     workbench_server.command_catalog = workbench_api.command_catalog
     serve = workbench_server.serve
 
-    _free_port(args.port)
-
     url = f"http://127.0.0.1:{args.port}"
     lan_ip = _lan_ipv4() if args.host in {"0.0.0.0", "::"} else None
     lan_url = f"http://{lan_ip}:{args.port}" if lan_ip else None
     if not args.no_open:
         webbrowser.open(url)
     print("正在打开 Study Knowledge Base（共享 3dStudio 宿主）")
+    print(f"数据库：{STUDY_DB}")
     print()
     print(f"本机访问：{url}")
     print(f"局域网访问：{lan_url or '未检测到可用的局域网 IPv4 地址'}")

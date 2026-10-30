@@ -14,6 +14,7 @@ class StudyTimeHttpTests(unittest.TestCase):
             import json
             import sys
             import threading
+            import urllib.error
             import urllib.request
             from http.server import ThreadingHTTPServer
             from pathlib import Path
@@ -38,13 +39,28 @@ class StudyTimeHttpTests(unittest.TestCase):
             thread.start()
             base = 'http://127.0.0.1:' + str(server.server_address[1])
 
-            def request(route, payload=None):
+            def request(route, payload=None, expected=200):
                 data = json.dumps(payload).encode() if payload is not None else None
                 req = urllib.request.Request(base + route, data=data, headers={'Content-Type': 'application/json'})
-                with urllib.request.urlopen(req, timeout=10) as response:
+                try:
+                    response = urllib.request.urlopen(req, timeout=10)
+                except urllib.error.HTTPError as error:
+                    response = error
+                with response:
+                    assert response.status == expected, (response.status, response.read())
                     return json.loads(response.read())
 
             try:
+                candidates = request('/api/plugin/scan', {})['plugins']
+                needed = {'study.table-catalog', 'study.table-grid', 'study.metrics',
+                          'study.pomodoro', 'study.stopwatch'}
+                assert needed <= {item['id'] for item in candidates}
+                assert all(item['state'] == 'disabled' for item in candidates if item['id'] in needed)
+                request('/api/study/time?kind=stopwatch', expected=400)
+                for candidate in candidates:
+                    if candidate['id'] in needed:
+                        installed = request('/api/plugin/install', {'plugin_id': candidate['id']})
+                        assert installed['installed'] and installed['state'] == 'enabled'
                 plugins = {item['id']: item for item in request('/api/plugins')['plugins']}
                 layout = request('/api/plugin/layout')
                 # A fresh workspace starts with Study's default BSP tree;

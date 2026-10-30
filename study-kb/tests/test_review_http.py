@@ -63,6 +63,17 @@ class ReviewHttpTests(unittest.TestCase):
                     assert response.status == expected, (response.status, response.read())
                     return json.loads(response.read())
             try:
+                # Discovery is deliberately separate from installation. This
+                # fixture explicitly installs each plugin it exercises before
+                # asserting the existing layout/configuration behavior.
+                candidates = request('/api/plugin/scan', {})['plugins']
+                needed = {'study.table-catalog', 'study.table-grid', 'study.review-table',
+                          'study.node-tree', 'official.sqlite-triggers'}
+                assert needed <= {item['id'] for item in candidates}
+                for candidate in candidates:
+                    if candidate['id'] in needed:
+                        installed = request('/api/plugin/install', {'plugin_id': candidate['id']})
+                        assert installed['installed'] and installed['state'] == 'enabled'
                 catalog = request('/api/study/review/catalog')
                 assert any(view['name'] == 'v_study_node_cards' for view in catalog['views'])
                 layout = request('/api/plugin/layout')
@@ -191,6 +202,48 @@ class ReviewHttpTests(unittest.TestCase):
                 created = request('/api/study/knowledge/save', {'node_id': knowledge_key, 'version': edited['version'], 'request_id': 'http-create-topic', 'operation': 'child', 'title': 'New child', 'content_md': ''})
                 assert created['node']['parent_id'] == knowledge_key
                 assert any(row['title'] == 'New child' for row in request('/api/study/tree?model=knowledge')['rows'])
+                # Visual authoring runs only in this temporary test library.
+                tree_scope = {'plugin_id': 'study.node-tree', 'module_id': 'trees'}
+                tree_definition = request('/api/plugin/configs?plugin_id=study.node-tree&module_id=trees')['definition']
+                assert tree_definition['dataAuthoring']['id'] == 'tree-basic/v1'
+                own_tree = {**tree_scope, 'name': 'Owned HTTP tree', 'request_id': 'http-create-own-tree-001', 'rows': [
+                    {'node_id': 'r', 'parent_id': '', 'title': 'Own root', 'content_md': 'Own text'},
+                    {'node_id': 'c', 'parent_id': 'r', 'title': 'Own child', 'content_md': ''}]}
+                request('/api/plugin/config/create-data', own_tree, expected=400, external=True)
+                invalid_tree = {**own_tree, 'rows': [{'node_id': 'r', 'parent_id': 'r', 'title': 'Cycle'}]}
+                request('/api/plugin/config/validate-data', invalid_tree, expected=400)
+                created_tree = request('/api/plugin/config/create-data', own_tree)
+                assert request('/api/plugin/config/create-data', own_tree) == created_tree
+                assert request('/api/study/tree?config_id=' + created_tree['config']['id'])['node_count'] == 2
+                own_rows = request('/api/plugin/config/read-data', {**tree_scope, 'collection_id': created_tree['collection_id']})
+                assert own_rows['revision'] == 1 and len(own_rows['rows']) == 2
+                request('/api/plugin/config/read-data', {'plugin_id': 'study.review-table', 'module_id': 'reviews', 'collection_id': created_tree['collection_id']}, expected=400)
+                own_source = created_tree['config']['settings']['dataSource']['table']
+                # The new common content table stores id/title/content_md;
+                # node_id remains the tree contract's projected field name.
+                bound = request('/api/plugin/config/bind', {**tree_scope, 'name': 'Bound existing own table', 'source': {'name': own_source, 'mapping': {'node_id': 'id', 'parent_id': 'parent_id', 'title': 'title', 'content_md': 'content_md'}}})
+                assert bound['preview']['validation']['valid']
+                request('/api/plugin/config/save', bound['config'])
+
+                review_scope = {'plugin_id': 'study.review-table', 'module_id': 'reviews'}
+                own_cards = {**review_scope, 'name': 'Owned HTTP cards', 'request_id': 'http-create-own-cards-001', 'rows': [{'card_id': 'custom-c1', 'question': 'Own question', 'answer': 'Own answer', 'hint': ''}]}
+                created_cards = request('/api/plugin/config/create-data', own_cards)
+                assert created_cards['config']['settings']['scheduler']['kind'] == 'learning'
+                assert created_cards['config']['settings']['scheduler']['state_table'] == 'workbench_content_learning'
+                own_preview = request('/api/study/review/sql-preview', {'config_id': created_cards['config']['id']})
+                assert own_preview['matched'] == 1 and own_preview['missing_schedule'] == 0
+                own_session = request('/api/study/review/sql-session', {'config_id': created_cards['config']['id'], 'selected_keys': ['custom-c1'], 'preview_hash': own_preview['preview_hash']})
+                assert own_session['card']['front'] == 'Own question'
+                rated = request('/api/study/review/session-grade', {'session_id': own_session['session_id'], 'position': 0, 'rating': 3})
+                assert rated['graded']['due_at'] != '2000-01-01 00:00:00'
+                update = {**created_cards['config'], 'collection_id': created_cards['collection_id'], 'data_revision': 1, 'request_id': 'http-save-own-cards-001', 'rows': [{**own_cards['rows'][0], 'answer': 'Updated answer'}]}
+                updated = request('/api/plugin/config/save-data', update)
+                assert updated['revision'] == 2
+                assert request('/api/plugin/config/save-data', update) == updated
+                request('/api/plugin/config/save-data', {**update, 'request_id': 'http-stale-own-cards-001'}, expected=409)
+                reloaded_preview = request('/api/study/review/sql-preview', {'config_id': created_cards['config']['id']})
+                assert reloaded_preview['rows'][0]['answer'] == 'Updated answer'
+                assert reloaded_preview['rows'][0]['due_at'] == rated['graded']['due_at']
                 print('HTTP integration passed')
             finally:
                 server.shutdown()
