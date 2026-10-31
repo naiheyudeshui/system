@@ -3,6 +3,24 @@ import DOMPurify from "./vendor/purify.es.mjs";
 
 marked.setOptions({ gfm: true, breaks: true });
 
+const managedId = /^wb-asset:\/\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i;
+// Resolve typed Markdown tokens before sanitizing; code examples and raw HTML
+// are never rewritten and unknown URI schemes remain subject to DOMPurify.
+function resolveAssetToken(token) {
+  if (token.type !== "image" && token.type !== "link") return;
+  const match = managedId.exec(token.href || "");
+  if (match) token.href = `/api/platform/files/${match[1].toLowerCase()}/content`;
+}
+export function markdownAssetIds(text) {
+  const ids = new Set(), tokens = marked.lexer(String(text || ""));
+  marked.walkTokens(tokens, token => {
+    if (token.type === "image" || token.type === "link") {
+      const match = managedId.exec(token.href || ""); if (match) ids.add(match[1].toLowerCase());
+    }
+  });
+  return [...ids];
+}
+
 const escapeHtml = (value) => String(value ?? "")
   .replace(/&/g, "&amp;")
   .replace(/</g, "&lt;")
@@ -135,7 +153,7 @@ export function renderMarkdown(text, targetEl, { mode = "render" } = {}) {
     targetEl.classList.add("study-md");
     return;
   }
-  const html = DOMPurify.sanitize(marked.parse(raw), { USE_PROFILES: { html: true } });
+  const html = DOMPurify.sanitize(marked.parse(raw, { walkTokens: resolveAssetToken }), { USE_PROFILES: { html: true } });
   targetEl.innerHTML = html;
   targetEl.classList.add("study-md");
   for (const table of targetEl.querySelectorAll("table")) {
@@ -149,6 +167,53 @@ export function renderMarkdown(text, targetEl, { mode = "render" } = {}) {
     table.before(scroll);
     scroll.append(table);
   }
+}
+
+/** Attachments are copied into the connected library only after file selection.
+ * The helper is independent of a specific tree/table editor and inserts plain
+ * Markdown. Upload never saves the user's unsaved note automatically. */
+export function attachAssetImport(toolbar, { getText, setText, isActive = () => true, onStatus = () => {}, files } = {}) {
+  const document = toolbar.ownerDocument, win = document.defaultView;
+  const button = document.createElement("button"), input = document.createElement("input");
+  button.type = "button"; button.textContent = "插入附件";
+  button.title = "复制文件到当前连接的资料库，随完整备份携带";
+  input.type = "file"; input.hidden = true;
+  let disposed = false;
+  const controller = new AbortController();
+  button.addEventListener("click", () => {
+    if (disposed) return;
+    if (!isActive()) { onStatus("请等待正文加载或保存完成；保存未确认时请先重试保存。"); return; }
+    input.click();
+  });
+  input.addEventListener("change", async () => {
+    const file = input.files?.[0]; input.value = ""; if (!file || disposed || !isActive()) return;
+    button.disabled = true;
+    try {
+      if (!files) files = (await import("/3dworkbench/fileAssets.mjs")).createFileAssets();
+      const status = await files.status({ signal: controller.signal });
+      if (!isActive() || disposed) return;
+      if (!status.ready && !status.initialized) {
+        if (!win.confirm(`将附件保存在当前服务 ${win.location.origin} 的资料库中，是否启用文件存储？`)) return;
+        await files.initialize({ signal: controller.signal });
+      }
+      onStatus("正在复制附件到资料库…");
+      const result = await files.upload(file, { signal: controller.signal });
+      if (!isActive() || disposed) {
+        if (result.asset?.assetId) await files.releasePin?.(result.asset.assetId).catch(() => {});
+        return;
+      }
+      const id = result.asset?.assetId;
+      const uri = `wb-asset://${id}`;
+      if (!managedId.test(uri)) throw new Error("服务返回无效的附件身份");
+      const label = file.name.replace(/[\\\[\]<>\r\n]/g, "_");
+      const image = /^image\/(png|jpeg|webp|gif)$/.test(file.type);
+      setText(`${getText()}\n\n${image ? "!" : ""}[${label}](${uri})`);
+      onStatus("附件已复制；请保存正文以保存此引用。");
+    } catch (error) { if (!disposed && isActive()) onStatus(`附件导入失败：${error.message}`); }
+    finally { if (!disposed) button.disabled = false; }
+  });
+  toolbar.append(button, input);
+  return { dispose() { disposed = true; controller.abort(); button.remove(); input.remove(); } };
 }
 
 export function attachMarkdownToggle(toolbar, valueEl, getText) {

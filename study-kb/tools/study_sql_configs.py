@@ -77,8 +77,8 @@ def register_study_modules():
         default["contract_version"] = "review-cards/v1"
     for default in TREE_DEFAULTS:
         default["contract_version"] = "tree-nodes/v1"
-    register_module("study.review-table", "reviews", contract="review-cards/v1", label="复习方案", defaults=DEFAULTS, data_template="review-basic/v1", binding_validator=validate_review_binding)
-    register_module("study.node-tree", "trees", contract="tree-nodes/v1", label="章节树方案", defaults=TREE_DEFAULTS, data_template="tree-basic/v1")
+    register_module("study.review-table", "reviews", contract="review-cards/v1", label="复习方案", defaults=DEFAULTS, data_template="review-basic/v1", binding_validator=validate_review_binding, file_workspace="study")
+    register_module("study.node-tree", "trees", contract="tree-nodes/v1", label="章节树方案", defaults=TREE_DEFAULTS, data_template="tree-basic/v1", tree_file_workspace="study")
 
 
 register_study_modules()

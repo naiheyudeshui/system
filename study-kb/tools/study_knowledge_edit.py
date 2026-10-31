@@ -201,6 +201,16 @@ def save_knowledge_node(payload):
     try:
         con.execute("BEGIN IMMEDIATE")
         result = edit_knowledge(con, payload)
+        # No schema initialization during edits. File storage must have been
+        # enabled explicitly; failure rolls back both content and its receipt.
+        from pathlib import Path
+        import sys
+        host_python = Path(__file__).resolve().parents[2] / "3dStudio" / "3dworkbench" / "python"
+        if str(host_python) not in sys.path:
+            sys.path.insert(0, str(host_python))
+        from file_references import synchronize_study_edit
+        import db
+        synchronize_study_edit(con, db.DB_PATH, payload.get("request_id"))
         con.commit()
         return result
     except Exception:

@@ -63,6 +63,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--no-open", action="store_true")
     parser.add_argument("--db", type=Path, default=STUDY_DB,
                         help="explicit SQLite file (use an isolated copy for acceptance tests)")
+    parser.add_argument("--data-root", type=Path,
+                        help="managed user-file directory; default: <database-stem>.files")
     parser.add_argument(
         "--trusted-lan-write",
         action="store_true",
@@ -70,6 +72,8 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
     STUDY_DB = args.db.expanduser().resolve()
+    if args.data_root is not None:
+        os.environ["WORKBENCH_DATA_ROOT"] = str(args.data_root.expanduser().resolve())
 
     if not STUDIO_ROOT.exists():
         print(f"未找到 3dStudio 软链接：{STUDIO_ROOT}", file=sys.stderr)

@@ -12,12 +12,22 @@ import android.webkit.JavascriptInterface;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.webkit.WebChromeClient;
+import android.webkit.ValueCallback;
+import android.webkit.URLUtil;
+import android.widget.Toast;
 import android.widget.TextView;
 import android.widget.Button;
 import android.widget.ScrollView;
 import android.app.AlertDialog;
 import com.chaquo.python.Python;
 import java.io.File;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 
 import androidx.activity.ComponentActivity;
 import androidx.activity.OnBackPressedCallback;
@@ -38,6 +48,24 @@ public class MainActivity extends ComponentActivity {
     private View rootView;
     private TextView statusView;
     private boolean pageLoaded;
+    private ValueCallback<Uri[]> fileSelection;
+    private String pendingDownload;
+    private final ActivityResultLauncher<Intent> chooseUpload = registerForActivityResult(
+        new ActivityResultContracts.StartActivityForResult(), result -> {
+            if (fileSelection == null) return;
+            Uri[] selected = WebChromeClient.FileChooserParams.parseResult(result.getResultCode(), result.getData());
+            fileSelection.onReceiveValue(selected);
+            fileSelection = null;
+        });
+    private final ActivityResultLauncher<Intent> saveDownload = registerForActivityResult(
+        new ActivityResultContracts.StartActivityForResult(), result -> {
+            String source = pendingDownload;
+            pendingDownload = null;
+            Uri target = result.getData() == null ? null : result.getData().getData();
+            if (result.getResultCode() == RESULT_OK && target != null && source != null) {
+                streamDownload(source, target);
+            }
+        });
     private final StudyServerState.Listener listener = this::render;
 
     @Override
@@ -64,10 +92,32 @@ public class MainActivity extends ComponentActivity {
         webView.getSettings().setSupportZoom(true);
         webView.getSettings().setBuiltInZoomControls(true);
         webView.getSettings().setDisplayZoomControls(false);
+        webView.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> callback,
+                                             FileChooserParams parameters) {
+                if (fileSelection != null) fileSelection.onReceiveValue(null);
+                fileSelection = callback;
+                Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                intent.addCategory(Intent.CATEGORY_OPENABLE);
+                intent.setType("*/*");
+                intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, parameters.getMode() == FileChooserParams.MODE_OPEN_MULTIPLE);
+                chooseUpload.launch(intent);
+                return true;
+            }
+        });
+        webView.setDownloadListener((url, userAgent, disposition, mime, length) ->
+            offerDownload(url, URLUtil.guessFileName(url, disposition, mime), mime));
         webView.addJavascriptInterface(new Object() {
             @JavascriptInterface
             public void onThemeChanged() {
                 runOnUiThread(MainActivity.this::syncSystemBarColor);
+            }
+            @JavascriptInterface
+            public void downloadFile(String url, String filename, String mime) {
+                // JS may start the document picker before a large HTTP export,
+                // avoiding WebView's preliminary download then re-download.
+                runOnUiThread(() -> offerDownload(url, filename, mime));
             }
         }, "StudyNative");
         webView.setWebViewClient(new WebViewClient() {
@@ -242,6 +292,70 @@ public class MainActivity extends ComponentActivity {
                 }
             }
         );
+    }
+
+    private void offerDownload(String url, String filename, String mime) {
+        Uri uri = Uri.parse(url);
+        if (!isLocal(uri) || uri.getPort() != BuildConfig.SERVER_PORT) {
+            Toast.makeText(this, "请使用本机资料库的文件下载链接", Toast.LENGTH_LONG).show();
+            return;
+        }
+        if (pendingDownload != null) {
+            Toast.makeText(this, "请先完成当前文件的保存选择", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        pendingDownload = url;
+        Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType(mime == null ? "application/octet-stream" : mime);
+        String safeName = filename == null ? "study-backup.zip" : filename.replace('\\', '/');
+        safeName = safeName.substring(safeName.lastIndexOf('/') + 1).replaceAll("[\\p{Cntrl}]", "");
+        intent.putExtra(Intent.EXTRA_TITLE, safeName.isEmpty() ? "study-backup.zip" : safeName);
+        saveDownload.launch(intent);
+    }
+
+    private void streamDownload(String source, Uri target) {
+        new Thread(() -> {
+            HttpURLConnection connection = null;
+            String result;
+            try {
+                connection = (HttpURLConnection) new URL(source).openConnection();
+                connection.setInstanceFollowRedirects(false);
+                connection.setConnectTimeout(15000);
+                connection.setReadTimeout(120000);
+                if (connection.getResponseCode() != 200) throw new java.io.IOException("下载失败 HTTP " + connection.getResponseCode());
+                long expected = connection.getContentLengthLong();
+                long received = 0;
+                try (InputStream input = connection.getInputStream();
+                     OutputStream output = getContentResolver().openOutputStream(target, "wt")) {
+                    if (output == null) throw new java.io.IOException("无法打开目标文档");
+                    byte[] buffer = new byte[65536];
+                    int count;
+                    while ((count = input.read(buffer)) != -1) {
+                        output.write(buffer, 0, count);
+                        received += count;
+                    }
+                    output.flush();
+                }
+                if (expected >= 0 && expected != received) throw new java.io.IOException("文件下载不完整，请重新导出");
+                result = "文件已保存到所选位置；请妥善保存，备份可能含私人资料";
+            } catch (Exception error) {
+                result = "保存未完成，请删除目标位置的不完整文件后重试：" + error.getMessage();
+            } finally {
+                if (connection != null) connection.disconnect();
+            }
+            final String message = result;
+            runOnUiThread(() -> Toast.makeText(this, message, Toast.LENGTH_LONG).show());
+        }, "study-file-download").start();
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (fileSelection != null) {
+            fileSelection.onReceiveValue(null);
+            fileSelection = null;
+        }
+        super.onDestroy();
     }
 
     private static boolean isLocal(Uri uri) {

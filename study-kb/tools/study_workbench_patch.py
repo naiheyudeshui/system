@@ -19,6 +19,12 @@ def install() -> None:
     register_study_layout()
     import plugin_host
     import workbench_server
+    import file_bundle_api
+    from study_library_sync import file_bundles
+    file_bundle_api.BUNDLE_FACTORY = file_bundles
+    workbench_server.FILE_BUNDLE_FACTORY = file_bundles
+    from study_bundle_adapter import install as install_bundle_adapters
+    install_bundle_adapters()
     from study_time_resources import ensure_plugin_resources
     plugin_host.register_resource_provider("study.pomodoro",ensure_plugin_resources)
     plugin_host.register_resource_provider("study.stopwatch",ensure_plugin_resources)
@@ -45,6 +51,8 @@ def install() -> None:
                 for unit in con.execute("SELECT id FROM wb_plugin_unit WHERE unit_type='review-session' AND legacy_ref=? AND status='active'",(row[0],)).fetchall():
                     deactivate_unit(con,unit[0])
     register_reconciler("study.review-sessions",rebuild_sessions)
+    from file_references import reconcile_study_references
+    register_reconciler("study.file-references",reconcile_study_references)
     def rebuild_registry(con):
         if not con.in_transaction:
             con.execute("BEGIN IMMEDIATE")
@@ -89,6 +97,11 @@ def install() -> None:
             def do_GET(self) -> None:  # noqa: N802
                 parsed = urllib.parse.urlparse(self.path)
                 try:
+                    if parsed.path == "/api/study/library/tree-roots":
+                        self.require_external_write_auth()
+                        from study_bundle_adapter import tree_roots
+                        self.send_json(tree_roots())
+                        return
                     if parsed.path == "/api/study/review/catalog":
                         from study_review_engine import review_catalog
 
@@ -160,6 +173,7 @@ def install() -> None:
                         self.send_header("Content-Length", str(len(payload)))
                         self.send_header("Content-Disposition", f'attachment; filename="{filename}"')
                         self.send_header("Cache-Control", "no-store")
+                        self.send_header("X-Workbench-Backup-Scope", "database-only; managed attachments require ZIP bundle")
                         self.end_headers()
                         self.wfile.write(payload)
                         return
@@ -174,6 +188,9 @@ def install() -> None:
                             )
                         )
                         return
+                except PermissionError as error:
+                    self.send_json({"detail": str(error)}, status=403)
+                    return
                 except Exception as error:
                     self.send_json({"detail": str(error)}, status=400)
                     return

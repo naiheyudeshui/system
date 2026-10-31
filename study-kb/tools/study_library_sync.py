@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sqlite3
+import sys
 import tempfile
 import threading
 from datetime import datetime
@@ -10,6 +11,10 @@ from pathlib import Path
 
 import db
 from study_storage_guard import maintenance
+
+SHARED_PYTHON = Path(__file__).resolve().parents[2] / "3dStudio" / "3dworkbench" / "python"
+if str(SHARED_PYTHON) not in sys.path:
+    sys.path.append(str(SHARED_PYTHON))
 
 MAX_BYTES = 128 * 1024 * 1024
 _LOCK = threading.Lock()
@@ -89,6 +94,7 @@ def import_library(payload: bytes, *, reinstall_plugins: bool = False) -> dict:
                 if not found:
                     raise ValueError("文件里没有学习卡片表，已拒绝替换")
                 db.ensure_schema(incoming)
+                _validate_managed_restore(incoming)
                 if not incoming.in_transaction:
                     incoming.execute("BEGIN IMMEDIATE")
                 _prepare_installations(incoming, reinstall_plugins=reinstall_plugins)
@@ -110,6 +116,61 @@ def import_library(payload: bytes, *, reinstall_plugins: bool = False) -> dict:
     return {"ok": True, "bytes": len(payload), "backup": backup_name,
             "validated": True, "indexes_rebuilt": len(_RESTORE_VALIDATORS),
             "reinstall_plugins": reinstall_plugins}
+
+
+def file_bundles(files):
+    """Product maintenance and business validation for the shared bundle engine."""
+    from study_file_reference_audit import scan
+    files.reference_scanners = (scan,)
+    from file_bundles import FileBundles
+
+    def prepare(connection):
+        _validate(connection)
+        tables = {row[0] for row in connection.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+        if not ({"study_knowledge_item", "study_card"} & tables):
+            raise ValueError("文件里没有学习卡片表，已拒绝替换")
+        db.ensure_schema(connection)
+        _prepare_installations(connection, reinstall_plugins=True)
+        for callback in _RESTORE_VALIDATORS:
+            callback(connection)
+        _prepare_installations(connection, reinstall_plugins=True)
+
+    return FileBundles(files, maintenance=maintenance, prepare_restore=prepare)
+
+
+def _validate_managed_restore(incoming):
+    """A legacy SQLite restore may reuse available objects, never lose them silently.
+
+    Preserve the existing storage-root identity. A DB without file metadata gets
+    an empty compatible index; objects left by the previous library are retained.
+    No assets from the live library are leaked into the imported metadata.
+    """
+    from contextlib import closing
+    from file_assets import FileAssets
+    from file_bundles import validate_file_references
+    import os
+    files = FileAssets(db.DB_PATH, root=os.environ.get("WORKBENCH_DATA_ROOT") or None, workspace_id="study")
+    marker = files.root / "storage.json"
+    incoming_tables = {row[0] for row in incoming.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+    if "wb_file_asset" in incoming_tables:
+        validate_file_references(incoming, files.blob_store)
+    if not marker.is_file():
+        if "wb_file_library" in incoming_tables:
+            raise ValueError("SQLite含托管文件索引，但未挂接文件根；请导入完整ZIP备份")
+        return
+    status = files.status()
+    with closing(files.connect()) as live:
+        # These schema statements come from this local, trusted library, never
+        # arbitrary archive-provided SQL. Only the known file service tables.
+        names = ("wb_file_library", "wb_file_blob", "wb_file_asset", "wb_file_reference_owner",
+                 "wb_file_reference", "wb_file_pin", "wb_storage_job", "wb_file_setting", "wb_external_reference")
+        for name in names:
+            if name in incoming_tables:
+                continue
+            row = live.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name=?", (name,)).fetchone()
+            if row:
+                incoming.execute(row[0])
+    incoming.execute("INSERT OR REPLACE INTO wb_file_library(singleton,library_uuid) VALUES(1,?)", (status["libraryId"],))
 
 
 def _backup_live(live: sqlite3.Connection) -> str:

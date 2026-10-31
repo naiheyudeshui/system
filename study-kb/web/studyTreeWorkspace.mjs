@@ -1,7 +1,8 @@
 import { addConfigCardControls, confirmWorkbenchAction, openConfigManager } from "/3dworkbench/pluginConfigManager.mjs?v=20261029-authoring1";
 import { renderTablePreview } from "/3dworkbench/tablePreview.mjs?v=20261019-history-toolbar";
 import { createTreeWorkspace, filterTree, indexTree } from "/3dworkbench/treeWorkspace.mjs?v=20261019-history-toolbar";
-import { renderMarkdown } from "./studyMarkdown.mjs?v=20261028-main-port1";
+import * as markdownTools from "./studyMarkdown.mjs?v=20261030-managed-assets1";
+const { renderMarkdown } = markdownTools;
 import { createSearchableCombobox } from "/3dworkbench/searchableCombobox.mjs?v=20261019-history-toolbar";
 
 function make(tag, text, className) {
@@ -76,7 +77,7 @@ export async function renderNodeTreePanel(panel, { api, postApi, presentationMod
   const message = make("p", null, "study-tree-status"); message.setAttribute("role", "status");
   panel.replaceChildren(home, preview, viewer, message);
   let entries = [], selectedId = "", data = null, filtered = [], session = null, source = null, busy = false, previewState = null;
-  let messageTimer = null, disposed = false, cancelDelete = null;
+  let messageTimer = null, disposed = false, cancelDelete = null, activeAssetImport = null;
   const paneId = instanceId || panel.closest("[data-instance-id]")?.dataset.instanceId;
   let leasedConfig = "", leaseChain = Promise.resolve();
   const updateLease = (id = selectedId) => {
@@ -106,6 +107,7 @@ export async function renderNodeTreePanel(panel, { api, postApi, presentationMod
   };
   const selected = () => entries.find((entry) => entry.id === selectedId);
   const page = (target) => {
+    activeAssetImport?.dispose(); activeAssetImport = null;
     for (const section of [home, preview, viewer]) section.hidden = section !== target;
     panel.classList.toggle("is-browsing-tree", target === viewer);
     setMessage();
@@ -336,6 +338,7 @@ export async function renderNodeTreePanel(panel, { api, postApi, presentationMod
   });
   let editorGeneration = 0;
   const editNode = async (operation, node) => {
+    activeAssetImport?.dispose(); activeAssetImport = null;
     const generation = ++editorGeneration;
     const originalSession = session;
     const state = session.getState();
@@ -450,13 +453,19 @@ export async function renderNodeTreePanel(panel, { api, postApi, presentationMod
     viewer.append(editor);
     let baseline = null, saving = false, payload = null, saved = null;
     const valid = () => !disposed && generation === editorGeneration && originalSession === session && !viewer.hidden;
+    const assetImport = activeAssetImport = markdownTools.attachAssetImport?.(editorActions, {
+      getText: bodyText,
+      setText: value => { setMultiline(bodyEl, value); syncEmpty(); paintNotePreview(); },
+      isActive: () => valid() && editor.isConnected && Boolean(baseline) && !saving && !payload,
+      onStatus: message => setEditorNotice(message),
+    });
     const close = () => {
       if (saving) return;
       const originalTitle = operation === "content" ? (baseline?.node.title || "").trim() : "";
       const originalBody = operation === "content" ? String(baseline?.node.content_md || "").replace(/\r\n/g, "\n").replace(/\r/g, "\n").replace(/\n+$/, "") : "";
       const changed = baseline && (bodyText() !== originalBody || titleText().trim() !== originalTitle);
       if ((payload || changed) && !window.confirm(saved ? "修改已保存，返回旧画面后请刷新。继续返回？" : "放弃当前草稿并返回？若刚才网络中断，保存可能已完成，可重试确认。")) return;
-      ++editorGeneration; editor.remove();
+      ++editorGeneration; assetImport?.dispose(); editor.remove();
       const browser = viewer.querySelector(".wb-tree-browser"); if (browser) browser.hidden = false;
       [...viewer.querySelectorAll(".wb-tree-graph-node")].find((element) => element.dataset.nodeId === node.id)?.focus();
     };
@@ -482,6 +491,7 @@ export async function renderNodeTreePanel(panel, { api, postApi, presentationMod
     };
     const finishEditor = () => {
       ++editorGeneration;
+      assetImport?.dispose();
       editor.remove();
       const browser = viewer.querySelector(".wb-tree-browser");
       if (browser) browser.hidden = false;
@@ -822,7 +832,7 @@ export async function renderNodeTreePanel(panel, { api, postApi, presentationMod
   edit.addEventListener("click", () => { void openManager(selectedId); });
   add.addEventListener("click", () => { void openManager(""); });
   refresh.addEventListener("click", () => { void run(reload); });
-  panel.dispose = () => { disposed = true; if (leaseTimer) window.clearInterval(leaseTimer); updateLease(""); ++editorGeneration; ++localMutationRevision; cancelDelete?.(); if (messageTimer) window.clearTimeout(messageTimer); session?.dispose(); rootPicker.dispose?.(); };
+  panel.dispose = () => { disposed = true; activeAssetImport?.dispose(); activeAssetImport = null; if (leaseTimer) window.clearInterval(leaseTimer); updateLease(""); ++editorGeneration; ++localMutationRevision; cancelDelete?.(); if (messageTimer) window.clearTimeout(messageTimer); session?.dispose(); rootPicker.dispose?.(); };
   await run(async () => {
     await reload();
     const payload = await api("/api/study/tree?model=knowledge");

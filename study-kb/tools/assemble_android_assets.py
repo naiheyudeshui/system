@@ -94,11 +94,18 @@ def _copy_database(src: Path, copied: dict[str, str]) -> None:
     if not src.is_file():
         raise FileNotFoundError(src)
     dest = DEST_ROOT / SQLITE_REL
-    dest.parent.mkdir(parents=True, exist_ok=True)
-    if dest.exists():
-        dest.unlink()
     source = sqlite3.connect(src.as_uri() + "?mode=ro", uri=True)
     try:
+        # Runtime code assets never include the user's file root. A fresh APK
+        # therefore cannot seed a DB with a managed identity/attachments but no
+        # matching objects. Keep installed private files on upgrades and migrate
+        # actual libraries through the portable ZIP instead of APK resources.
+        has_files = source.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='wb_file_library'").fetchone()
+        if has_files and source.execute("SELECT 1 FROM wb_file_library LIMIT 1").fetchone():
+            raise RuntimeError("APK seed database contains managed file storage; use a clean seed database and import a complete library ZIP after installation")
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        if dest.exists():
+            dest.unlink()
         target = sqlite3.connect(dest)
         try:
             source.backup(target)

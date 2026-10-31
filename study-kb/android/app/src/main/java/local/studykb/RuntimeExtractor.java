@@ -38,6 +38,15 @@ public final class RuntimeExtractor {
                 continue;
             }
             File dest = new File(root, path);
+            if (!dest.getCanonicalPath().startsWith(root.getCanonicalPath() + File.separator)) {
+                throw new IOException("runtime path escapes private directory");
+            }
+            // Code upgrades must never publish APK files over user storage,
+            // WAL, backups, journals or future private data. Only seed SQLite
+            // is permitted, and only on first installation.
+            if (path.startsWith("study-kb/data/") && !DATABASE.equals(path)) {
+                continue;
+            }
             if (DATABASE.equals(path) && dest.isFile()) {
                 continue;
             }
