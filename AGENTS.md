@@ -15,6 +15,6 @@
 ## 仓库边界
 
 - 改动前检查 Git 状态，保留用户未提交的修改。
-- `3dStudio/` 是共享 UI 主源链接；不要把学习数据写入其 `ops.sqlite`。
+- `3dStudio/` 是独立克隆的共享 UI 宿主仓库，有自己的 `.git`；不要把学习数据写入其 `ops.sqlite`。交接结构见 `REPOSITORY_WORKSPACE_GUIDE.md`。
 - `readme/` 是 Rsim_helper 中央文档池链接；system 的用户说明放根 `README.md`，学习执行说明统一放 `.cursor/skills/study/SKILL.md`。
 - 针对共享链接目标的开发，另行读取目标仓库适用的 `AGENTS.md`，不把本仓库授权当作任意修改共享项目的授权。

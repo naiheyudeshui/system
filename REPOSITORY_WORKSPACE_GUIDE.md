@@ -1,6 +1,6 @@
 # Study 与公共宿主交接说明
 
-整理日期：2026-11-01。日常工作入口为 `D:\system`；`D:\system\3dStudio` 是独立的宿主 Git 工作树，不再指向旧 main 源码。两个仓库均使用 `feat/workbench-contract-v2`，分别推送到 `naiheyudeshui/system` 与 `naiheyudeshui/3dStudio`。公共 Git 管理目录仍在原仓位置，不能手动删除旧主仓的 .git。
+整理日期：2026-11-01。日常工作入口为 `D:\system`；`D:\system\3dStudio` 是重新克隆的独立宿主仓库。两处均有完整的 `.git` 目录，使用 `feat/workbench-contract-v2`，分别推送到 `naiheyudeshui/system` 与 `naiheyudeshui/3dStudio`；运行不依赖旧宿主工作树。旧 worktrees 保留作回退，其中 Study 工作树现为 detached HEAD；`D:\system\.git` 仍管理已有 Study worktrees，不得手动删除。
 
 ## 内容分类
 
