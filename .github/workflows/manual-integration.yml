@@ -1,0 +1,53 @@
+name: Study manuals and product integration
+on:
+  push:
+    paths: ['study-kb/**', 'tooling/**', '.github/workflows/manual-integration.yml']
+  pull_request:
+    paths: ['study-kb/**', 'tooling/**', '.github/workflows/manual-integration.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  locked-product:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: study
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - id: host
+        name: Read exact host lock
+        shell: python
+        run: |
+          import json, os, re
+          lock=json.load(open('study/tooling/dependencies.lock.json'))['host']
+          assert lock['repository']=='https://github.com/naiheyudeshui/3dStudio.git'
+          assert re.fullmatch('[0-9a-f]{40}',lock['commit'])
+          with open(os.environ['GITHUB_OUTPUT'],'a') as stream: stream.write('commit='+lock['commit']+'\n')
+      - uses: actions/checkout@v4
+        with:
+          repository: naiheyudeshui/3dStudio
+          ref: ${{ steps.host.outputs.commit }}
+          path: host
+          persist-credentials: false
+      - run: python -m pip install -r host/tooling/build-manual/requirements-lock.txt
+      - run: python -m playwright install msedge
+      - run: python study/tooling/verify_manuals.py --studio-root host --output study/build/manual-ci
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: study-manual-verification
+          path: |
+            study/build/manual-ci/*.json
+            study/build/manual-ci/*.log
+            study/build/manual-ci/*.png
+            study/build/manual-ci/runtime-web/
+            study/build/manual-ci/runtime-android/
+            study/build/manual-ci/manuals/
+            study/build/manual-ci/tree-parity.zip

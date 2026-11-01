@@ -1,5 +1,9 @@
 # Study 资源与说明书构建操作
 
+完整自动验收入口为 `python tooling/verify_manuals.py --studio-root <host> --output build/manual-verification-new`。它要求两个源码检出干净、宿主 commit 与锁一致，运行正式回归、三份手册重建、确定性 ZIP、Web/Android runtime 校验和浏览器验收。日常使用的学习库会变化，建议用独立干净 worktree 执行；不要为通过检查而回滚运行数据库。
+
+Study 的 `.github/workflows/manual-integration.yml` 使用产品锁定宿主；宿主的对应工作流使用 `study-consumer.lock.json` 锁定 Study 验收入口，`--candidate-host` 只在隔离检出生成临时锁以检查候选宿主。报告记录每一步命令、日志和结果；本地通过不代表 GitHub 已运行。
+
 此目录是产品组合入口。`product.json` 选择资源，`dependencies.lock.json` 锁定共享宿主准确 commit；`build.py` 组装/校验，`manuals.py` 重建并可部署说明书。新输出目录必须不存在。以下从 system 根执行，`<host>` 替换成实际 3dStudio 检出路径；使用已安装宿主 `tooling/build-manual/requirements-lock.txt` 的 Python 环境。
 
 ```powershell
