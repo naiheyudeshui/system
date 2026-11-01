@@ -1,5 +1,6 @@
 import { addConfigCardControls, confirmWorkbenchAction, openConfigManager } from "/3dworkbench/pluginConfigManager.mjs?v=20261029-authoring1";
 import { createSearchableCombobox } from "/3dworkbench/searchableCombobox.mjs";
+import { createUiIcon } from "/3dworkbench/icons.mjs";
 import { renderTablePreview } from "/3dworkbench/tablePreview.mjs";
 import { renderMarkdown } from "./studyMarkdown.mjs?v=20261028-main-port1";
 import { createPlanCardList } from "/3dworkbench/components/planCardList.mjs?v=20261101-plan-cards2";
@@ -17,7 +18,8 @@ export async function renderReviewTablePanel(panel, { api, postApi, instanceId }
   const home = make("section");
   home.dataset.helpPage = "plans";
   const header = make("header", null, "study-review-header");
-  const settings = make("button", "⚙", "trigger-settings");
+  const settings = make("button", null, "trigger-settings");
+  settings.append(createUiIcon(panel.ownerDocument, "settings"));
   settings.setAttribute("aria-label", "方案设置");
   settings.title = "方案设置";
   const headerActions = make("div", null, "wb-config-actions study-review-header-actions");
@@ -27,8 +29,8 @@ export async function renderReviewTablePanel(panel, { api, postApi, instanceId }
   management.hidden = true;
   const edit = make("button", "编辑已有方案", "metric-card metric-management-card");
   const add = make("button", "新增方案", "metric-card metric-management-card");
-  for (const [button, icon, label] of [[edit, "⚙", "编辑已有方案"], [add, "+", "新增方案"]]) {
-    const symbol = make("b", icon);
+  for (const [button, icon, label] of [[edit, "settings", "编辑已有方案"], [add, "plus", "新增方案"]]) {
+    const symbol = createUiIcon(panel.ownerDocument, icon);
     symbol.setAttribute("aria-hidden", "true");
     button.setAttribute("aria-label", label);
     button.replaceChildren(symbol, make("span", label));

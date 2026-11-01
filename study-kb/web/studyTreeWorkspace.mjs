@@ -1,6 +1,7 @@
 import { addConfigCardControls, confirmWorkbenchAction, openConfigManager } from "/3dworkbench/pluginConfigManager.mjs?v=20261030-tree-plans1";
 import { renderTablePreview } from "/3dworkbench/tablePreview.mjs?v=20261030-tree-plans1";
 import { createTreeWorkspace, filterTree, indexTree } from "/3dworkbench/treeWorkspace.mjs?v=20261030-tree-plans1";
+import { createUiIcon } from "/3dworkbench/icons.mjs";
 import * as markdownTools from "./studyMarkdown.mjs?v=20261030-managed-assets1";
 const { renderMarkdown } = markdownTools;
 import { createPlanCardList } from "/3dworkbench/components/planCardList.mjs?v=20261101-plan-cards2";
@@ -52,14 +53,15 @@ export async function renderNodeTreePanel(panel, { api, postApi, presentationMod
   home.dataset.helpPage = "plans";
   const header = make("header", null, "study-review-header");
   const tools = make("div", null, "wb-config-actions");
-  const settings = make("button", "⚙", "trigger-settings"); settings.setAttribute("aria-label", "树方案设置");
+  const settings = make("button", null, "trigger-settings"); settings.setAttribute("aria-label", "树方案设置");
+  settings.append(createUiIcon(panel.ownerDocument, "settings"));
   settings.setAttribute("aria-pressed", "false");
   tools.append(settings); header.append(make("h3", "章节树图"), tools);
   const grid = make("div", null, "study-plan-grid");
   const management = make("div", null, "metric-card study-plan-management"); management.hidden = true;
   const edit = make("button", null, "metric-card metric-management-card");
   const add = make("button", null, "metric-card metric-management-card");
-  const editIcon = make("b", "⚙"), addIcon = make("b", "+");
+  const editIcon = createUiIcon(panel.ownerDocument, "settings"), addIcon = createUiIcon(panel.ownerDocument, "plus");
   editIcon.setAttribute("aria-hidden", "true"); addIcon.setAttribute("aria-hidden", "true");
   edit.append(editIcon, make("span", "编辑已有方案")); add.append(addIcon, make("span", "新增方案"));
   edit.dataset.helpAction = "manage-edit"; add.dataset.helpAction = "manage-add";
@@ -71,7 +73,7 @@ export async function renderNodeTreePanel(panel, { api, postApi, presentationMod
   const previewTitle = make("h3", "树数据预览");
   const returnHome = make("button", null, "wb-tree-icon-button");
   returnHome.setAttribute("aria-label", "返回方案"); returnHome.title = "返回方案";
-  returnHome.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 5-7 7 7 7M5 12h15"/></svg>';
+  returnHome.append(createUiIcon(panel.ownerDocument, "back"));
   previewHeader.append(previewTitle, returnHome);
   const report = make("p"); report.setAttribute("role", "status");
   const table = make("div");

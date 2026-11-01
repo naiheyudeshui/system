@@ -6,6 +6,7 @@ import { JSDOM } from "jsdom";
 
 const source = await readFile(new URL("../web/studyTimers.mjs", import.meta.url), "utf8");
 const inlineEditorSource = await readFile(new URL("../../3dStudio/3dworkbench/web/inlineCellEditor.mjs", import.meta.url), "utf8");
+const iconsSource = await readFile(new URL("../../3dStudio/3dworkbench/web/icons.mjs", import.meta.url), "utf8");
 
 async function setup() {
   const dom = new JSDOM("<main id='panel'></main>", { url: "http://localhost" });
@@ -16,8 +17,9 @@ async function setup() {
   const context = vm.createContext({ document: dom.window.document, window: dom.window, console });
   const module = new vm.SourceTextModule(source, { context });
   await module.link(async (specifier) => {
-    assert.equal(specifier, "/3dworkbench/inlineCellEditor.mjs");
-    return new vm.SourceTextModule(inlineEditorSource, { context });
+    const sources = { "/3dworkbench/inlineCellEditor.mjs": inlineEditorSource, "/3dworkbench/icons.mjs": iconsSource };
+    assert.ok(sources[specifier], `Unknown UI dependency: ${specifier}`);
+    return new vm.SourceTextModule(sources[specifier], { context });
   });
   await module.evaluate();
   return { dom, panel: dom.window.document.querySelector("#panel"), timers: module.namespace, tick: () => intervalCallback?.(), cleared: () => cleared };

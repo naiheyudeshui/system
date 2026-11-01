@@ -1,0 +1,10 @@
+{
+  "study-kb/plugins/study.library/icon.svg": "library",
+  "study-kb/plugins/study.metrics/icon.svg": "metrics",
+  "study-kb/plugins/study.node-tree/icon.svg": "tree",
+  "study-kb/plugins/study.pomodoro/icon.svg": "pomodoro",
+  "study-kb/plugins/study.review-table/icon.svg": "review",
+  "study-kb/plugins/study.stopwatch/icon.svg": "stopwatch",
+  "study-kb/plugins/study.table-catalog/icon.svg": "catalog",
+  "study-kb/plugins/study.table-grid/icon.svg": "table"
+}

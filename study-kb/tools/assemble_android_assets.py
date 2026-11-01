@@ -35,6 +35,7 @@ STUDIO_TOOLS = (
     "view_writeback.py",
 )
 STUDIO_PYTHON = (
+    "icon_contract.py",
     "tree_model.py",
     "workbench_plugins.py",
 )
