@@ -354,6 +354,12 @@ SELECT * FROM v_study_knowledge_nodes ORDER BY sort_order, title, node_id;
 
 树图支持拖放：拖到节点中央会成为目标的子节点；拖到同级节点上方或下方会调整 `sort_order`，界面用父节点高亮、插入线和兄弟节点让位预览结果。系统拒绝拖到自己或自己的后代。选中节点后按 `Delete` 或点击“删除节点”，自定义弹窗提供取消、仅删除当前节点（子节点上移）和递归归档整棵子树。删除采用归档，复习历史和 FSRS 不删除。
 
+## 产品结构与统一说明书维护
+
+开发与跨平台迁移先读 [Study 产品结构说明](study-kb/docs/PRODUCT-ARCHITECTURE.md)，其中说明公共工作台、产品业务、平台壳、实例配置和用户数据的责任，以及新 `tooling/build.py` 的资源校验/组装入口。
+
+新版产品说明作者源从 [Study 手册](study-kb/docs/manual/docs/index.md) 进入；[帮助操作](study-kb/docs/manual/docs/user/help.md) 区分当前帮助与后续内置完整阅读。当前已落地统一编写要求、接口合同和开发资源组装基础，完整说明书生成/阅读与 Android 入口迁移仍在执行。
+
 ## 托管附件、主题与完整备份
 
 新增文件服务把图片、PDF等原文件保存在当前资料库宿主的 `study.files/`，SQLite保存稳定身份及引用。远程浏览器的文件会上传到连接的服务端，Android离线运行时则在应用私有目录。首次启用或保存需要用户操作，打开页面不会自动把旧浏览器壁纸上传。

@@ -52,3 +52,34 @@ Thumbs.db
 
 # Local study server address (machine-specific)
 .cursor/skills/study/server.url
+study-kb/manual-publications/
+build/manual-runtime-*/
+
+# Rebuildable outputs and local runtime files; sources/tests stay versioned.
+/build/
+/.venv/
+/.contract-venv/
+/*.log
+/study-kb/*.log
+/study-kb/data/*.activity.lock
+/study-kb/data/*.files/
+
+# Local browser sessions and one-shot import scratch (never product sources).
+/.chrome-test/
+/chrome-profile-*/
+/chrome-dump*.html
+/study-shot*.png
+/.tmp-*
+/tmp/
+/tmp_verify_card.py/
+/study-kb/data/_*.txt
+/study-kb/data/_*.json
+/study-kb/data/audit*.txt
+/study-kb/data/*-result.json
+/.cursor/skills/study/records/imports/*.sqlite*
+/.cursor/skills/study/records/imports/_*.py
+/.cursor/skills/study/records/imports/_*.txt
+/.cursor/skills/study/records/imports/_*.md
+/.cursor/skills/study/records/imports/*.py
+/系统分析师-一本通精华知识点-第二版(OCR).docx
+/论文/论文写作总复习资料（第二版）.pdf
