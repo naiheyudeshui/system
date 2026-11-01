@@ -22,6 +22,7 @@ def main(runtime_root: str, contract_v2: bool = False, port: int = 8033) -> None
     os.chdir(root)
     os.environ.setdefault("PYTHONUTF8", "1")
     os.environ.setdefault("PYTHONIOENCODING", "utf-8")
+    os.environ["STUDY_RUNTIME_PROFILE"] = "contract-v2" if contract_v2 else "android"
     sys.argv = [
         script,
         "--host",

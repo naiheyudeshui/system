@@ -97,6 +97,14 @@ def install() -> None:
             def do_GET(self) -> None:  # noqa: N802
                 parsed = urllib.parse.urlparse(self.path)
                 try:
+                    if parsed.path == "/api/study/connection":
+                        self.send_json({
+                            "schema": "study.connection/v1",
+                            "productId": "study",
+                            "runtimeProfile": os.environ.get("STUDY_RUNTIME_PROFILE", "desktop"),
+                            "serverPort": self.server.server_address[1],
+                        })
+                        return
                     if parsed.path == "/api/study/library/tree-roots":
                         self.require_external_write_auth()
                         from study_bundle_adapter import tree_roots

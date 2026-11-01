@@ -47,6 +47,7 @@ public class MainActivity extends ComponentActivity {
     private WebView webView;
     private View rootView;
     private TextView statusView;
+    private TextView addressView;
     private boolean pageLoaded;
     private ValueCallback<Uri[]> fileSelection;
     private String pendingDownload;
@@ -78,6 +79,18 @@ public class MainActivity extends ComponentActivity {
         applySystemInsets(root);
         webView = findViewById(R.id.web);
         statusView = findViewById(R.id.status);
+        addressView = findViewById(R.id.contract_address);
+        addressView.setText(getString(R.string.starting));
+        addressView.setOnClickListener(view -> {
+            String url = StudyServerService.lanUrl();
+            if (url == null) {
+                Toast.makeText(this, R.string.no_lan, Toast.LENGTH_SHORT).show();
+                return;
+            }
+            android.content.ClipboardManager clipboard = getSystemService(android.content.ClipboardManager.class);
+            if (clipboard != null) clipboard.setPrimaryClip(android.content.ClipData.newPlainText("Study URL", url));
+            Toast.makeText(this, R.string.address_copied, Toast.LENGTH_SHORT).show();
+        });
         webView.setBackgroundColor(getColor(R.color.app_background));
         if (BuildConfig.SHOW_CONTRACT_DIAGNOSTICS) {
             setTitle("学习库 · 重构测试版");
@@ -187,15 +200,12 @@ public class MainActivity extends ComponentActivity {
                 statusView.setVisibility(android.view.View.VISIBLE);
                 String detail = StudyServerState.detail();
                 statusView.setText(detail.isEmpty() ? getString(R.string.server_failed) : detail);
+                addressView.setText(getString(R.string.server_failed));
                 return;
             }
             if (StudyServerState.READY.equals(status)) {
                 String detail = StudyServerState.detail();
-                if (BuildConfig.SHOW_CONTRACT_DIAGNOSTICS) {
-                    TextView address = findViewById(R.id.contract_address);
-                    address.setText(detail + "\n仅限可信局域网，允许访问测试副本，不连接正式主库");
-                    address.setVisibility(View.VISIBLE);
-                }
+                addressView.setText(detail + " · " + getString(R.string.copy_address));
                 if (!detail.isEmpty()) {
                     statusView.setText(detail);
                 }
@@ -277,6 +287,7 @@ public class MainActivity extends ComponentActivity {
                     rootView.setBackgroundColor(color);
                     webView.setBackgroundColor(color);
                     statusView.setBackgroundColor(color);
+                    addressView.setBackgroundColor(color);
                     // On edge-to-edge Android versions the root paints behind
                     // the bars; on older versions these also color the bars.
                     getWindow().setStatusBarColor(color);
@@ -284,6 +295,7 @@ public class MainActivity extends ComponentActivity {
                     boolean light = ((Color.red(color) * 299
                         + Color.green(color) * 587
                         + Color.blue(color) * 114) / 1000) > 160;
+                    addressView.setTextColor(light ? Color.rgb(40, 55, 50) : Color.rgb(220, 235, 228));
                     WindowInsetsControllerCompat controller = WindowCompat.getInsetsController(getWindow(), rootView);
                     controller.setAppearanceLightStatusBars(light);
                     controller.setAppearanceLightNavigationBars(light);

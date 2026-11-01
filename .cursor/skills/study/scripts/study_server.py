@@ -10,9 +10,9 @@ import sys
 import tempfile
 import uuid
 from pathlib import Path
-from urllib import error, request
+from urllib import error, request, parse
 
-from _paths import BACKUP_DIR, DEFAULT_SERVER_URL, REPO_ROOT
+from _paths import BACKUP_DIR, DEFAULT_SERVER_URL, REPO_ROOT, _SERVER_URL_FILE
 
 _TIMEOUT = 15
 # Agent 终端常设 HTTP_PROXY=127.0.0.1:7888，但 NO_PROXY 不含局域网；直连手机 8033 必须绕过代理。
@@ -46,8 +46,40 @@ def _request(method: str, url: str, payload: dict | None = None, *, timeout: int
         return exc.code, detail, {}
 
 
+def connection_identity(base: str, profile: str | None = None) -> dict:
+    parsed = parse.urlsplit(base)
+    if parsed.scheme not in ("http", "https") or not parsed.hostname or parsed.username or parsed.password or parsed.query or parsed.fragment or parsed.path not in ("", "/"):
+        raise ValueError("Use a root http(s) URL without credentials, query or fragment")
+    port = parsed.port or (443 if parsed.scheme == "https" else 80)
+    status, body, _ = _request("GET", _url(base.rstrip("/"), "/api/study/connection"))
+    if status != 200 or not isinstance(body, dict) or body.get("schema") != "study.connection/v1" or body.get("productId") != "study":
+        raise ValueError(f"Study identity could not be verified ({status}): {body}")
+    if body.get("runtimeProfile") not in ("desktop", "android", "contract-v2") or body.get("serverPort") != port:
+        raise ValueError(f"Runtime identity/port mismatch: {body}")
+    if profile and body["runtimeProfile"] != profile:
+        raise ValueError(f"Expected {profile}, received {body['runtimeProfile']}")
+    return body
+
+
+def configure_server(base: str, profile: str, target: Path = _SERVER_URL_FILE) -> dict:
+    base = base.strip().rstrip("/")
+    identity = connection_identity(base, profile)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    # Validate first, then atomically replace; a failed probe preserves the old URL.
+    with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=target.parent, delete=False) as stream:
+        temporary = Path(stream.name)
+        stream.write(base + "\n# runtime-profile: " + profile + "\n")
+    try:
+        temporary.replace(target)
+    finally:
+        temporary.unlink(missing_ok=True)
+    return {"server": base, "identity": identity, "config": str(target)}
+
+
 def probe_server(base: str) -> dict:
     result: dict = {"server": base, "reachable": False, "readable": False, "writable": False, "schema": {}, "errors": [], "warnings": []}
+
+    result["identity"] = connection_identity(base)
 
     status, body, _ = _request("GET", _url(base, "/"))
     if status != 200:
@@ -192,7 +224,13 @@ def sync_mirror(base: str, *, skip_probe: bool = False) -> dict:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Probe or call study-kb HTTP server (phone-first).")
     parser.add_argument("--server", default=os.environ.get("STUDY_SERVER_URL", DEFAULT_SERVER_URL))
+    parser.add_argument("--profile", choices=("desktop", "android", "contract-v2"), help="Require this runtime identity before any operation")
     sub = parser.add_subparsers(dest="command", required=True)
+
+    sub.add_parser("identity", help="Read-only verification of product, runtime and port")
+    configure = sub.add_parser("configure", help="Validate and save the copied application URL")
+    configure.add_argument("--url", required=True)
+    configure.add_argument("--profile", required=True, choices=("desktop", "android", "contract-v2"), dest="configure_profile")
 
     sub.add_parser("probe", help="检查连通性、读树、写权限与 schema 提示")
     read_cmd = sub.add_parser("read", help="POST /api/study/knowledge/read")
@@ -205,7 +243,21 @@ def main(argv: list[str] | None = None) -> int:
     sync_cmd.add_argument("--skip-probe", action="store_true", help="跳过写入前 probe（不推荐）")
 
     args = parser.parse_args(argv)
+    if args.command == "configure":
+        print(json.dumps(configure_server(args.url, args.configure_profile), ensure_ascii=False, indent=2))
+        return 0
     base = args.server.strip()
+    expected = args.profile
+    if not expected and not os.environ.get("STUDY_SERVER_URL") and base == DEFAULT_SERVER_URL and _SERVER_URL_FILE.is_file():
+        for line in _SERVER_URL_FILE.read_text(encoding="utf-8").splitlines():
+            if line.startswith("# runtime-profile: "):
+                expected = line.removeprefix("# runtime-profile: ").strip()
+    if args.command in ("save", "sync-mirror") and not expected:
+        parser.error("Run configure first, or explicitly select --profile desktop|android|contract-v2")
+    identity = connection_identity(base, expected)
+    if args.command == "identity":
+        print(json.dumps(identity, ensure_ascii=False, indent=2))
+        return 0
     if args.command == "probe":
         result = probe_server(base)
         print(json.dumps(result, ensure_ascii=False, indent=2))

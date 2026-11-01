@@ -1,5 +1,7 @@
 """Packaging guards and host entrypoint tests; no library or phone mutation."""
 import importlib.util
+import os
+from types import SimpleNamespace
 from pathlib import Path
 import tempfile
 import unittest
@@ -51,21 +53,25 @@ class AndroidContractBuildTest(unittest.TestCase):
         bootstrap = load("contract_bootstrap", ROOT / "android/app/src/main/python/bootstrap.py")
         with patch.object(bootstrap.os.path, "isfile", return_value=True), \
                 patch.object(bootstrap.os, "chdir"), patch.object(bootstrap.runpy, "run_path") as run, \
-                patch.object(bootstrap.sys, "argv", []):
+                patch.object(bootstrap.sys, "argv", []), patch.dict(os.environ), \
+                patch.dict(bootstrap.sys.modules, {"study_android_library": SimpleNamespace(prepare_initial_library=lambda root: {"initialized": False, "reason": "fixture"})}):
             bootstrap.main(str(ROOT), True, 18033)
             self.assertEqual("0.0.0.0", bootstrap.sys.argv[2])
             self.assertEqual("18033", bootstrap.sys.argv[4])
             self.assertIn("--trusted-lan-write", bootstrap.sys.argv)
+            self.assertEqual("contract-v2", os.environ["STUDY_RUNTIME_PROFILE"])
             run.assert_called_once()
 
     def test_default_bootstrap_keeps_existing_port(self):
         bootstrap = load("normal_bootstrap", ROOT / "android/app/src/main/python/bootstrap.py")
         with patch.object(bootstrap.os.path, "isfile", return_value=True), \
                 patch.object(bootstrap.os, "chdir"), patch.object(bootstrap.runpy, "run_path"), \
-                patch.object(bootstrap.sys, "argv", []):
+                patch.object(bootstrap.sys, "argv", []), patch.dict(os.environ), \
+                patch.dict(bootstrap.sys.modules, {"study_android_library": SimpleNamespace(prepare_initial_library=lambda root: {"initialized": False, "reason": "fixture"})}):
             bootstrap.main(str(ROOT))
             self.assertEqual("0.0.0.0", bootstrap.sys.argv[2])
             self.assertEqual("8033", bootstrap.sys.argv[4])
+            self.assertEqual("android", os.environ["STUDY_RUNTIME_PROFILE"])
 
 
 if __name__ == "__main__":

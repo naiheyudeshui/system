@@ -5,7 +5,12 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
 import android.content.pm.ServiceInfo;
+import android.net.ConnectivityManager;
+import android.net.Network;
+import android.net.NetworkRequest;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.IBinder;
 import android.util.Log;
 
@@ -27,7 +32,65 @@ public class StudyServerService extends Service {
     private static final String TAG = "StudyServer";
     private static final int NOTIFICATION_ID = 8033;
     private static final int PORT = BuildConfig.SERVER_PORT;
+    private static final long NOTIFICATION_REFRESH_MS = 15_000L;
     private final AtomicBoolean running = new AtomicBoolean(false);
+    private final AtomicBoolean ready = new AtomicBoolean(false);
+    private final Handler notificationHandler = new Handler(Looper.getMainLooper());
+    private ConnectivityManager connectivityManager;
+    private ConnectivityManager.NetworkCallback networkCallback;
+    private final Runnable notificationRefresh = new Runnable() {
+        @Override public void run() {
+            refreshConnection();
+            if (running.get()) notificationHandler.postDelayed(this, NOTIFICATION_REFRESH_MS);
+        }
+    };
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        connectivityManager = getSystemService(ConnectivityManager.class);
+        if (connectivityManager == null) return;
+        networkCallback = new ConnectivityManager.NetworkCallback() {
+            @Override public void onAvailable(Network network) { refreshConnection(); }
+            @Override public void onLost(Network network) { refreshConnection(); }
+            @Override public void onCapabilitiesChanged(Network network, android.net.NetworkCapabilities capabilities) { refreshConnection(); }
+            @Override public void onLinkPropertiesChanged(Network network, android.net.LinkProperties properties) { refreshConnection(); }
+        };
+        try {
+            connectivityManager.registerNetworkCallback(new NetworkRequest.Builder().build(), networkCallback);
+        } catch (Exception error) {
+            networkCallback = null;
+            Log.w(TAG, "Network callback unavailable; using periodic address refresh", error);
+        }
+    }
+
+    private void refreshConnection() {
+        notificationHandler.post(() -> {
+            if (!running.get() || !ready.get()) return;
+            String status = runningStatus();
+            StudyServerState.publish(StudyServerState.READY, status);
+            updateNotification(status);
+        });
+    }
+
+    @Override
+    public void onTaskRemoved(Intent rootIntent) {
+        refreshConnection();
+        super.onTaskRemoved(rootIntent);
+    }
+
+    @Override
+    public void onDestroy() {
+        running.set(false);
+        ready.set(false);
+        notificationHandler.removeCallbacksAndMessages(null);
+        if (connectivityManager != null && networkCallback != null) {
+            try { connectivityManager.unregisterNetworkCallback(networkCallback); }
+            catch (Exception error) { Log.w(TAG, "Network callback cleanup failed", error); }
+        }
+        networkCallback = null;
+        super.onDestroy();
+    }
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -46,6 +109,8 @@ public class StudyServerService extends Service {
             Thread thread = new Thread(this::serve, "study-server");
             thread.start();
         }
+        notificationHandler.removeCallbacks(notificationRefresh);
+        notificationHandler.postDelayed(notificationRefresh, NOTIFICATION_REFRESH_MS);
         return START_STICKY;
     }
 
@@ -65,12 +130,16 @@ public class StudyServerService extends Service {
             }, "study-python");
             server.start();
             waitUntilListening(server, failure);
+            if (!running.get()) return;
             String status = runningStatus();
             Log.i(TAG, "Study server ready on port " + PORT);
+            ready.set(true);
             StudyServerState.publish(StudyServerState.READY, status);
             updateNotification(status);
         } catch (Throwable error) {
+            if (!running.get()) return;
             running.set(false);
+            ready.set(false);
             Throwable cause = failure.get() == null ? error : failure.get();
             Log.e(TAG, "Study server startup failed", cause);
             StudyServerState.publish(StudyServerState.ERROR, cause.toString());
@@ -120,7 +189,7 @@ public class StudyServerService extends Service {
         return getString(R.string.running) + " " + address;
     }
 
-    private String lanUrl() {
+    static String lanUrl() {
         String wifi = null;
         String other = null;
         try {
