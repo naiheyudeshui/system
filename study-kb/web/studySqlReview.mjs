@@ -2,6 +2,7 @@ import { addConfigCardControls, confirmWorkbenchAction, openConfigManager } from
 import { createSearchableCombobox } from "/3dworkbench/searchableCombobox.mjs";
 import { renderTablePreview } from "/3dworkbench/tablePreview.mjs";
 import { renderMarkdown } from "./studyMarkdown.mjs?v=20261028-main-port1";
+import { createPlanCardList } from "/3dworkbench/components/planCardList.mjs?v=20261101-plan-cards2";
 
 function make(tag, text, className) {
   const node = document.createElement(tag);
@@ -38,7 +39,7 @@ export async function renderReviewTablePanel(panel, { api, postApi, instanceId }
   const resume = make("button", "继续上次复习");
   resume.hidden = true;
   headerActions.append(resume, settings);
-  home.append(header, make("p", "选择方案卡片，再预览、筛选并确认本轮集合。", "action-hint"), cards, parameters);
+  home.append(header, cards, parameters);
   const preparation = make("section");
   preparation.dataset.helpPage = "preview";
   preparation.hidden = true;
@@ -75,6 +76,12 @@ export async function renderReviewTablePanel(panel, { api, postApi, instanceId }
   let entries = [], selectedId = "", state = null, busy = false, started = 0, revealed = false;
   let parameterInputs = {}, previewResult = null, previewPayload = null, previewState = null, filtered = [], reviewOptions = [];
   const paneId = instanceId || panel.closest("[data-instance-id]")?.dataset.instanceId;
+  const cardList = createPlanCardList({ container: cards,
+    storageKey: `study.plan-order:review:${paneId || "default"}`,
+    getSelectedId: () => selectedId, canInteract: () => !busy,
+    onSelect: id => { selectedId = id; updateLease(); renderParameters(); refreshControls(); },
+    onError: error => { message.textContent = error.message; },
+  });
   let leasedConfig = "", leaseChain = Promise.resolve();
   const updateLease = (id = selectedId) => {
     if (!paneId) return;
@@ -86,7 +93,7 @@ export async function renderReviewTablePanel(panel, { api, postApi, instanceId }
     }).catch(error => { message.textContent = `数据使用登记失败：${error.message}`; });
   };
   const leaseTimer = paneId ? window.setInterval(() => updateLease(), 30000) : null;
-  panel.dispose = () => { if (leaseTimer) window.clearInterval(leaseTimer); updateLease(""); rootPicker.dispose?.(); };
+  panel.dispose = () => { cardList.dispose(); if (leaseTimer) window.clearInterval(leaseTimer); updateLease(""); rootPicker.dispose?.(); };
   const rootTools = make("div", null, "wb-tree-root-tools");
   const rootPicker = createSearchableCombobox({
     placeholder: "搜索或选择根节点",
@@ -219,32 +226,30 @@ export async function renderReviewTablePanel(panel, { api, postApi, instanceId }
     }
   };
   const renderCards = () => {
+    cardList.beforeRender();
     cards.replaceChildren(management);
-    for (const entry of entries) {
+    for (const entry of cardList.ordered(entries)) {
       const card = make("article", null, `metric-card study-plan-card${entry.id === selectedId ? " is-selected" : ""}`);
       card.dataset.configId = entry.id;
       const choose = make("button", entry.name, "study-plan-select");
       choose.setAttribute("aria-pressed", String(entry.id === selectedId));
-      choose.addEventListener("click", () => {
-        if (busy || selectedId === entry.id) return;
-        selectedId = entry.id; updateLease(); renderParameters(); renderCards(); refreshControls();
-      });
-      card.append(choose, make("small", "已保存的 SQL 复习方案"));
+      card.append(choose);
       if (!management.hidden) addConfigCardControls(card, {
         name: entry.name,
         onEdit: () => { void openManager(entry.id); },
         onDelete: () => { void deletePlan(entry); },
       });
-      if (entry.id === selectedId) {
-        const actions = make("div", null, "wb-config-actions");
-        for (const label of ["预览并筛选", "开始一轮学习"]) {
-          const button = make("button", label, label === "开始一轮学习" ? "primary" : "study-preview-button");
-          button.addEventListener("click", () => { void (label === "开始一轮学习" ? startNewRound() : prepare()); });
-          actions.append(button);
-        }
-        card.append(actions);
+      const actions = make("div", null, "wb-config-actions study-plan-actions");
+      for (const label of ["预览并筛选", "开始一轮学习"]) {
+        const button = make("button", label, label === "开始一轮学习" ? "primary" : "study-preview-button");
+        button.addEventListener("click", () => {
+          if (cardList.select(entry.id)) void (label === "开始一轮学习" ? startNewRound() : prepare());
+        });
+        actions.append(button);
       }
+      card.append(actions);
       cards.append(card);
+      cardList.bind(card, entry.id);
     }
     if (!entries.length) cards.append(make("p", "暂无方案，点击设置 → 新增方案。"));
   };

@@ -29,6 +29,7 @@ const workspaceCss = await readUiSource(new URL("pluginWorkspace.css", shared));
 const studyCss = await readUiSource(new URL("../web/styles.css", import.meta.url));
 const workbenchCss = await readUiSource(new URL("workbench.css", shared));
 const settle = () => new Promise((resolve) => setImmediate(resolve));
+const visibleButtons = root => [...root.querySelectorAll("button")].filter(node => !node.closest("[hidden]"));
 
 function drop(ui, id, target) {
   const event = new ui.dom.window.Event("drop", { bubbles: true, cancelable: true });
@@ -353,7 +354,7 @@ test("shared previews cap long columns and wrap long values", async () => {
   } finally { ui.dom.window.close(); }
 });
 
-test("plan cards expose only selected actions, edit current plan, create new and require preview", async () => {
+test("plan cards keep actions available, edit current plan, create new and require preview", async () => {
   const ui = await setup();
   try {
     const root = ui.document.createElement("section"); ui.document.body.append(root);
@@ -369,7 +370,7 @@ test("plan cards expose only selected actions, edit current plan, create new and
     assert.equal(root.querySelectorAll(".study-plan-card").length, 2);
     assert.equal(button("导入旧方案"), undefined);
     assert.doesNotMatch(reviewSource, /import-legacy|study\.review\.profiles\.v1/);
-    assert.equal(root.querySelectorAll(".study-plan-card .wb-config-actions").length, 1);
+    assert.equal(root.querySelectorAll(".study-plan-card .study-plan-actions").length, 2);
     assert.equal(root.querySelector(".study-learning-card").hidden, true);
     assert.equal(calls.some((url) => url.includes("/session/")), false);
     assert.equal(calls.some((url) => url.endsWith("catalog")), false);
@@ -401,6 +402,77 @@ test("plan cards expose only selected actions, edit current plan, create new and
     button("预览并筛选").click(); await settle();
     assert.equal(root.querySelector('[data-action="confirm-start"]').disabled, true);
     assert.match(root.textContent, /筛选 0 条/);
+  } finally { ui.dom.window.close(); }
+});
+
+test("review and tree select the whole card without rebuilding it, and actions use their own plan", async () => {
+  const ui = await setup();
+  try {
+    for (const [kind, render] of [["review", ui.review.renderReviewTablePanel], ["tree", ui.treeAdapter.renderNodeTreePanel]]) {
+      const root = ui.document.createElement("section"); ui.document.body.append(root);
+      const calls = [];
+      const entries = [{ id: "a", name: "A", parameters: {} }, { id: "b", name: "B", parameters: {} }];
+      const tree = { roots: [{ id: "root", title: "Root", data: {}, children: [] }],
+        rows: [{ node_id: "root", parent_id: null, title: "Root" }], columns: ["node_id", "parent_id", "title"], detail_fields: [],
+        validation: { kind: "tree", root_count: 1, max_depth: 1, warnings: [] } };
+      await render(root, {
+        api: async url => { calls.push(url); return url.includes("configs") ? { configs: entries } : tree; },
+        postApi: async (url, payload) => { calls.push({ url, payload }); return { rows: [], columns: [], limit: 10, preview_hash: "empty", duplicates: 0, missing_schedule: 0 }; },
+      });
+      const before = [...root.querySelectorAll(".study-plan-card")];
+      assert.ok(before.every(card => card.querySelectorAll(".study-plan-actions button").length === 2));
+      assert.ok(before.every(card => !card.querySelector("small")));
+      const last = before.at(-1); last.click();
+      assert.equal(last.getAttribute("aria-current"), "true");
+      assert.equal(root.querySelector('.study-plan-select[aria-pressed="true"]').textContent, "B");
+      assert.ok(before.every((card, index) => root.querySelectorAll(".study-plan-card")[index] === card));
+      before[0].dispatchEvent(new ui.dom.window.KeyboardEvent("keydown", { key: " ", bubbles: true, cancelable: true }));
+      assert.equal(before[0].getAttribute("aria-current"), "true");
+      // An action on an unselected card must select that card before loading it.
+      last.querySelector(kind === "tree" ? ".study-plan-actions .primary" : ".study-plan-actions button").click();
+      await settle(); await settle();
+      if (kind === "review") assert.equal(calls.find(call => call.url?.endsWith("sql-preview")).payload.config_id, "b");
+      else { assert.ok(root.classList.contains("is-browsing-tree")); assert.ok(calls.some(call => typeof call === "string" && call.includes("config_id=b"))); }
+      root.dispose(); root.remove();
+    }
+  } finally { ui.dom.window.close(); }
+});
+
+test("plan ordering previews displacement, commits only on drop and restores per pane", async () => {
+  const ui = await setup();
+  try {
+    for (const [kind, render] of [["review", ui.review.renderReviewTablePanel], ["tree", ui.treeAdapter.renderNodeTreePanel]]) {
+      const entries = [{ id: "a", name: "A", parameters: {} }, { id: "b", name: "B", parameters: {} }];
+      const mount = async instanceId => {
+        const root = ui.document.createElement("section"); ui.document.body.append(root);
+        await render(root, { api: async () => ({ configs: entries }), postApi: async () => ({}), instanceId });
+        return root;
+      };
+      let root = await mount("sort-pane");
+      const grid = root.querySelector(".study-plan-grid"), cards = [...root.querySelectorAll(".study-plan-card")];
+      grid.getBoundingClientRect = () => ({ left: 0, top: 0, width: 500, height: 500 });
+      cards.forEach((card, index) => { card.getBoundingClientRect = () => ({ left: 0, top: index * 130, width: 240, height: 118 }); });
+      const fire = (target, type, y = 30) => {
+        const event = new ui.dom.window.Event(type, { bubbles: true, cancelable: true });
+        Object.assign(event, { clientX: 50, clientY: y, dataTransfer: { setData() {} } }); target.dispatchEvent(event);
+      };
+      const key = `study.plan-order:${kind}:sort-pane`;
+      fire(cards[0], "dragstart"); fire(grid, "dragover", (cards.length - 1) * 130 + 50);
+      assert.ok(cards.at(-1).style.transform.includes("-130px"));
+      assert.ok(grid.querySelector(".wb-sortable-slot"));
+      assert.equal(ui.dom.window.localStorage.getItem(key), null);
+      ui.document.dispatchEvent(new ui.dom.window.KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+      assert.equal(grid.querySelector(".wb-sortable-slot"), null);
+      assert.equal(ui.dom.window.localStorage.getItem(key), null);
+      fire(cards[0], "dragstart"); fire(grid, "drop", (cards.length - 1) * 130 + 50); fire(cards[0], "dragend");
+      const expected = [...cards.slice(1), cards[0]].map(card => card.dataset.configId);
+      assert.deepEqual(JSON.parse(ui.dom.window.localStorage.getItem(key)), expected);
+      root.dispose(); root.remove(); root = await mount("sort-pane");
+      assert.deepEqual([...root.querySelectorAll(".study-plan-card")].map(card => card.dataset.configId), expected);
+      root.dispose(); root.remove(); root = await mount("other-pane");
+      assert.equal(root.querySelector(".study-plan-card").dataset.configId, cards[0].dataset.configId);
+      root.dispose(); root.remove();
+    }
   } finally { ui.dom.window.close(); }
 });
 
@@ -460,7 +532,7 @@ test("tree browser replaces graph with outline and returns from nested details w
     const filtered = ui.tree.filterTree(roots, ["child"]);
     assert.equal(filtered.addedAncestors, 1);
     const host = ui.tree.createTreeWorkspace(root, { roots, initialState: { collapsed: ["root"] }, detailFields: [{ column: "answer", format: "markdown" }, { column: "note", format: "text" }], renderMarkdown: (value, target) => { target.textContent = value; }, onRefresh: async () => { throw new Error("offline"); } });
-    const button = (label) => [...root.querySelectorAll("button")].find((node) => node.textContent === label);
+    const button = (label) => [...visibleButtons(root)].find((node) => node.textContent === label);
     root.querySelector('[aria-label="展开或收起子树 Root"]').dispatchEvent(new ui.dom.window.Event("click"));
     assert.equal(root.querySelectorAll(".wb-tree-graph-node").length, 2);
     assert.equal(root.querySelector("img"), null);
@@ -523,7 +595,7 @@ test("tree editor saves canonical content and retries shared refresh without dup
       saves++; content = values.content_md; title = values.title; failRefresh = true;
       return { node: { node_id: "node:root", title, content_md: content }, version: "version-2" };
     } });
-    const button = (label) => [...root.querySelectorAll("button")].find((node) => node.textContent === label);
+    const button = (label) => [...visibleButtons(root)].find((node) => node.textContent === label);
     button("预览并筛选").click(); await settle(); button("打开树图").click();
     root.querySelector(".wb-tree-graph-node").dispatchEvent(new ui.dom.window.Event("click"));
     root.querySelector(".wb-tree-graph-node").dispatchEvent(new ui.dom.window.KeyboardEvent("keydown", { key: "Enter", shiftKey: true, bubbles: true, cancelable: true }));
@@ -586,7 +658,7 @@ test("tree editor retries the same write and replays undo and redo through the h
         return { node: { node_id: "node:root" }, history_available: true };
       },
     });
-    const button = (label) => [...root.querySelectorAll("button")].find((node) => node.textContent === label);
+    const button = (label) => [...visibleButtons(root)].find((node) => node.textContent === label);
     button("预览并筛选").click(); await settle(); button("打开树图").click();
     assert.equal(root.querySelector('[aria-label="撤销 Ctrl+Z"]').disabled, true);
     root.querySelector(".wb-tree-graph-node").dispatchEvent(new ui.dom.window.Event("click"));
@@ -620,7 +692,7 @@ test("tree outline presentation remains pane-selected and disposal cancels its d
     let writes = 0;
     const payload = { roots: [{ id: "node:root", title: "Root", children: [] }], rows: [{ node_id: "node:root", title: "Root" }], columns: ["node_id", "title"], detail_fields: [], validation: { kind: "tree", root_count: 1, max_depth: 1, warnings: [] }, scopes: [] };
     await ui.treeAdapter.renderNodeTreePanel(root, { presentationMode: "outline", api: async (url) => url.includes("/configs?") ? { configs: [] } : payload, postApi: async () => { writes++; return {}; } });
-    const button = (label) => [...root.querySelectorAll("button")].find((node) => node.textContent === label);
+    const button = (label) => [...visibleButtons(root)].find((node) => node.textContent === label);
     button("预览并筛选").click(); await settle(); button("打开树图").click();
     assert.equal(root.querySelector(".wb-tree-outline").hidden, false);
     root.querySelector('[aria-label="切换到树图"]').click();
@@ -657,7 +729,7 @@ test("deleting a tree node stays on the tree and removes only that node", async 
         return { node: { node_id: values.node_id, deleted: true } };
       },
     });
-    const button = (label) => [...ui.document.querySelectorAll("button")].find((node) => node.textContent === label);
+    const button = (label) => [...visibleButtons(ui.document)].find((node) => node.textContent === label);
     button("预览并筛选").click(); await settle(); button("打开树图").click();
     assert.equal(root.classList.contains("is-browsing-tree"), true);
     root.querySelector('.wb-tree-graph-node[data-node-id="node:b"]').dispatchEvent(new ui.dom.window.Event("click"));
@@ -688,7 +760,7 @@ test("late tree validation cannot replace a disposed plugin panel", async () => 
         deleted = true; return { node: { node_id: "node:root", deleted: true } };
       },
     });
-    const button = (label) => [...ui.document.querySelectorAll("button")].find((node) => node.textContent === label);
+    const button = (label) => [...visibleButtons(ui.document)].find((node) => node.textContent === label);
     button("预览并筛选").click(); await settle(); button("打开树图").click();
     root.querySelector(".wb-tree-graph-node").dispatchEvent(new ui.dom.window.Event("click"));
     root.querySelector(".wb-tree-graph-node").dispatchEvent(new ui.dom.window.KeyboardEvent("keydown", { key: "Delete", bubbles: true, cancelable: true }));
@@ -861,7 +933,7 @@ test("tree plan preview retains ancestors and allows a selected browsing root", 
     const child = { id: "leaf", title: "Leaf", answer_md: "Answer", cards: [{ front: "Card", back: "Card answer" }], children: [] };
     const tree = { roots: [{ id: "root", title: "Root", children: [child] }], scopes: [{ id: "scope", label: "Book" }] };
     await ui.treeAdapter.renderNodeTreePanel(root, { api: async (url) => url.includes("/configs?") ? { configs: [] } : tree, postApi: async () => ({}) });
-    const button = (label) => [...root.querySelectorAll("button")].find((node) => node.textContent === label || node.getAttribute("aria-label") === label);
+    const button = (label) => [...visibleButtons(root)].find((node) => node.textContent === label || node.getAttribute("aria-label") === label);
     button("预览并筛选").click(); await settle();
     assert.match(root.textContent, /校验通过/);
     [...root.querySelectorAll("button")].find((node) => node.textContent.startsWith("节点标题")).click();
@@ -926,7 +998,7 @@ test("tree plans omit browsing scope, order actions and preserve filters and vie
       if (unavailable) throw new Error("offline");
       return payload();
     }, postApi: async () => ({}) });
-    const button = label => [...root.querySelectorAll("button")].find(node => node.textContent === label || node.getAttribute("aria-label") === label);
+    const button = label => [...visibleButtons(root)].find(node => node.textContent === label || node.getAttribute("aria-label") === label);
     assert.equal(button("刷新"), undefined);
     assert.equal(root.querySelector('[aria-label="浏览范围"]'), null);
     await root.refresh();
@@ -969,7 +1041,7 @@ test("tree mapping editor synchronizes relation fields and multiple detail modul
     await ui.manager.openConfigManager(root, { api: async () => ({ configs: [], definition: { contract: "tree-nodes/v1" } }), postApi: async () => ({}), pluginId: "tree", moduleId: "trees" });
     const mapping = root.querySelector('[aria-label="节点 ID 列"]');
     mapping.value = "code"; mapping.dispatchEvent(new ui.dom.window.Event("change"));
-    const button = (label) => [...root.querySelectorAll("button")].find((node) => node.textContent === label);
+    const button = (label) => [...visibleButtons(root)].find((node) => node.textContent === label);
     button("新增详情模块").click();
     const columns = root.querySelectorAll('[aria-label="详情来源列"]');
     columns[1].value = "notes"; columns[1].dispatchEvent(new ui.dom.window.Event("input"));

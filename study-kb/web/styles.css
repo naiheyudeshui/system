@@ -257,11 +257,17 @@ button.danger { background: var(--danger); color: var(--panel); }
 .study-sql-review > section,.study-learning-card > section,.study-review-question { min-width:0; max-width:100%; }
 .study-review-header { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:16px; }
 .study-review-header h3,.study-review-header p { margin:0; }
-.study-plan-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr)); gap:12px; margin:16px 0; }
+.study-plan-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr)); grid-auto-rows:1fr; gap:12px; margin:16px 0; }
 .study-plan-grid > .metric-card { min-height:112px; border:1px solid var(--border); border-radius:8px; padding:16px; background:var(--panel); align-content:start; gap:12px; }
 .study-plan-grid > .is-selected { border-color:var(--accent); box-shadow:inset 0 3px var(--accent); background:var(--accent-soft); }
 .study-plan-select { padding:0; border:0; background:transparent; text-align:left; font-size:17px; font-weight:700; color:var(--accent); }
-.study-plan-card small { color:var(--text-muted); }
+.study-plan-grid > .study-plan-card { position:relative; display:flex; flex-direction:column; min-width:0; box-sizing:border-box; cursor:pointer; }
+.study-plan-card:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+.study-plan-card > .study-plan-select { width:100%; min-height:44px; padding-right:52px; box-sizing:border-box; overflow-wrap:anywhere; cursor:pointer; }
+.study-plan-card > .study-plan-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:auto; padding-top:10px; }
+.study-plan-actions > button { flex:1 1 auto; min-width:0; min-height:40px; }
+.study-plan-grid.is-sortable-preview .study-plan-card { will-change:transform; pointer-events:none; }
+.study-plan-drag-ghost { position:fixed; z-index:1000; pointer-events:none; max-width:240px; padding:10px 14px; border:1px solid var(--accent); border-radius:8px; background:var(--panel); color:var(--text); box-shadow:var(--shadow); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .study-learning-card { width:100%; min-width:0; max-width:100%; box-sizing:border-box; overflow:hidden; padding:var(--wb-component-padding,24px); border:1px solid var(--border); border-radius:var(--wb-component-radius,12px); background:var(--panel); }
 .study-review-question { font-size:20px; line-height:1.6; margin:24px 0; }
 .study-learning-card .study-review-ratings { margin-top:20px; }
@@ -278,7 +284,7 @@ button.danger { background: var(--danger); color: var(--panel); }
 
 .study-review-header-actions { align-items:center; margin-left:auto; }
 .study-plan-grid > .study-plan-management { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); grid-template-rows:minmax(112px,1fr); align-content:stretch; align-items:stretch; gap:0; padding:0; overflow:hidden; background:color-mix(in srgb,var(--accent) 6%,var(--panel)); }
-.study-plan-management > .metric-management-card { display:flex; flex-direction:column; align-items:center; justify-content:center; align-self:stretch; height:auto; gap:10px; min-width:0; min-height:112px; padding:16px 10px; border:0; border-radius:0; background:transparent; text-align:center; }
+.study-plan-management > .metric-management-card { display:flex; flex-direction:column; align-items:center; justify-content:center; align-self:stretch; height:auto; max-height:none; box-sizing:border-box; gap:10px; min-width:0; min-height:112px; padding:16px 10px; border:0; border-radius:0; background:transparent; text-align:center; }
 .study-plan-management > .metric-management-card + .metric-management-card { border-left:1px solid var(--border); }
 .study-plan-management > .metric-management-card b { font-size:24px; line-height:1; color:var(--accent); }
 .study-plan-management > .metric-management-card span { font-size:14px; line-height:1.5; font-weight:650; }

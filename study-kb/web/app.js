@@ -5,7 +5,7 @@ import { createEditingServices, createHttpApi } from "/3dworkbench/hostServices.
 import { createRefreshCoordinator } from "/3dworkbench/refreshCoordinator.mjs?v=20261030-manager2";
 import { applyIconButtons, setupLanguageSelect, t } from "/3dworkbench/workbenchPlatform.mjs?v=20261028-bsp1";
 import { studyHelpTopics } from "./studyHelp.mjs?v=20261030-editable-trees1";
-import { createStudyRenderers } from "./studyPlugins.mjs?v=20261030-tables1";
+import { createStudyRenderers } from "./studyPlugins.mjs?v=20261101-plan-cards2";
 import { renderMarkdown } from "./studyMarkdown.mjs";
 
 // Study host: a top bar plus one BSP workspace.  Every feature is a plugin in

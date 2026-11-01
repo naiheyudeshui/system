@@ -3,6 +3,7 @@ import { renderTablePreview } from "/3dworkbench/tablePreview.mjs?v=20261030-tre
 import { createTreeWorkspace, filterTree, indexTree } from "/3dworkbench/treeWorkspace.mjs?v=20261030-tree-plans1";
 import * as markdownTools from "./studyMarkdown.mjs?v=20261030-managed-assets1";
 const { renderMarkdown } = markdownTools;
+import { createPlanCardList } from "/3dworkbench/components/planCardList.mjs?v=20261101-plan-cards2";
 import { createSearchableCombobox } from "/3dworkbench/searchableCombobox.mjs?v=20261019-history-toolbar";
 
 function make(tag, text, className) {
@@ -63,8 +64,7 @@ export async function renderNodeTreePanel(panel, { api, postApi, presentationMod
   edit.append(editIcon, make("span", "编辑已有方案")); add.append(addIcon, make("span", "新增方案"));
   edit.dataset.helpAction = "manage-edit"; add.dataset.helpAction = "manage-add";
   management.append(edit, add);
-  const info = make("p", "选择数据方案，先校验、预览筛选，再打开整页树图。", "action-hint");
-  home.append(header, info, grid);
+  home.append(header, grid);
   const preview = make("section"); preview.hidden = true;
   preview.dataset.helpPage = "preview";
   const previewHeader = make("header", null, "study-review-header study-tree-preview-header");
@@ -87,6 +87,12 @@ export async function renderNodeTreePanel(panel, { api, postApi, presentationMod
   let entries = [], selectedId = "", data = null, filtered = [], session = null, source = null, busy = false, previewState = null;
   let messageTimer = null, disposed = false, cancelDelete = null, activeAssetImport = null;
   const paneId = instanceId || panel.closest("[data-instance-id]")?.dataset.instanceId;
+  const cardList = createPlanCardList({ container: grid,
+    storageKey: `study.plan-order:tree:${paneId || "default"}`,
+    getSelectedId: () => selectedId, canInteract: () => !busy,
+    onSelect: id => { selectedId = id; updateLease(); },
+    onError: error => setMessage(error.message, "error"),
+  });
   let leasedConfig = "", leaseChain = Promise.resolve();
   const updateLease = (id = selectedId) => {
     if (!paneId) return;
@@ -283,7 +289,7 @@ export async function renderNodeTreePanel(panel, { api, postApi, presentationMod
     const options = [...indexTree(tree.roots).values()];
     return options.find((node) => node.id === value || node.title === value)?.id || value;
   };
-  const prepare = () => run(async () => {
+  const prepare = ({ openTree = false } = {}) => run(async () => {
     const request = { config_id: selectedId };
     const next = await fetchData(request);
     indexTree(next.roots);
@@ -292,6 +298,10 @@ export async function renderNodeTreePanel(panel, { api, postApi, presentationMod
     previewTitle.textContent = `${selected()?.name || "学习知识树"} · 预览与筛选`;
     renderPreview(next);
     page(preview);
+    if (openTree && filtered.length) {
+      const tree = filterTree(data.roots, filtered.map(row => row.node_id));
+      showTree(tree.roots);
+    }
   });
   const renderPreview = (next, initialFilters = []) => {
     const validation = next.validation;
@@ -309,22 +319,28 @@ export async function renderNodeTreePanel(panel, { api, postApi, presentationMod
     });
   };
   const renderCards = () => {
+    cardList.beforeRender();
     grid.replaceChildren(management);
-    for (const entry of [{ id: "", name: "学习知识树" }, ...entries]) {
+    for (const entry of cardList.ordered([{ id: "", name: "学习知识树" }, ...entries])) {
       const card = make("article", null, `metric-card study-plan-card${entry.id === selectedId ? " is-selected" : ""}`);
       const choose = make("button", entry.name, "study-plan-select"); choose.setAttribute("aria-pressed", String(entry.id === selectedId));
-      choose.addEventListener("click", () => { if (!busy) { selectedId = entry.id; updateLease(); renderCards(); } });
-      card.append(choose, make("small", entry.id ? "数据方案 · 自定义关系与详情模块" : "内置方案 · 章节与卡片均可筛选；编辑后另存为自定义方案"));
+      card.append(choose);
       if (!management.hidden) addConfigCardControls(card, {
         name: entry.name,
         onEdit: () => { void openManager(entry.id, !entry.id); },
         onDelete: entry.id ? () => { void deletePlan(entry); } : null,
       });
-      if (entry.id === selectedId) {
-        const previewButton = make("button", "预览并筛选"); previewButton.addEventListener("click", () => { void prepare(); });
-        card.append(previewButton);
+      const actions = make("div", null, "wb-config-actions study-plan-actions");
+      for (const [label, openTree] of [["预览并筛选", false], ["打开树图", true]]) {
+        const button = make("button", label, openTree ? "primary" : "study-preview-button");
+        button.addEventListener("click", () => {
+          if (cardList.select(entry.id)) void prepare({ openTree });
+        });
+        actions.append(button);
       }
+      card.append(actions);
       grid.append(card);
+      cardList.bind(card, entry.id);
     }
     edit.disabled = false;
   };
@@ -856,7 +872,7 @@ export async function renderNodeTreePanel(panel, { api, postApi, presentationMod
       else if (indexTree(refreshed.roots).has(rootChoice)) rootPicker.setValue(rootChoice);
     }, true);
   };
-  panel.dispose = () => { disposed = true; activeAssetImport?.dispose(); activeAssetImport = null; if (leaseTimer) window.clearInterval(leaseTimer); updateLease(""); ++editorGeneration; ++localMutationRevision; cancelDelete?.(); if (messageTimer) window.clearTimeout(messageTimer); session?.dispose(); rootPicker.dispose?.(); };
+  panel.dispose = () => { disposed = true; cardList.dispose(); activeAssetImport?.dispose(); activeAssetImport = null; if (leaseTimer) window.clearInterval(leaseTimer); updateLease(""); ++editorGeneration; ++localMutationRevision; cancelDelete?.(); if (messageTimer) window.clearTimeout(messageTimer); session?.dispose(); rootPicker.dispose?.(); };
   await run(async () => {
     await reload();
   });
