@@ -1,6 +1,6 @@
 # Study 与公共宿主交接说明
 
-整理日期：2026-11-01。日常工作入口为 `D:\system`；`D:\system\3dStudio` 是重新克隆的独立宿主仓库。两处均有完整的 `.git` 目录，使用 `feat/workbench-contract-v2`，分别推送到 `naiheyudeshui/system` 与 `naiheyudeshui/3dStudio`；运行不依赖旧宿主工作树。旧 worktrees 保留作回退，其中 Study 工作树现为 detached HEAD；`D:\system\.git` 仍管理已有 Study worktrees，不得手动删除。
+整理日期：2026-11-01。日常工作入口为 `D:\system`；`D:\system\3dStudio` 是重新克隆的独立宿主仓库。两处均有完整的 `.git` 目录，使用 `feat/workbench-contract-v2`，分别对应 `naiheyudeshui/system` 与 `naiheyudeshui/3dStudio`；运行不依赖旧宿主工作树。旧 worktrees 保留作来源和回退，其中旧 Study 图标工作树已使用 `feat/themeable-icons-20261101`；`D:\system\.git` 仍管理已有 Study worktrees，不得手动删除。
 
 ## 内容分类
 
@@ -49,3 +49,9 @@ npm test --prefix 3dStudio/tests
 用户已明确选择继续使用当前分支学习库，未合并旧库或覆盖手机主库。旧库、旧评分和原始资料仍可从归档恢复。恢复时停止服务，按中央备份接口恢复整库及附件；不能只拿旧 SQLite 覆盖新库而漏掉附件。
 
 后续截图、运行日志和临时组装输出写到仓外或已忽略的 build/reports；需要长期保存的结论写成正式文档。不要使用 `git clean -fdx` 清理，因为它会删除附件、环境、资料与本地构建。
+
+## 2026-11-01 多 agent 汇合后
+
+方案卡、统一图标及手册自动验收已汇入上述日常入口。具体来源、提交、回归和备份见 [汇合记录](tooling/agent-integration-20261101.md)。旧工作树保留历史/WIP，不能按目录整体覆盖当前运行仓；新任务先核对实际服务命令和产品宿主锁。
+
+本轮服务重载后的日志位于 `D:/system-handoff-archive/20261101-agent-unification/server.stdout.log` 与 `server.stderr.log`。完整干净源码验收在仓外独立 worktree 执行，避免运行库的正常变化影响发布检查。本轮新增提交保存在本地，尚未推送，已有 APK 不代表这个统一源码版本。
