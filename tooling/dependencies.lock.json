@@ -2,6 +2,6 @@
   "schema": "workbench.product-dependencies/v1",
   "host": {
     "repository": "https://github.com/naiheyudeshui/3dStudio.git",
-    "commit": "b2fac49278539c2603721a672c25575ca4385919"
+    "commit": "6431ae95329159bfc04a51bfcc2779c01711683f"
   }
 }
