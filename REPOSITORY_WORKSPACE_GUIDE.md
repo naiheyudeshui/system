@@ -26,6 +26,8 @@
 
 浏览器打开 `http://127.0.0.1:8033/`。该环境是本机依赖，不随 Git 上传。新机器先创建 Python 虚拟环境并安装 `3dStudio/requirements.txt`；构建说明书还需 `3dStudio/tooling/build-manual/requirements-lock.txt`。发布手册缺失时使用 `tooling/manuals.py --studio-root 3dStudio --output <全新目录> --deploy` 重建。
 
+本次交付服务从此目录监听 `0.0.0.0:8033`，沿用可信局域网写入模式。运行日志在外部归档的 `service.stdout.log` / `service.stderr.log`。插件目录查询会更新数据库中的安装路径和登记时间，因此运行期间 `study-kb/data/study.sqlite` 出现 Git 修改状态属于运行数据变化；本次逐表核对只有 `workbench_plugin` 变化，知识、评分及其他数据不变。不要为清空 Git 状态回滚正在使用的数据库。
+
 ```powershell
 npm ci --prefix study-kb/tests
 npm test --prefix study-kb/tests
@@ -41,6 +43,8 @@ npm test --prefix 3dStudio/tests
 ## 备份和恢复
 
 本轮外部归档为 `D:\system-handoff-archive\20261101-131549`：`previous-system` 保存旧 D:\system 的源码、文稿和本地数据（不复制 .git、依赖、可重建构建缓存或外链）；`current-data` 保存当前两库与附件；`temporary-manifest.csv` 逐条记录移出的路径。旧 D:\system 未提交内容另保存在本地 `backup/pre-handoff-main-wip-20261101` 分支，没有混入产品分支。
+
+`runtime-transfer.csv` 记录本机运行资源的迁入位置。`current-data/study-after-startup.sqlite` 是启动验证后的 SQLite 一致性副本；分支中保留用户选择的启动前快照。迁移后的测试日志以 `final-` 开头，717 个资源的验证输出在 `final-web-runtime`，均放在仓外。
 
 用户已明确选择继续使用当前分支学习库，未合并旧库或覆盖手机主库。旧库、旧评分和原始资料仍可从归档恢复。恢复时停止服务，按中央备份接口恢复整库及附件；不能只拿旧 SQLite 覆盖新库而漏掉附件。
 
