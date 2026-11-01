@@ -1,0 +1,59 @@
+{
+  "server": "http://192.168.31.20:8033",
+  "paper_parent": "card:card_83b246a7ae28451d955f183b10",
+  "theme_title": "主题六：中间件与软件构件在联合仿真平台中的应用",
+  "nodes": [
+    {
+      "node_id": "card:card_43a4b636acf04eb0a0669ee494",
+      "parent_id": "card:card_7824eed861584b90a015ec434e",
+      "title": "第1段 摘要第一段：项目背景与建设目标"
+    },
+    {
+      "node_id": "card:card_1f59b4d9133f4089b3ca33dcc4",
+      "parent_id": "card:card_7824eed861584b90a015ec434e",
+      "title": "第2段 摘要第二段：中间件与构件主题切入"
+    },
+    {
+      "node_id": "card:card_491e6111fca043b98aa13029ff",
+      "parent_id": "card:card_7824eed861584b90a015ec434e",
+      "title": "第3段 正文引入问题：业务压力与技术问题"
+    },
+    {
+      "node_id": "card:card_623055293e544e4aaea83a832a",
+      "parent_id": "card:card_7824eed861584b90a015ec434e",
+      "title": "第4段 正文介绍本人职责：组织结构与工作边界"
+    },
+    {
+      "node_id": "card:card_82e566e091c64547bdd8e881db",
+      "parent_id": "card:card_7824eed861584b90a015ec434e",
+      "title": "第5段 理论与方法：中间件和软件构件如何分工"
+    },
+    {
+      "node_id": "card:card_6a2648597d174b9fa590b2354c",
+      "parent_id": "card:card_7824eed861584b90a015ec434e",
+      "title": "第6段 架构设计：接口、消息与构件装配"
+    },
+    {
+      "node_id": "card:card_bd6b42552d6a41ca904585e7fd",
+      "parent_id": "card:card_7824eed861584b90a015ec434e",
+      "title": "第7段 实施过程：从构件封装到云端执行"
+    },
+    {
+      "node_id": "card:card_ab8ac1ccb579485e8449255330",
+      "parent_id": "card:card_7824eed861584b90a015ec434e",
+      "title": "第8段 验证与质量保障：如何证明方案有效"
+    },
+    {
+      "node_id": "card:card_f34776e60e2b401c99bfae54ef",
+      "parent_id": "card:card_7824eed861584b90a015ec434e",
+      "title": "第9段 结尾收获：业务价值与工程价值"
+    },
+    {
+      "node_id": "card:card_94fc5c7b5d2d412ca1c8820b7a",
+      "parent_id": "card:card_7824eed861584b90a015ec434e",
+      "title": "第10段 结尾不足与展望：持续演进方向"
+    }
+  ],
+  "theme_node_id": "card:card_7824eed861584b90a015ec434e",
+  "paragraph_count": 10
+}

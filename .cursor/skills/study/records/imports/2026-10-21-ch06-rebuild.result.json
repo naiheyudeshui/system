@@ -1,0 +1,363 @@
+{
+  "server": "http://192.168.31.20:8033",
+  "root": "node:node_f349ff3635aa4b39ad2d325ef1",
+  "archived_subtrees": [
+    "node:node_e29ce94e755a4c7d87d7e80d58",
+    "node:node_93b39d4412224d6a9f0638aac8",
+    "node:node_833d3352d5c94983a50c4b4e27",
+    "node:node_ad1ed996b3e7493cb9595a947f",
+    "node:node_2401399432e644afba48193aa8",
+    "node:node_f5479042c9f64a98b231887860"
+  ],
+  "created_sections": [
+    {
+      "node_id": "node:node_963e9fa7c31b4c8c9a47f97f85",
+      "title": "企业信息化规划"
+    },
+    {
+      "node_id": "node:node_502cc6161d3a47d4aefc000aeb",
+      "title": "信息资源规划 IRP"
+    },
+    {
+      "node_id": "node:node_425bdf963fbe4d60a1a9364229",
+      "title": "决策支持系统 DSS"
+    },
+    {
+      "node_id": "node:node_3cca35c37cee4e2ba9347290ba",
+      "title": "电子商务与电子政务"
+    },
+    {
+      "node_id": "node:node_b162dbf27ccc48b7981bd9d3f1",
+      "title": "企业应用集成 EAI"
+    },
+    {
+      "node_id": "node:node_2a2fe017fb744ff7a8218cd010",
+      "title": "工作流管理"
+    }
+  ],
+  "created_topics": [
+    {
+      "node_id": "node:node_59bc5bb373634c828b8650054f",
+      "title": "规划定位与核心问题",
+      "parent_id": "node:node_963e9fa7c31b4c8c9a47f97f85"
+    },
+    {
+      "node_id": "node:node_c98d018b7a144b6b8a53c6553f",
+      "title": "规划层次与发展阶段",
+      "parent_id": "node:node_963e9fa7c31b4c8c9a47f97f85"
+    },
+    {
+      "node_id": "node:node_3932500265924748a5d61ea2c2",
+      "title": "BITA 与 EITA",
+      "parent_id": "node:node_963e9fa7c31b4c8c9a47f97f85"
+    },
+    {
+      "node_id": "node:node_82edafcb450747ed94b2f157ef",
+      "title": "IRP 定义与两条主线",
+      "parent_id": "node:node_502cc6161d3a47d4aefc000aeb"
+    },
+    {
+      "node_id": "node:node_cbef0b93c8094357bc06c978cb",
+      "title": "IRP 七步过程",
+      "parent_id": "node:node_502cc6161d3a47d4aefc000aeb"
+    },
+    {
+      "node_id": "node:node_f669a38a5fcb4e8d82cfd3f50c",
+      "title": "业务模型与数据需求分析",
+      "parent_id": "node:node_502cc6161d3a47d4aefc000aeb"
+    },
+    {
+      "node_id": "node:node_d5b9d658bad84da18732596663",
+      "title": "信息资源网与信息通信网",
+      "parent_id": "node:node_502cc6161d3a47d4aefc000aeb"
+    },
+    {
+      "node_id": "node:node_0b45c98370be4ce2a776b73935",
+      "title": "DSS 定义与决策类型",
+      "parent_id": "node:node_425bdf963fbe4d60a1a9364229"
+    },
+    {
+      "node_id": "node:node_03da4d66576c4c028998fd5f40",
+      "title": "DSS 组成与功能",
+      "parent_id": "node:node_425bdf963fbe4d60a1a9364229"
+    },
+    {
+      "node_id": "node:node_1117dd44677d43c28a3f05f36e",
+      "title": "MIS、DSS 与 ESS 对比",
+      "parent_id": "node:node_425bdf963fbe4d60a1a9364229"
+    },
+    {
+      "node_id": "node:node_447960d099e9468fa74c6a0c27",
+      "title": "电子商务",
+      "parent_id": "node:node_3cca35c37cee4e2ba9347290ba"
+    },
+    {
+      "node_id": "node:node_7b86b592993f4b59b81847e03c",
+      "title": "电子政务",
+      "parent_id": "node:node_3cca35c37cee4e2ba9347290ba"
+    },
+    {
+      "node_id": "node:node_bf463974b5d94c66b1f95fcf7c",
+      "title": "两类模式对比",
+      "parent_id": "node:node_3cca35c37cee4e2ba9347290ba"
+    },
+    {
+      "node_id": "node:node_33fdeae94ea64368adc7a7cf77",
+      "title": "EAI 基础",
+      "parent_id": "node:node_b162dbf27ccc48b7981bd9d3f1"
+    },
+    {
+      "node_id": "node:node_43ea227a5b7041d2b915b1791d",
+      "title": "四种集成层次",
+      "parent_id": "node:node_b162dbf27ccc48b7981bd9d3f1"
+    },
+    {
+      "node_id": "node:node_bbac4c32f9124c038bba5358a8",
+      "title": "基本概念",
+      "parent_id": "node:node_2a2fe017fb744ff7a8218cd010"
+    },
+    {
+      "node_id": "node:node_ea75e328cca64b288aef5acd3c",
+      "title": "WFMS 功能",
+      "parent_id": "node:node_2a2fe017fb744ff7a8218cd010"
+    },
+    {
+      "node_id": "node:node_2a2a8f1e31a1414f957b722488",
+      "title": "工作流参考模型 WRM",
+      "parent_id": "node:node_2a2fe017fb744ff7a8218cd010"
+    }
+  ],
+  "created_cards": [
+    {
+      "node_id": "card:card_459cc7a77d9e44a7886c996c85",
+      "title": "什么是企业信息化规划？",
+      "parent_id": "node:node_59bc5bb373634c828b8650054f"
+    },
+    {
+      "node_id": "card:card_e24c9ed7802247d6bfe8f23993",
+      "title": "信息化规划必须回答哪四个问题？",
+      "parent_id": "node:node_59bc5bb373634c828b8650054f"
+    },
+    {
+      "node_id": "card:card_a5ff13effd0140ca84c79dacb2",
+      "title": "企业战略、信息系统战略和信息技术战略如何衔接？",
+      "parent_id": "node:node_59bc5bb373634c828b8650054f"
+    },
+    {
+      "node_id": "card:card_4613f364029f45709dd8e7735f",
+      "title": "企业信息化规划通常包括哪些层次？",
+      "parent_id": "node:node_c98d018b7a144b6b8a53c6553f"
+    },
+    {
+      "node_id": "card:card_b47104ed095047c0a57563f465",
+      "title": "企业信息化初级、中级和高级阶段有什么区别？",
+      "parent_id": "node:node_c98d018b7a144b6b8a53c6553f"
+    },
+    {
+      "node_id": "card:card_d627bfb5ad674061ba77d08979",
+      "title": "企业战略与信息化战略有哪些关系？",
+      "parent_id": "node:node_c98d018b7a144b6b8a53c6553f"
+    },
+    {
+      "node_id": "card:card_21daa9bacefa45ca874f060074",
+      "title": "BITA 是什么？",
+      "parent_id": "node:node_3932500265924748a5d61ea2c2"
+    },
+    {
+      "node_id": "card:card_1d7340797a7546d4ac2b938254",
+      "title": "EITA 是什么？",
+      "parent_id": "node:node_3932500265924748a5d61ea2c2"
+    },
+    {
+      "node_id": "card:card_267624a4d947497aa84c97585a",
+      "title": "什么是信息资源规划 IRP？",
+      "parent_id": "node:node_82edafcb450747ed94b2f157ef"
+    },
+    {
+      "node_id": "card:card_6243aeef1c074e028a7238ff3f",
+      "title": "IRP 的两条主线是什么？",
+      "parent_id": "node:node_82edafcb450747ed94b2f157ef"
+    },
+    {
+      "node_id": "card:card_925f6693541d48b7bfa728fb8f",
+      "title": "IRP 的七个步骤是什么？",
+      "parent_id": "node:node_cbef0b93c8094357bc06c978cb"
+    },
+    {
+      "node_id": "card:card_179f3b00f13844fdb6bbf94b2a",
+      "title": "IRP 的核心产物有哪些？",
+      "parent_id": "node:node_cbef0b93c8094357bc06c978cb"
+    },
+    {
+      "node_id": "card:card_21df1e01d5e74d5b82a6d7ba04",
+      "title": "业务模型分析包含哪些内容？",
+      "parent_id": "node:node_f669a38a5fcb4e8d82cfd3f50c"
+    },
+    {
+      "node_id": "card:card_41b8a75af84048238372859244",
+      "title": "数据需求分析为什么重要？",
+      "parent_id": "node:node_f669a38a5fcb4e8d82cfd3f50c"
+    },
+    {
+      "node_id": "card:card_4839e44f89104ddc91135796cb",
+      "title": "什么是用户视图？",
+      "parent_id": "node:node_f669a38a5fcb4e8d82cfd3f50c"
+    },
+    {
+      "node_id": "card:card_bbf06270403c4d3a84bac7288b",
+      "title": "信息资源网与信息通信网有什么区别？",
+      "parent_id": "node:node_d5b9d658bad84da18732596663"
+    },
+    {
+      "node_id": "card:card_bcdc4a8aaf3f44e287b3add11e",
+      "title": "信息资源网的建设包括哪些内容？",
+      "parent_id": "node:node_d5b9d658bad84da18732596663"
+    },
+    {
+      "node_id": "card:card_9b9f034d49044feea42f4f938a",
+      "title": "什么是决策支持系统 DSS？",
+      "parent_id": "node:node_0b45c98370be4ce2a776b73935"
+    },
+    {
+      "node_id": "card:card_cf2661f1e14348329fc402f056",
+      "title": "结构化、半结构化和非结构化决策如何区分？",
+      "parent_id": "node:node_0b45c98370be4ce2a776b73935"
+    },
+    {
+      "node_id": "card:card_c844de36bb124a8bbe4557e266",
+      "title": "DSS 由哪四个子系统组成？",
+      "parent_id": "node:node_03da4d66576c4c028998fd5f40"
+    },
+    {
+      "node_id": "card:card_9f757eadd6d040c19a1078b8f4",
+      "title": "DSS 的主要功能有哪些？",
+      "parent_id": "node:node_03da4d66576c4c028998fd5f40"
+    },
+    {
+      "node_id": "card:card_ffd02330d1e04d198afb8d047b",
+      "title": "MIS、DSS 和 ESS 有什么区别？",
+      "parent_id": "node:node_1117dd44677d43c28a3f05f36e"
+    },
+    {
+      "node_id": "card:card_3f264941959a49d9b41d221a36",
+      "title": "电子商务相比传统商务有什么特征？",
+      "parent_id": "node:node_447960d099e9468fa74c6a0c27"
+    },
+    {
+      "node_id": "card:card_8edeedbdb65d4bd4ba852dafbd",
+      "title": "B2B、B2C、C2C 和 O2O 分别是什么？",
+      "parent_id": "node:node_447960d099e9468fa74c6a0c27"
+    },
+    {
+      "node_id": "card:card_c02a36a1cd9844f1bc3e27d4fe",
+      "title": "B2G 是什么？",
+      "parent_id": "node:node_447960d099e9468fa74c6a0c27"
+    },
+    {
+      "node_id": "card:card_5b74d825ea64420a940356a685",
+      "title": "什么是电子政务？",
+      "parent_id": "node:node_7b86b592993f4b59b81847e03c"
+    },
+    {
+      "node_id": "card:card_a3c3aa6bfb14426989f80c2610",
+      "title": "电子政务的 G2G、G2B、G2C、G2E 是什么？",
+      "parent_id": "node:node_7b86b592993f4b59b81847e03c"
+    },
+    {
+      "node_id": "card:card_eccc56d343764495aa1a61fcf6",
+      "title": "电子政务中主要有哪些信息流？",
+      "parent_id": "node:node_7b86b592993f4b59b81847e03c"
+    },
+    {
+      "node_id": "card:card_bc657963cb3045f7b8123e03f5",
+      "title": "电子商务与电子政务的模式如何对照？",
+      "parent_id": "node:node_bf463974b5d94c66b1f95fcf7c"
+    },
+    {
+      "node_id": "card:card_25816d114da046b392ff08e657",
+      "title": "什么是企业应用集成 EAI？",
+      "parent_id": "node:node_33fdeae94ea64368adc7a7cf77"
+    },
+    {
+      "node_id": "card:card_480a2377ff654bfbbd40bd4835",
+      "title": "EAI 的集成层次有哪些？",
+      "parent_id": "node:node_33fdeae94ea64368adc7a7cf77"
+    },
+    {
+      "node_id": "card:card_9297278edcaf485f9c91d7de55",
+      "title": "什么是表示集成？",
+      "parent_id": "node:node_43ea227a5b7041d2b915b1791d"
+    },
+    {
+      "node_id": "card:card_f6ecd45351fb475d8b0dc9a846",
+      "title": "什么是数据集成？",
+      "parent_id": "node:node_43ea227a5b7041d2b915b1791d"
+    },
+    {
+      "node_id": "card:card_69f20fcb48824860acfa131990",
+      "title": "什么是控制集成（功能/应用集成）？",
+      "parent_id": "node:node_43ea227a5b7041d2b915b1791d"
+    },
+    {
+      "node_id": "card:card_b8de802c018c4582abd34029b1",
+      "title": "什么是业务流程集成？",
+      "parent_id": "node:node_43ea227a5b7041d2b915b1791d"
+    },
+    {
+      "node_id": "card:card_3058dd42e3cc468085e4797a41",
+      "title": "数据集成和控制集成有什么区别？",
+      "parent_id": "node:node_43ea227a5b7041d2b915b1791d"
+    },
+    {
+      "node_id": "card:card_b5781a14613e4d8bafd974e88a",
+      "title": "什么是工作流管理？",
+      "parent_id": "node:node_bbac4c32f9124c038bba5358a8"
+    },
+    {
+      "node_id": "card:card_c43c824591bf40bd9fff69eed7",
+      "title": "工作流、活动和工作项如何区分？",
+      "parent_id": "node:node_bbac4c32f9124c038bba5358a8"
+    },
+    {
+      "node_id": "card:card_d5089f08e61e4092a6e51cb1df",
+      "title": "工作流管理系统 WFMS 的基本功能是什么？",
+      "parent_id": "node:node_ea75e328cca64b288aef5acd3c"
+    },
+    {
+      "node_id": "card:card_03fbe517c113495b8dccbd63ac",
+      "title": "工作流建模与工作流执行有什么区别？",
+      "parent_id": "node:node_ea75e328cca64b288aef5acd3c"
+    },
+    {
+      "node_id": "card:card_a84376878c83460a9f15a6409a",
+      "title": "工作流参考模型 WRM 有哪六个基本模块？",
+      "parent_id": "node:node_2a2a8f1e31a1414f957b722488"
+    },
+    {
+      "node_id": "card:card_26c3e99ca0a54a0fb7b1fbd08e",
+      "title": "WRM 的五类接口是什么？",
+      "parent_id": "node:node_2a2a8f1e31a1414f957b722488"
+    },
+    {
+      "node_id": "card:card_e8fbe281df414cd6b4de8114b7",
+      "title": "工作流执行服务的职责是什么？",
+      "parent_id": "node:node_2a2a8f1e31a1414f957b722488"
+    },
+    {
+      "node_id": "card:card_1a59311df8e54c73bc677315d8",
+      "title": "工作流引擎、客户端应用和调用应用分别做什么？",
+      "parent_id": "node:node_2a2a8f1e31a1414f957b722488"
+    },
+    {
+      "node_id": "card:card_b091a443556f499194a6836de9",
+      "title": "管理监控工具在工作流中做什么？",
+      "parent_id": "node:node_2a2a8f1e31a1414f957b722488"
+    }
+  ],
+  "counts": {
+    "archived_subtrees": 6,
+    "sections": 6,
+    "topics": 18,
+    "cards": 45
+  }
+}

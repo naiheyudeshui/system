@@ -1,0 +1,230 @@
+{
+  "server": "http://192.168.31.20:8033",
+  "batch": "chapter-tree-plans-20261019",
+  "plans": [
+    {
+      "id": "study.tree.chapter.5495af39085e456d.v1",
+      "name": "一 计算机系统知识",
+      "action": "created",
+      "node_count": 66,
+      "validation": {
+        "valid": true,
+        "kind": "tree",
+        "root_count": 1,
+        "max_depth": 4,
+        "warnings": []
+      }
+    },
+    {
+      "id": "study.tree.chapter.10b2e0dfbde428f8.v1",
+      "name": "二 操作系统知识",
+      "action": "created",
+      "node_count": 70,
+      "validation": {
+        "valid": true,
+        "kind": "tree",
+        "root_count": 1,
+        "max_depth": 4,
+        "warnings": []
+      }
+    },
+    {
+      "id": "study.tree.chapter.608f1fe0f5b15b0f.v1",
+      "name": "三 数据库系统",
+      "action": "created",
+      "node_count": 59,
+      "validation": {
+        "valid": true,
+        "kind": "tree",
+        "root_count": 1,
+        "max_depth": 4,
+        "warnings": []
+      }
+    },
+    {
+      "id": "study.tree.chapter.e8adba1a28bdabdd.v1",
+      "name": "四 计算机网络",
+      "action": "created",
+      "node_count": 66,
+      "validation": {
+        "valid": true,
+        "kind": "tree",
+        "root_count": 1,
+        "max_depth": 6,
+        "warnings": []
+      }
+    },
+    {
+      "id": "study.tree.chapter.43686784a986b9ec.v1",
+      "name": "五 信息安全",
+      "action": "created",
+      "node_count": 30,
+      "validation": {
+        "valid": true,
+        "kind": "tree",
+        "root_count": 1,
+        "max_depth": 4,
+        "warnings": []
+      }
+    },
+    {
+      "id": "study.tree.chapter.2f667de835cdc4fb.v1",
+      "name": "六 企业信息化",
+      "action": "created",
+      "node_count": 39,
+      "validation": {
+        "valid": true,
+        "kind": "tree",
+        "root_count": 1,
+        "max_depth": 4,
+        "warnings": []
+      }
+    },
+    {
+      "id": "study.tree.chapter.5c7996176719deb5.v1",
+      "name": "七 软件工程",
+      "action": "created",
+      "node_count": 62,
+      "validation": {
+        "valid": true,
+        "kind": "tree",
+        "root_count": 1,
+        "max_depth": 5,
+        "warnings": []
+      }
+    },
+    {
+      "id": "study.tree.chapter.5dd8866ce8114cc3.v1",
+      "name": "八 项目管理",
+      "action": "created",
+      "node_count": 44,
+      "validation": {
+        "valid": true,
+        "kind": "tree",
+        "root_count": 1,
+        "max_depth": 4,
+        "warnings": []
+      }
+    },
+    {
+      "id": "study.tree.chapter.029c66133c3d05fb.v1",
+      "name": "九 系统规划与可行性分析",
+      "action": "created",
+      "node_count": 24,
+      "validation": {
+        "valid": true,
+        "kind": "tree",
+        "root_count": 1,
+        "max_depth": 4,
+        "warnings": []
+      }
+    },
+    {
+      "id": "study.tree.chapter.da58981bf53d41fb.v1",
+      "name": "十 软件需求工程",
+      "action": "created",
+      "node_count": 38,
+      "validation": {
+        "valid": true,
+        "kind": "tree",
+        "root_count": 1,
+        "max_depth": 6,
+        "warnings": []
+      }
+    },
+    {
+      "id": "study.tree.chapter.76296f9be287a113.v1",
+      "name": "十一 软件架构设计",
+      "action": "created",
+      "node_count": 29,
+      "validation": {
+        "valid": true,
+        "kind": "tree",
+        "root_count": 1,
+        "max_depth": 6,
+        "warnings": []
+      }
+    },
+    {
+      "id": "study.tree.chapter.b0785a0a7a314944.v1",
+      "name": "十二系统设计",
+      "action": "created",
+      "node_count": 32,
+      "validation": {
+        "valid": true,
+        "kind": "tree",
+        "root_count": 1,
+        "max_depth": 4,
+        "warnings": []
+      }
+    },
+    {
+      "id": "study.tree.chapter.bf3d1aac5c05aaf3.v1",
+      "name": "十三 软件实现和测试",
+      "action": "created",
+      "node_count": 34,
+      "validation": {
+        "valid": true,
+        "kind": "tree",
+        "root_count": 1,
+        "max_depth": 5,
+        "warnings": []
+      }
+    },
+    {
+      "id": "study.tree.chapter.efb8bca6d422bba2.v1",
+      "name": "十四系统运行与维护",
+      "action": "created",
+      "node_count": 35,
+      "validation": {
+        "valid": true,
+        "kind": "tree",
+        "root_count": 1,
+        "max_depth": 4,
+        "warnings": []
+      }
+    },
+    {
+      "id": "study.tree.chapter.80519f2782c9677f.v1",
+      "name": "十五 数学与工程基础",
+      "action": "created",
+      "node_count": 9,
+      "validation": {
+        "valid": true,
+        "kind": "tree",
+        "root_count": 1,
+        "max_depth": 2,
+        "warnings": []
+      }
+    },
+    {
+      "id": "study.tree.chapter.e046b21e6f531ec9.v1",
+      "name": "补充 知识产权",
+      "action": "created",
+      "node_count": 5,
+      "validation": {
+        "valid": true,
+        "kind": "tree",
+        "root_count": 1,
+        "max_depth": 2,
+        "warnings": []
+      }
+    },
+    {
+      "id": "study.tree.chapter.c54cb96413d9fa7c.v1",
+      "name": "论文",
+      "action": "created",
+      "node_count": 90,
+      "validation": {
+        "valid": true,
+        "kind": "tree",
+        "root_count": 1,
+        "max_depth": 4,
+        "warnings": []
+      }
+    }
+  ],
+  "knowledge_changes": 0,
+  "knowledge_rows_unchanged": true,
+  "configuration_count": 18
+}

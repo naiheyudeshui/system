@@ -1,6 +1,6 @@
 ---
 name: study
-description: 将书本、OCR、笔记或对话归纳为通俗可背诵的知识卡，维护已有章节树并安全入库；默认以手机端 8033 workbench 为主库，本地 study.sqlite 为备份；用户要求整理资料、插入或修改卡片、调整知识树、阅读 Markdown 节点详情、按章节复习或查看今日到期时使用。
+description: 将书本、OCR、笔记或对话归纳为通俗可背诵的知识卡，维护已有章节树并安全入库；以已验证的手机 workbench（原版8033/第二版18033）为主库，本地 study.sqlite 为备份；用户要求整理资料、插入或修改卡片、调整知识树、阅读 Markdown 节点详情、按章节复习或查看今日到期时使用。
 metadata:
   scope: system
   tags: study, flashcard, fsrs, spaced-repetition, knowledge-base
@@ -124,6 +124,23 @@ probe 输出 `writable: true` 且 `errors` 为空，才允许后续 `knowledge/s
 
 备份文件只读盘点用 `sqlite3.connect(path.as_uri() + "?mode=ro", uri=True)`。不要用 `study_kb.open_db` 冒充只读：它调用迁移，可能改备份文件。先确认文件存在，防止错误路径产生空库。
 
+
+## 2026-11-01 地址、运行身份与连接配置
+
+原版 Android 默认 8033，第二版 `local.studykb.contractv2` 使用 18033；电脑服务的默认端口为 8033。端口相同不代表数据相同，以应用当前显示的地址和只读身份接口为准。APK 顶部与常驻通知在网络变化时更新地址，并每 15 秒兜底刷新；点击顶部地址复制当前 URL。断网时显示无局域网地址，不把 127.0.0.1 当成电脑可访问的手机地址。
+
+在 system 根目录配置第二版（将占位 IP 替换为 APK 实际显示值）：
+
+```powershell
+python .cursor/skills/study/scripts/study_server.py configure --url http://<手机IP>:18033 --profile contract-v2
+python .cursor/skills/study/scripts/study_server.py identity
+python .cursor/skills/study/scripts/study_server.py probe
+```
+
+`configure` 先通过 `GET /api/study/connection` 核对 `study.connection/v1`、产品 `study`、运行类型和实际监听端口，通过后原子保存 `server.url`。失败保留原配置。`identity` 只读；`probe` 继续检查现有读写接口，不新增或评分卡片。CLI 调用知识读写、导出和镜像同步前都会核对身份；配置中的 profile 会在后续调用继续核对。显式环境地址可加 `--profile contract-v2` 防止选错运行类型。
+
+电脑服务选 `desktop`，原版 APK 选 `android`。尚未更新的旧 APK 缺少身份接口时，校验会失败；先更新应用，不能绕过失败将数据写往猜测地址。此能力不是 mDNS 或自动发现手机。旧的 Git 忽略文件 `server.url` 可能仍指向旧网段，需要重新 configure；不会自动覆盖为电脑地址。手机日常主库与本次用户选择的电脑分支库分别保留，不自动互相覆盖。
+
 ## 3. 知识树、卡片与图之间的真实关系
 
 ```text
@@ -200,6 +217,36 @@ study_review_log.card_id ────────────> study_card.id（�
 **易错点**：调整分类不等于重置归还日。
 **来源**：教学示例；非教材事实。
 ```
+
+### 4.4 卡片打磨五步法（2026-10-19）
+
+用于把冗长材料变为可理解、可独立回忆的问答；不保证靠排版或口诀就能提高记忆效果。复习间隔仍由 FSRS 根据用户真实评分调度，不以“符合遗忘曲线”为由改写评分或调度。
+
+1. **解构**：提取实体、定义、分类依据、步骤、公式、对比、条件和例外。去广告、出版物导流及重复话语；保留必要解释、因果和反例。为每个考点记录来源，OCR 不确定处待核对，不靠猜测补全。
+2. **颗粒化与归树**：先按教材原章、节对照已有树，再按独立回忆目标拆卡。一个完整流程、分类或对比可以是一张总览卡；重要分项另建细卡。父子表达包含、分类或过程分解，不把仅仅相关的概念硬挂成父子，不为层数而增加空壳节点。知识地图写在章根正文，不另建同名地图节点。
+3. **映射与白话**：先保留专业术语和得分点，再用生活或项目场景解释抽象概念；明确标注“例子”，说明类比边界。白话不能替代正式定义，不强制给简单概念加案例。
+4. **口诀化（可选）**：有明显枚举或顺序时，可给一两句简短口诀，通常争取 20 字以内。逐项核对口诀与考点是否对应；无法准确压缩就不用，不为押韵改变分类、顺序、条件或遗漏项目。
+5. **视觉锚定**：用短段落、必要加粗和列表；多维比较优先表格，Emoji 可选。按手机阅读优化，不硬性限制每行 15 字；定义、公式、单位和边界必须完整。通过 HTTP 保存完整 Markdown 可用小标题；走简化大纲导入时遵守 §5，避免把答案小标题误生成为子节点。
+
+**推荐卡片字段（按内容裁剪，不强制填满）**
+
+- 标题：能脱离上下文独立回答的问题。草稿可编号；编号不替代数据库真实 ID。
+- 核心定义或步骤：准确保留教材术语、分类依据和必要条件。
+- 背诵要点：一条表达一个要点；先给能判分的短答，再按需展开解释。
+- 记忆口诀：仅在准确且有帮助时附加。
+- 通俗例子与易错边界：抽象或易混内容按需补充。
+- 来源：材料、版本、章/节/页码或原文位置；不能编造定位。
+
+**交付前校准**
+
+- 覆盖：逐个来源考点映射到目标卡/节点，标出遗漏、待核实和有理由暂不纳入的内容，不能用卡片数量代替覆盖率。
+- 颗粒度：题目与答案对齐；删除无关知识拼盘，同时保留必要的流程、分类和对比总览，不机械逐句拆卡。
+- 精度：逐项核对术语、数字、否定词、公式、适用条件和口诀；例子不得被表述为教材结论。
+- 结构：核对教材小节归属、父子含义、重复内容及树环；优先复用既有 ID，涉及合并先保留历史并按授权范围执行。
+- 渲染：检查真实换行、表格和标题，不能把字面量 `\\n` 当成换行写入答案。
+- 执行边界：输出草稿不等于入库；只有用户要求并确认写入范围后才走 §6。修改 skill 不触发卡片批量重写。
+
+执行逻辑为“核对来源 → 提取考点 → 规划树 → 编写问答 → 选配例子/口诀 → 覆盖与去重验收 → 按授权增量更新”，不是可直接调用的自动生成脚本。
 
 ## 5. Markdown：正文渲染与大纲导入分开理解
 
@@ -533,3 +580,43 @@ npm --prefix study-kb/tests test
 - `study_knowledge_edit` 保存 request_id、请求哈希、操作、before_json/result_json作为审计及幂等回执。勿删除审计以“解除冲突”；应重新读节点并使用新请求ID。
 - 保存后优先保留筛选和相机状态，目标不命中时临时显示目标与祖先并提示。网络状态不明确时保留原请求重试；确认已保存但刷新失败时仅重载，不重新写入。
 - 本次真实库只升级空关系/审计表与视图，备份 `study-kb/data/backups/study-before-knowledge-edit-20260919-162329.sqlite`；没有写测试主题或正式评分。旧资料记录不可通过重放备份覆盖后续用户编辑。
+
+## Text to candidate tree (2026-10-15)
+
+For long TXT files, OCR exports, meeting notes, or unstable Markdown, use `D:/Rsim_helper/readme/skills/study/scripts/text_to_tree.py` to create a candidate JSON and Markdown tree before proposing database changes. The script is deterministic and side-effect free: it recognizes explicit headings first, preserves source line references, marks outline/topic nodes, and emits review issues. It never writes `study.sqlite` or calls the server.
+
+Read `D:/Rsim_helper/readme/skills/study/references/text-to-tree.md` for the node schema, source and OCR review rules, import gates, and the public methods that informed this extension. Treat the generated tree as a draft; confirm its parent, duplicates, low-confidence headings, and card boundaries before using the existing HTTP save workflow.
+## 4.5 系统分析师十段式论文写作技能（paper-exam-writing）
+
+论文写作与知识卡片化是两种不同任务。卡片要求“一卡一事、可独立复习”；论文要求围绕一个中心论点形成连续的论证链。整理系统分析师论文时，必须在卡片化之前建立论文论证模型。
+
+### 论文简报（写作前必填）
+
+每篇论文先明确：题目、项目事实、中心论点、核心问题、主题方法、本人职责、关键决策、验证证据、项目价值和局限。事实分为 `VERIFIED`（用户或项目资料明确提供）、`INFERRED`（由项目结构合理推断）和 `AUTHOR_INPUT_NEEDED`（不得擅自写成事实）。
+
+### 十段式论证契约
+
+1. 摘要第一段：固定项目背景、建设目标、时间、参与方和规模。
+2. 摘要第二段：说明本题方法解决项目中的哪一个核心矛盾，以及本文采用的主线。
+3. 正文引入问题：行业压力、现有做法的具体缺陷及其业务后果。
+4. 正文介绍本人职责：甲乙方组织、团队边界、本人负责的端到端工作。
+5. 理论与方法：只引入本题必要理论，并说明为什么适用于本项目问题。
+6. 方案设计：写关键设计决策、取舍和与项目对象的对应关系。
+7. 实施过程：写如何落地、谁参与、产生哪些基线、接口、流程或制品。
+8. 验证与闭环：写验证层次、指标、验收证据和问题如何回流改进。
+9. 结尾收获：从业务角色和工程角色说明可观察价值；没有数据时不得虚构量化结果。
+10. 不足与展望：回扣本题方法的局限，并提出与项目问题对应的下一步。
+
+第1、3、4、9、10段可以在不同题目中保持同一项目事实底座，但必须根据题目调整段尾落点；第2、5、6、7、8段必须体现题目特有的方法、决策和证据，不能只替换标题。
+
+### 段落契约与过渡
+
+每段至少包含主题句、项目事实、方法动作或决策、结果/影响和通向下一段的出口。段落之间必须存在可说明的 `CAUSE`（因果）、`CONTRAST`（对比）、`DETAIL`（细化）、`EVIDENCE`（证据）、`CONSEQUENCE`（后果）或 `QUALIFICATION`（限定）关系；不能只添加“因此、同时、此外”等连接词掩盖逻辑断裂。
+
+### 反向提纲审查
+
+成稿后逐段检查：本段的一句话消息、使用的项目事实、对应的教材概念、产生的决策/证据、下一段为什么必须出现。若一段只有模块清单、只有教材定义、无法对应中心论点或与前段重复，必须重写而不是继续润色。
+
+### 中心论点模板
+
+使用“在【项目条件】下，通过【主题方法的关键机制】解决【核心矛盾】，从而使【可验证的业务/工程结果】成为可能”的句式先写中心论点，再扩展十段。论文卡片标题可以保留“第X段”，但卡片正文不得添加来源说明、脚本说明或与文章无关的复习提示。

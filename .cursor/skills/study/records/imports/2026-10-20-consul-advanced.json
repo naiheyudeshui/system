@@ -1,0 +1,17 @@
+{
+  "server": "http://10.0.0.120:8033",
+  "parent": "card:card_2f7e28d4bb514689bff5685c3b",
+  "nodes": [
+    {
+      "node_id": "card:card_de78ad7fbbb8485ba593fdd773",
+      "title": "Consul 多数据中心解决什么问题？",
+      "parent_id": "card:card_2f7e28d4bb514689bff5685c3b"
+    },
+    {
+      "node_id": "card:card_0bdb210d52174f1882f4d4cb17",
+      "title": "Consul KV 存储能做什么，如何实现动态配置与分布式锁？",
+      "parent_id": "card:card_2f7e28d4bb514689bff5685c3b"
+    }
+  ],
+  "existing_rows_unchanged": true
+}

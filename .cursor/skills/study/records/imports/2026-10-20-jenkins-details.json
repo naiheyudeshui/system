@@ -1,0 +1,67 @@
+{
+  "server": "http://10.0.0.120:8033",
+  "parent": "card:card_d2848f356b5d4796af832b3399",
+  "nodes": [
+    {
+      "node_id": "card:card_4def469610a749d8af2dc7a231",
+      "parent_id": "card:card_d2848f356b5d4796af832b3399",
+      "title": "Jenkins 如何自动触发流水线？",
+      "content_md": "**一句话**：通过仓库事件、定期检查或上游任务完成，启动自动化流程。\n\n| 方式 | 机制 | 特点 |\n| --- | --- | --- |\n| Webhook | GitHub、GitLab、Bitbucket 等仓库在推送等事件发生后通知 Jenkins | 事件驱动，通常触发及时 |\n| Poll SCM | Jenkins 定期检查代码仓库，发现相关变化后触发 | 需要轮询，可能有等待 |\n| 上游任务触发 | 其他任务完成后，按配置启动下游任务 | 适合串联依赖流程 |\n\n**例子**：开发者推送代码，仓库发送 Webhook，Jenkins 启动构建和测试。\n\n**易错点**：仓库与 Jenkins 需要配置事件、地址和权限，推送不会天然触发；Poll SCM 是定期检查变化，不等于每到时间都无条件构建。\n\n**记忆**：事件通知、定时查变、上游带动。\n\n**来源**：用户提供的 Jenkins 四项补充材料（2026-10-20）；术语与边界说明为整理补充，非教材逐字原文。",
+      "answer_md": "**一句话**：通过仓库事件、定期检查或上游任务完成，启动自动化流程。\n\n| 方式 | 机制 | 特点 |\n| --- | --- | --- |\n| Webhook | GitHub、GitLab、Bitbucket 等仓库在推送等事件发生后通知 Jenkins | 事件驱动，通常触发及时 |\n| Poll SCM | Jenkins 定期检查代码仓库，发现相关变化后触发 | 需要轮询，可能有等待 |\n| 上游任务触发 | 其他任务完成后，按配置启动下游任务 | 适合串联依赖流程 |\n\n**例子**：开发者推送代码，仓库发送 Webhook，Jenkins 启动构建和测试。\n\n**易错点**：仓库与 Jenkins 需要配置事件、地址和权限，推送不会天然触发；Poll SCM 是定期检查变化，不等于每到时间都无条件构建。\n\n**记忆**：事件通知、定时查变、上游带动。\n\n**来源**：用户提供的 Jenkins 四项补充材料（2026-10-20）；术语与边界说明为整理补充，非教材逐字原文。",
+      "source_type": "card",
+      "source_id": "card_4def469610a749d8af2dc7a231",
+      "owner_node_id": "card:card_d2848f356b5d4796af832b3399",
+      "source_ref": "系统分析师-一本通精华知识点-第二版(OCR).docx",
+      "sort_order": 1,
+      "status": "active",
+      "item_type": "card",
+      "card_id": "card_4def469610a749d8af2dc7a231"
+    },
+    {
+      "node_id": "card:card_2986f8b32e3a49599ccf498469",
+      "parent_id": "card:card_d2848f356b5d4796af832b3399",
+      "title": "Jenkinsfile 如何把 CI/CD 流水线作为代码管理？",
+      "content_md": "**定义**：Pipeline as Code 将流水线写进 Jenkinsfile，通常与项目代码一起纳入版本控制，可评审、追踪和回退流程变更。\n\n**结构**：Stage（阶段）组织一组工作，Step（步骤）执行具体操作。\n\n| 示例阶段 | 具体工作 |\n| --- | --- |\n| Checkout | 获取指定版本代码 |\n| Build | 编译或打包 |\n| Test | 执行测试并收集结果 |\n| Deploy | 部署到指定环境 |\n\n**例子**：把“先测试、通过后部署”的规则写进仓库，团队不再仅靠口头约定操作。\n\n**术语校准**：Jenkinsfile 可采用声明式或脚本式 Pipeline；“流水线即代码”不等于只能使用声明式语法。\n\n**交付边界**：持续交付可以在生产发布前保留审批；自动部署到生产属于持续部署。\n\n**来源**：用户提供的 Jenkins 四项补充材料（2026-10-20）；术语与边界说明为整理补充，非教材逐字原文。",
+      "answer_md": "**定义**：Pipeline as Code 将流水线写进 Jenkinsfile，通常与项目代码一起纳入版本控制，可评审、追踪和回退流程变更。\n\n**结构**：Stage（阶段）组织一组工作，Step（步骤）执行具体操作。\n\n| 示例阶段 | 具体工作 |\n| --- | --- |\n| Checkout | 获取指定版本代码 |\n| Build | 编译或打包 |\n| Test | 执行测试并收集结果 |\n| Deploy | 部署到指定环境 |\n\n**例子**：把“先测试、通过后部署”的规则写进仓库，团队不再仅靠口头约定操作。\n\n**术语校准**：Jenkinsfile 可采用声明式或脚本式 Pipeline；“流水线即代码”不等于只能使用声明式语法。\n\n**交付边界**：持续交付可以在生产发布前保留审批；自动部署到生产属于持续部署。\n\n**来源**：用户提供的 Jenkins 四项补充材料（2026-10-20）；术语与边界说明为整理补充，非教材逐字原文。",
+      "source_type": "card",
+      "source_id": "card_2986f8b32e3a49599ccf498469",
+      "owner_node_id": "card:card_d2848f356b5d4796af832b3399",
+      "source_ref": "系统分析师-一本通精华知识点-第二版(OCR).docx",
+      "sort_order": 2,
+      "status": "active",
+      "item_type": "card",
+      "card_id": "card_2986f8b32e3a49599ccf498469"
+    },
+    {
+      "node_id": "card:card_6588988368f549c28d536421aa",
+      "parent_id": "card:card_d2848f356b5d4796af832b3399",
+      "title": "Jenkins Controller 与 Agent 怎样分工实现分布式构建？",
+      "content_md": "**一句话**：Controller 管调度，Agent 执行工作。\n\n| 角色 | 主要职责 |\n| --- | --- |\n| Controller（控制节点，旧称 Master） | 调度任务、管理配置、提供 Web 界面、管理构建记录和日志 |\n| Agent（执行节点） | 执行编译、测试、打包和部署等步骤 |\n\n**运行方式**：按任务要求把工作分配给 Linux、Windows、macOS 等执行机，也可通过相应插件动态创建 Kubernetes Pod 作为执行环境。\n\n**收益**：多执行机并行处理任务；按平台选择工具链；通过独立环境降低任务之间的干扰。\n\n**例子**：Linux Agent 构建后端镜像，Windows Agent 执行 Windows 专属测试。\n\n**边界**：通常应避免在 Controller 上运行构建任务；并发取决于执行器和资源，隔离强度取决于实际配置。动态供给执行机需要插件和基础设施支持。\n\n**来源**：用户提供的 Jenkins 四项补充材料（2026-10-20）；术语与边界说明为整理补充，非教材逐字原文。",
+      "answer_md": "**一句话**：Controller 管调度，Agent 执行工作。\n\n| 角色 | 主要职责 |\n| --- | --- |\n| Controller（控制节点，旧称 Master） | 调度任务、管理配置、提供 Web 界面、管理构建记录和日志 |\n| Agent（执行节点） | 执行编译、测试、打包和部署等步骤 |\n\n**运行方式**：按任务要求把工作分配给 Linux、Windows、macOS 等执行机，也可通过相应插件动态创建 Kubernetes Pod 作为执行环境。\n\n**收益**：多执行机并行处理任务；按平台选择工具链；通过独立环境降低任务之间的干扰。\n\n**例子**：Linux Agent 构建后端镜像，Windows Agent 执行 Windows 专属测试。\n\n**边界**：通常应避免在 Controller 上运行构建任务；并发取决于执行器和资源，隔离强度取决于实际配置。动态供给执行机需要插件和基础设施支持。\n\n**来源**：用户提供的 Jenkins 四项补充材料（2026-10-20）；术语与边界说明为整理补充，非教材逐字原文。",
+      "source_type": "card",
+      "source_id": "card_6588988368f549c28d536421aa",
+      "owner_node_id": "card:card_d2848f356b5d4796af832b3399",
+      "source_ref": "系统分析师-一本通精华知识点-第二版(OCR).docx",
+      "sort_order": 3,
+      "status": "active",
+      "item_type": "card",
+      "card_id": "card_6588988368f549c28d536421aa"
+    },
+    {
+      "node_id": "card:card_c8aad2703b6d4a36972702a0a9",
+      "parent_id": "card:card_d2848f356b5d4796af832b3399",
+      "title": "Jenkins 插件如何连接软件交付中的各类工具？",
+      "content_md": "**一句话**：插件及命令行调用把代码、构建、质量、制品和通知环节接入流水线。\n\n| 环节 | 工具示例 | 接入目的 |\n| --- | --- | --- |\n| 代码管理 | Git、SVN、GitLab | 获取代码、接收变更事件 |\n| 构建与运行 | Maven、Gradle、npm、Python | 执行构建、脚本或测试 |\n| 质量与测试 | SonarQube、JUnit、Selenium | 分析质量、执行测试或展示报告 |\n| 制品与容器 | Docker、Nexus、Artifactory | 构建镜像、存储与发布制品 |\n| 通知 | Slack、钉钉、企业微信、Email | 反馈结果和失败原因 |\n\n**例子**：拉代码→Maven 构建→收集 JUnit 报告→上传制品→通知团队。\n\n**易错点**：表中是可集成的工具，不全是插件名称。Python 是语言/运行环境；JUnit 插件常用于收集测试报告，测试本身通常由构建工具或命令执行。Webhook 和脚本也能实现集成，不是每个工具都必须安装专用插件。\n\n**记忆**：代码、构建、质量、制品、通知。\n\n**来源**：用户提供的 Jenkins 四项补充材料（2026-10-20）；术语与边界说明为整理补充，非教材逐字原文。",
+      "answer_md": "**一句话**：插件及命令行调用把代码、构建、质量、制品和通知环节接入流水线。\n\n| 环节 | 工具示例 | 接入目的 |\n| --- | --- | --- |\n| 代码管理 | Git、SVN、GitLab | 获取代码、接收变更事件 |\n| 构建与运行 | Maven、Gradle、npm、Python | 执行构建、脚本或测试 |\n| 质量与测试 | SonarQube、JUnit、Selenium | 分析质量、执行测试或展示报告 |\n| 制品与容器 | Docker、Nexus、Artifactory | 构建镜像、存储与发布制品 |\n| 通知 | Slack、钉钉、企业微信、Email | 反馈结果和失败原因 |\n\n**例子**：拉代码→Maven 构建→收集 JUnit 报告→上传制品→通知团队。\n\n**易错点**：表中是可集成的工具，不全是插件名称。Python 是语言/运行环境；JUnit 插件常用于收集测试报告，测试本身通常由构建工具或命令执行。Webhook 和脚本也能实现集成，不是每个工具都必须安装专用插件。\n\n**记忆**：代码、构建、质量、制品、通知。\n\n**来源**：用户提供的 Jenkins 四项补充材料（2026-10-20）；术语与边界说明为整理补充，非教材逐字原文。",
+      "source_type": "card",
+      "source_id": "card_c8aad2703b6d4a36972702a0a9",
+      "owner_node_id": "card:card_d2848f356b5d4796af832b3399",
+      "source_ref": "系统分析师-一本通精华知识点-第二版(OCR).docx",
+      "sort_order": 4,
+      "status": "active",
+      "item_type": "card",
+      "card_id": "card_c8aad2703b6d4a36972702a0a9"
+    }
+  ],
+  "existing_rows_unchanged": true
+}

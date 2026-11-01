@@ -1,0 +1,275 @@
+{
+  "server": "http://192.168.31.20:8033",
+  "original_root_unchanged": "node:node_ebcb46620e384ad1bfc4a01ae9",
+  "comparison_root": "node:node_b28a06bbb04b4c429ee83413ed",
+  "created_sections": [
+    {
+      "node_id": "node:node_f96ca15092b641ad88a2cd5d5c",
+      "title": "1 软件需求基础"
+    },
+    {
+      "node_id": "node:node_180640ee69d7476e9c10860a35",
+      "title": "2 需求工程过程"
+    },
+    {
+      "node_id": "node:node_ff6e742e6b4f44cdaf16df464f",
+      "title": "3 结构化分析"
+    },
+    {
+      "node_id": "node:node_4fed46a6522845b7a08b7fb2b8",
+      "title": "4 PDOA 与 OOA"
+    },
+    {
+      "node_id": "node:node_b07f4c06c26348f8a3c0cad9e8",
+      "title": "5 用例模型"
+    },
+    {
+      "node_id": "node:node_231e4f2bc1904c7fb1f7a16cfd",
+      "title": "6 UML 建模"
+    }
+  ],
+  "created_topics": [
+    {
+      "node_id": "node:node_b6316c32669e43d7945b3e3beb",
+      "title": "核心考点",
+      "parent_id": "node:node_f96ca15092b641ad88a2cd5d5c"
+    },
+    {
+      "node_id": "node:node_a2748a514540431f905ad10a5d",
+      "title": "核心考点",
+      "parent_id": "node:node_180640ee69d7476e9c10860a35"
+    },
+    {
+      "node_id": "node:node_50ddcc26fcd64e0ea756ccb16f",
+      "title": "核心考点",
+      "parent_id": "node:node_ff6e742e6b4f44cdaf16df464f"
+    },
+    {
+      "node_id": "node:node_1bb5aa47c1734b959d5c28faef",
+      "title": "核心考点",
+      "parent_id": "node:node_4fed46a6522845b7a08b7fb2b8"
+    },
+    {
+      "node_id": "node:node_a0454b99ec824eccaf5f5b2278",
+      "title": "核心考点",
+      "parent_id": "node:node_b07f4c06c26348f8a3c0cad9e8"
+    },
+    {
+      "node_id": "node:node_607dccac180040188e9b915f68",
+      "title": "核心考点",
+      "parent_id": "node:node_231e4f2bc1904c7fb1f7a16cfd"
+    }
+  ],
+  "created_cards": [
+    {
+      "node_id": "card:card_8da1f314ea634ee9b40230a63d",
+      "title": "什么是软件需求？",
+      "parent_id": "node:node_b6316c32669e43d7945b3e3beb"
+    },
+    {
+      "node_id": "card:card_7bb95567f6e244bf9ef77fe00a",
+      "title": "业务需求、用户需求和系统需求如何区分？",
+      "parent_id": "node:node_b6316c32669e43d7945b3e3beb"
+    },
+    {
+      "node_id": "card:card_009c5c642d664725a5637dbb82",
+      "title": "功能需求和非功能需求有什么区别？",
+      "parent_id": "node:node_b6316c32669e43d7945b3e3beb"
+    },
+    {
+      "node_id": "card:card_b3c34d6930f54e1ea0983831e1",
+      "title": "FURPS+ 如何分类需求？",
+      "parent_id": "node:node_b6316c32669e43d7945b3e3beb"
+    },
+    {
+      "node_id": "card:card_edfbfe756fab4f328547a54ce2",
+      "title": "PIECES 框架检查哪些问题？",
+      "parent_id": "node:node_b6316c32669e43d7945b3e3beb"
+    },
+    {
+      "node_id": "card:card_8d703db53c2544fe85bc67b90d",
+      "title": "QFD 的作用是什么？",
+      "parent_id": "node:node_b6316c32669e43d7945b3e3beb"
+    },
+    {
+      "node_id": "card:card_dfc677369d9e430ab1e4b86871",
+      "title": "需求工程包括哪两大过程？",
+      "parent_id": "node:node_a2748a514540431f905ad10a5d"
+    },
+    {
+      "node_id": "card:card_468931de6d7b440b9bccf38857",
+      "title": "需求获取常用哪些方法？",
+      "parent_id": "node:node_a2748a514540431f905ad10a5d"
+    },
+    {
+      "node_id": "card:card_fbc4fbbf77384d88b119ca8d57",
+      "title": "需求分析的主要任务是什么？",
+      "parent_id": "node:node_a2748a514540431f905ad10a5d"
+    },
+    {
+      "node_id": "card:card_03de017088094f55b978ac87e7",
+      "title": "SRS 的作用是什么？",
+      "parent_id": "node:node_a2748a514540431f905ad10a5d"
+    },
+    {
+      "node_id": "card:card_799effcf884b467caf94fdc36b",
+      "title": "严格定义方法与原型方法如何区别？",
+      "parent_id": "node:node_a2748a514540431f905ad10a5d"
+    },
+    {
+      "node_id": "card:card_6d04003a8f8949769bc497fed5",
+      "title": "需求验证检查哪些性质？",
+      "parent_id": "node:node_a2748a514540431f905ad10a5d"
+    },
+    {
+      "node_id": "card:card_fd500fc7a98b43bd9ecd1ac1fd",
+      "title": "需求基线是什么？",
+      "parent_id": "node:node_a2748a514540431f905ad10a5d"
+    },
+    {
+      "node_id": "card:card_4116f777634d43c69b541b7fe5",
+      "title": "需求变更控制如何进行？",
+      "parent_id": "node:node_a2748a514540431f905ad10a5d"
+    },
+    {
+      "node_id": "card:card_fcd25cc858254504a1bbbf2a8b",
+      "title": "需求版本控制、跟踪和状态跟踪分别做什么？",
+      "parent_id": "node:node_a2748a514540431f905ad10a5d"
+    },
+    {
+      "node_id": "card:card_4c5be9d7410b43a7bcec7f9edd",
+      "title": "结构化分析包含哪四个模型？",
+      "parent_id": "node:node_50ddcc26fcd64e0ea756ccb16f"
+    },
+    {
+      "node_id": "card:card_b504127e4e624fe59f1e6777e2",
+      "title": "DFD 的作用是什么？",
+      "parent_id": "node:node_50ddcc26fcd64e0ea756ccb16f"
+    },
+    {
+      "node_id": "card:card_43881e726ad3402fbc52a5f451",
+      "title": "DFD 有哪些基本元素？",
+      "parent_id": "node:node_50ddcc26fcd64e0ea756ccb16f"
+    },
+    {
+      "node_id": "card:card_17e464fd17e541e5ab260508d6",
+      "title": "DFD 中数据流可以有哪些方向？",
+      "parent_id": "node:node_50ddcc26fcd64e0ea756ccb16f"
+    },
+    {
+      "node_id": "card:card_169fa25a7c654acd861d43523a",
+      "title": "DFD 中的黑洞、奇迹和灰洞是什么？",
+      "parent_id": "node:node_50ddcc26fcd64e0ea756ccb16f"
+    },
+    {
+      "node_id": "card:card_ba35cca7aad7498c9265be70dd",
+      "title": "数据字典包括哪六类条目？",
+      "parent_id": "node:node_50ddcc26fcd64e0ea756ccb16f"
+    },
+    {
+      "node_id": "card:card_06ca2af140964d97928f4c3856",
+      "title": "数据字典中的定义、组成、可选和重复符号如何理解？",
+      "parent_id": "node:node_50ddcc26fcd64e0ea756ccb16f"
+    },
+    {
+      "node_id": "card:card_049cb43291d0400e9a5eeea325",
+      "title": "数据模型、行为模型和功能模型分别对应什么？",
+      "parent_id": "node:node_50ddcc26fcd64e0ea756ccb16f"
+    },
+    {
+      "node_id": "card:card_d6e3aaec3b5347f09b8c66ae55",
+      "title": "PDOA 关注什么？",
+      "parent_id": "node:node_1bb5aa47c1734b959d5c28faef"
+    },
+    {
+      "node_id": "card:card_2e7eb967ed804b12972758a02e",
+      "title": "PDOA 的三个步骤是什么？",
+      "parent_id": "node:node_1bb5aa47c1734b959d5c28faef"
+    },
+    {
+      "node_id": "card:card_cd01b0c3d6824bb9b05e50ab84",
+      "title": "PDOA、结构化分析和 OOA 如何区别？",
+      "parent_id": "node:node_1bb5aa47c1734b959d5c28faef"
+    },
+    {
+      "node_id": "card:card_daccf73430cb45e2868a73b28c",
+      "title": "对象和类分别是什么？",
+      "parent_id": "node:node_1bb5aa47c1734b959d5c28faef"
+    },
+    {
+      "node_id": "card:card_35b1148e6b7542a88a4df342f5",
+      "title": "面向对象分析中的三种分析类是什么？",
+      "parent_id": "node:node_1bb5aa47c1734b959d5c28faef"
+    },
+    {
+      "node_id": "card:card_d5fc7659ee2e428085c6eb94b6",
+      "title": "什么是用例和参与者？",
+      "parent_id": "node:node_a0454b99ec824eccaf5f5b2278"
+    },
+    {
+      "node_id": "card:card_414bc57be72d47828a85b220c1",
+      "title": "用例模型通常经过哪四个阶段？",
+      "parent_id": "node:node_a0454b99ec824eccaf5f5b2278"
+    },
+    {
+      "node_id": "card:card_93ac1df9256c44898690a52b99",
+      "title": "细化用例需要描述哪些内容？",
+      "parent_id": "node:node_a0454b99ec824eccaf5f5b2278"
+    },
+    {
+      "node_id": "card:card_4137c7bd368b4c3f92471e4d4d",
+      "title": "用例的包含、扩展和泛化关系有什么区别？",
+      "parent_id": "node:node_a0454b99ec824eccaf5f5b2278"
+    },
+    {
+      "node_id": "card:card_27fff5a7905d4a42b4c95d8ed4",
+      "title": "用例模型和分析模型有什么关系？",
+      "parent_id": "node:node_a0454b99ec824eccaf5f5b2278"
+    },
+    {
+      "node_id": "card:card_fb7bbd65f7054ab0a3baeae4e3",
+      "title": "UML 由哪三个部分组成？",
+      "parent_id": "node:node_607dccac180040188e9b915f68"
+    },
+    {
+      "node_id": "card:card_2b334da78adb4c16b56adfc095",
+      "title": "UML 构造块中的事物、关系和图分别是什么？",
+      "parent_id": "node:node_607dccac180040188e9b915f68"
+    },
+    {
+      "node_id": "card:card_8133f9f029704d7d89b04c00ab",
+      "title": "UML 中的事物分为哪些类别？",
+      "parent_id": "node:node_607dccac180040188e9b915f68"
+    },
+    {
+      "node_id": "card:card_c2b2c5abab774100a69ec4ca78",
+      "title": "UML 中的四种基本关系是什么？",
+      "parent_id": "node:node_607dccac180040188e9b915f68"
+    },
+    {
+      "node_id": "card:card_cbc539991a2b40d3bbab88ee04",
+      "title": "UML 的静态图有哪八张？",
+      "parent_id": "node:node_607dccac180040188e9b915f68"
+    },
+    {
+      "node_id": "card:card_9fae66648fa042bcb900ef7891",
+      "title": "UML 的动态图有哪六张？",
+      "parent_id": "node:node_607dccac180040188e9b915f68"
+    },
+    {
+      "node_id": "card:card_7a68aab0ffd346b896c5b25b23",
+      "title": "四张交互图分别强调什么？",
+      "parent_id": "node:node_607dccac180040188e9b915f68"
+    },
+    {
+      "node_id": "card:card_11cc608813e94ead84f733bc25",
+      "title": "UML 4+1 视图包括哪些视图？",
+      "parent_id": "node:node_607dccac180040188e9b915f68"
+    }
+  ],
+  "counts": {
+    "sections": 6,
+    "topics": 6,
+    "cards": 41
+  }
+}

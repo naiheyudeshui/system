@@ -662,6 +662,162 @@
           "label": "import-audit"
         }
       ]
+    },
+    {
+      "id": "study-edit.paper-middleware-components-revise.2026-10-20",
+      "path": "imports/2026-10-20-paper-middleware-components-revise.md",
+      "description": "按用户提纲重写论文中间件与构件主题十段式，删除卡片来源行并保留复习历史",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "edit-audit"
+        }
+      ]
+    },
+    {
+      "id": "study-import.paper-middleware-components.2026-10-20",
+      "path": "imports/2026-10-20-paper-middleware-components.md",
+      "description": "论文新增中间件与软件构件主题及十段式项目论文卡片",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "import-audit"
+        }
+      ]
+    },
+    {
+      "id": "study-import.jenkins-details.2026-10-20",
+      "path": "imports/2026-10-20-jenkins-details.md",
+      "description": "Jenkins父卡下新增触发、流水线、分布式构建、插件四张子卡",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "import-audit"
+        }
+      ]
+    },
+    {
+      "id": "study-edit.paper-benefits.2026-10-20",
+      "path": "imports/2026-10-20-paper-benefits.md",
+      "description": "论文结尾改为四类角色收益，加入算法验证三周缩短为两天；原位更新1卡并同步镜像",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "edit-audit"
+        }
+      ]
+    },
+    {
+      "id": "study-import.web-ch01.2026-10-20",
+      "path": "imports/2026-10-20-web-ch01.md",
+      "description": "案例资料第一章Web应用56卡片树已写手机，与微服务同级；保留旧历史并同步镜像",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "import-audit"
+        }
+      ]
+    },
+    {
+      "id": "study-import.microservices-ch05.2026-10-19",
+      "path": "imports/2026-10-19-microservices-ch05.md",
+      "description": "案例资料第五章49卡片树已写手机主库；新增49条调度，原历史不变，镜像已同步",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "import-audit"
+        }
+      ]
+    },
+    {
+      "id": "study-config.chapter-tree-plans.2026-10-19",
+      "path": "imports/2026-10-19-chapter-tree-plans.md",
+      "description": "手机主库新增17个独立章节树图方案，保留原知识树与复习记录",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "configuration-audit"
+        }
+      ]
+    },
+    {
+      "id": "study-import.scm-four-cards.2026-10-19",
+      "path": "imports/2026-10-19-scm-four-cards.md",
+      "description": "按用户四卡草稿原位修正配置管理，保留调度与复习历史",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "import-audit"
+        }
+      ]
+    },
+    {
+      "id": "study-edit.ch14-operations-maintenance.2026-10-20",
+      "path": "imports/2026-10-20-ch14-revise.md",
+      "description": "按一本通第二版第十四章原文原位修订系统运行与维护 23 张卡片，校正公式、分类、流程和评价方法并同步镜像",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "edit-audit"
+        }
+      ]
+    },
+    {
+      "id": "study-edit.ch14-reparent.2026-10-21",
+      "path": "imports/2026-10-21-ch14-reparent.md",
+      "description": "按第十四章教材小节新增九个目录层并移动十六张卡片，保留卡片及复习历史",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "structure-audit"
+        }
+      ]
+    },
+    {
+      "id": "study-edit.ch14-card-split.2026-10-21",
+      "path": "imports/2026-10-21-ch14-split.md",
+      "description": "按一卡一考点原则拆分第十四章 13 张混合卡为 30 张同级卡片，保留教材知识并同步镜像",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "edit-audit"
+        }
+      ]
+    },
+    {
+      "id": "study-edit.ch06-rebuild.2026-10-21",
+      "path": "imports/2026-10-21-ch06-rebuild.md",
+      "description": "第六章企业信息化按单一考点重建为六个主题、十八个目录和四十五张卡片",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "structure-audit"
+        }
+      ]
+    },
+    {
+      "id": "study-edit.ch10-rebuild-comparison.2026-10-21",
+      "path": "imports/2026-10-21-ch10-rebuild-comparison.md",
+      "description": "保留原第十章不变，新增软件需求工程重构对比版六个主题和四十一张卡片",
+      "relationships": [
+        {
+          "target": "skill.study",
+          "kind": "ContainedBy",
+          "label": "structure-audit"
+        }
+      ]
     }
   ]
 }

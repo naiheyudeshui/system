@@ -1,0 +1,51 @@
+{
+  "server": "http://10.0.0.101:8033",
+  "before": {
+    "node": {
+      "node_id": "card:card_a7cf9d0c0f684d409e37d5bb19",
+      "parent_id": "card:card_003d76fbaae54ca095139220e8",
+      "title": "结尾收获：业务价值与工程价值",
+      "content_md": "项目使仿真从个人工具升级为企业级研发基础设施：研发人员可以按权限复用资产，测试人员可以批量构造组合场景，管理者可以比较不同版本和车型的结果，平台团队可以根据作业负载弹性调度资源。更重要的是，需求、配置、代码、环境、结果和问题之间形成了可追踪关系。",
+      "answer_md": "项目使仿真从个人工具升级为企业级研发基础设施：研发人员可以按权限复用资产，测试人员可以批量构造组合场景，管理者可以比较不同版本和车型的结果，平台团队可以根据作业负载弹性调度资源。更重要的是，需求、配置、代码、环境、结果和问题之间形成了可追踪关系。",
+      "source_type": "card",
+      "source_id": "card_a7cf9d0c0f684d409e37d5bb19",
+      "owner_node_id": "card:card_003d76fbaae54ca095139220e8",
+      "source_ref": "系统分析师-一本通精华知识点-第二版(OCR).docx",
+      "sort_order": 13,
+      "status": "active",
+      "item_type": "card",
+      "card_id": "card_a7cf9d0c0f684d409e37d5bb19"
+    },
+    "version": "b225b8e2ae3c7b966d227e58bd48a59f923e3fb1c889ce58f680e190d532c375"
+  },
+  "payload": {
+    "node_id": "card:card_a7cf9d0c0f684d409e37d5bb19",
+    "version": "b225b8e2ae3c7b966d227e58bd48a59f923e3fb1c889ce58f680e190d532c375",
+    "request_id": "5289d1ac-0458-4140-93b7-12e5fa0ca4f3",
+    "operation": "content",
+    "content_md": "项目使仿真从个人工具升级为企业级研发基础设施：研发者可按权限复用模型资产，测试人员可批量构造组合场景，算法开发团队单轮验证时间由三周缩短至两天，管理者可比较不同版本与车型的结果。需求、配置、代码、环境、结果和问题形成可追踪闭环，为跨团队协同和研发决策提供支撑。"
+  },
+  "source": "用户2026-10-20指定四类角色及三周缩短为两天的论文情境",
+  "old_chars": 123,
+  "new_chars": 130,
+  "result": {
+    "node": {
+      "node_id": "card:card_a7cf9d0c0f684d409e37d5bb19",
+      "parent_id": "card:card_003d76fbaae54ca095139220e8",
+      "title": "结尾收获：业务价值与工程价值",
+      "content_md": "项目使仿真从个人工具升级为企业级研发基础设施：研发者可按权限复用模型资产，测试人员可批量构造组合场景，算法开发团队单轮验证时间由三周缩短至两天，管理者可比较不同版本与车型的结果。需求、配置、代码、环境、结果和问题形成可追踪闭环，为跨团队协同和研发决策提供支撑。",
+      "answer_md": "项目使仿真从个人工具升级为企业级研发基础设施：研发者可按权限复用模型资产，测试人员可批量构造组合场景，算法开发团队单轮验证时间由三周缩短至两天，管理者可比较不同版本与车型的结果。需求、配置、代码、环境、结果和问题形成可追踪闭环，为跨团队协同和研发决策提供支撑。",
+      "source_type": "card",
+      "source_id": "card_a7cf9d0c0f684d409e37d5bb19",
+      "owner_node_id": "card:card_003d76fbaae54ca095139220e8",
+      "source_ref": "系统分析师-一本通精华知识点-第二版(OCR).docx",
+      "sort_order": 13,
+      "status": "active",
+      "item_type": "card",
+      "card_id": "card_a7cf9d0c0f684d409e37d5bb19"
+    },
+    "version": "336aaa2aa0ec65b7e3b4a92a341e2725747c82d2d0f8cd910b59210d892e5d31",
+    "history_available": true
+  },
+  "verified": true
+}

@@ -1,0 +1,171 @@
+{
+  "server": "http://192.168.31.20:8033",
+  "replaced": 13,
+  "created": [
+    {
+      "node_id": "card:card_6fcd7f13b24c4dffa2ff651125",
+      "title": "系统运行管理的目的是什么？",
+      "parent_id": "node:node_262b311f901349b19df22a6615"
+    },
+    {
+      "node_id": "card:card_6cb8f6ac61e14901a0d89c8167",
+      "title": "系统运行管理的主要内容是什么？",
+      "parent_id": "node:node_262b311f901349b19df22a6615"
+    },
+    {
+      "node_id": "card:card_d8c8085d8b8e414dbe78da5ada",
+      "title": "用户管理包括哪些功能？",
+      "parent_id": "node:node_40eee89144f2484e8253a62e30"
+    },
+    {
+      "node_id": "card:card_904d8b17318b4bbe8e7f4ae075",
+      "title": "统一用户管理有什么好处？",
+      "parent_id": "node:node_40eee89144f2484e8253a62e30"
+    },
+    {
+      "node_id": "card:card_13f5844d792d4f48ba6d033a19",
+      "title": "教材列出的四种用户认证方式是什么？",
+      "parent_id": "node:node_40eee89144f2484e8253a62e30"
+    },
+    {
+      "node_id": "card:card_ddea33bffe314cdfba5f4a85af",
+      "title": "故障监视的对象有哪些？",
+      "parent_id": "node:node_23b4d1d4f91c4bd2882788bbc5"
+    },
+    {
+      "node_id": "card:card_355b286a42b44697a8030a046c",
+      "title": "故障调查、定位和信息收集如何进行？",
+      "parent_id": "node:node_23b4d1d4f91c4bd2882788bbc5"
+    },
+    {
+      "node_id": "card:card_eed65915cb2447b7a359101eb0",
+      "title": "新旧系统转换的三种方案是什么？",
+      "parent_id": "node:node_3ac64fbcc36c42859141dde949"
+    },
+    {
+      "node_id": "card:card_60e2086be6714336a2c9bd7cdb",
+      "title": "数据迁移的三种方法是什么？",
+      "parent_id": "node:node_3ac64fbcc36c42859141dde949"
+    },
+    {
+      "node_id": "card:card_d3a1ed62adab433897f988e664",
+      "title": "数据迁移实施的三个阶段是什么？",
+      "parent_id": "node:node_58d3ff629e974e82abe47b4373"
+    },
+    {
+      "node_id": "card:card_220258f834ea4affa540cc98cf",
+      "title": "数据迁移前的七项准备工作是什么？",
+      "parent_id": "node:node_58d3ff629e974e82abe47b4373"
+    },
+    {
+      "node_id": "card:card_f5fc8a5934ee468d8b176e3032",
+      "title": "ETL 的三个过程是什么？",
+      "parent_id": "node:node_58d3ff629e974e82abe47b4373"
+    },
+    {
+      "node_id": "card:card_52dcad86b95f40b094dfb7a0a4",
+      "title": "数据迁移后的两种校验方法是什么？",
+      "parent_id": "node:node_58d3ff629e974e82abe47b4373"
+    },
+    {
+      "node_id": "card:card_09722f0427944b0ea962582aa3",
+      "title": "系统评价的目的是什么？",
+      "parent_id": "node:node_81436416c8f74020a4dde2b4dd"
+    },
+    {
+      "node_id": "card:card_93a5ad8ab8b94f97a782df0cec",
+      "title": "系统评价的四个步骤是什么？",
+      "parent_id": "node:node_81436416c8f74020a4dde2b4dd"
+    },
+    {
+      "node_id": "card:card_faad30865ea44d7290d7034bce",
+      "title": "系统评价指标有哪些维度？",
+      "parent_id": "node:node_81436416c8f74020a4dde2b4dd"
+    },
+    {
+      "node_id": "card:card_a56bf9c4b34b4785809113e03f",
+      "title": "评价指标设计的四种驱动方式是什么？",
+      "parent_id": "node:node_81436416c8f74020a4dde2b4dd"
+    },
+    {
+      "node_id": "card:card_d3a79a5bee484b1eb4da79e62a",
+      "title": "评价指标权重设计的三类方法是什么？",
+      "parent_id": "node:node_81436416c8f74020a4dde2b4dd"
+    },
+    {
+      "node_id": "card:card_f625366ff43646b59be072c9d1",
+      "title": "软件维护的对象有哪些？",
+      "parent_id": "node:node_898032c927e24fb9841ae15eba"
+    },
+    {
+      "node_id": "card:card_f2d1e9079b904ff19f9d4437de",
+      "title": "软件维护的四种类型是什么？",
+      "parent_id": "node:node_898032c927e24fb9841ae15eba"
+    },
+    {
+      "node_id": "card:card_4a8aee19a73b4375bd815af87f",
+      "title": "提高软件可维护性的五个阶段分别做什么？",
+      "parent_id": "node:node_898032c927e24fb9841ae15eba"
+    },
+    {
+      "node_id": "card:card_65236cb127004b71a9488cfdd0",
+      "title": "软件维护工作流程是什么？",
+      "parent_id": "node:node_898032c927e24fb9841ae15eba"
+    },
+    {
+      "node_id": "card:card_92923675f39b48048d0d3e1761",
+      "title": "软件可维护性如何度量？",
+      "parent_id": "node:node_a9ca318b4bca4d3dbab817b2c1"
+    },
+    {
+      "node_id": "card:card_01083d5c8bce4e4fb586248bc9",
+      "title": "影响软件维护工作的因素有哪些？",
+      "parent_id": "node:node_a9ca318b4bca4d3dbab817b2c1"
+    },
+    {
+      "node_id": "card:card_90fe2076bf224d4b89f047495c",
+      "title": "遗留系统有哪些特点？",
+      "parent_id": "node:node_7593f8bdbb8a487b99267434b3"
+    },
+    {
+      "node_id": "card:card_60ee59750264404aacb043b819",
+      "title": "遗留系统评价的五个步骤是什么？",
+      "parent_id": "node:node_7593f8bdbb8a487b99267434b3"
+    },
+    {
+      "node_id": "card:card_a72b4154bad142a1b46698d545",
+      "title": "系统故障的常见原因有哪些？",
+      "parent_id": "node:node_cf7d0c57ef60420a8d1887ee7b"
+    },
+    {
+      "node_id": "card:card_45eeb373d0d641e7b74fa4ff76",
+      "title": "硬件、数据库和应用故障如何恢复？",
+      "parent_id": "node:node_cf7d0c57ef60420a8d1887ee7b"
+    },
+    {
+      "node_id": "card:card_c838d81467ff43edb6532a6bf8",
+      "title": "什么是软件构件库？",
+      "parent_id": "node:node_fbb9d343a0af4bdfa228f72bf2"
+    },
+    {
+      "node_id": "card:card_6a3e136688a442bcae7c17818f",
+      "title": "软件分发可完成哪些任务？",
+      "parent_id": "node:node_fbb9d343a0af4bdfa228f72bf2"
+    }
+  ],
+  "deleted": [
+    "card:card_889f110e556e447fa6d4beedc7",
+    "card:card_7ff8d98e3f8548dfbcb69b264b",
+    "card:card_e1eb625463b04cd58bab328b63",
+    "card:card_ba9aaea954c34e9ba81f695d08",
+    "card:card_1ea1e0073ecb4fffa33e64dd1a",
+    "card:card_eb11ba5f3c3a471e9f4ecbd6ac",
+    "card:card_0434967ace82472da433eecfd1",
+    "card:card_affccd90f4634a5c99b235109f",
+    "card:card_ffd3fb885ca04f419f508c1bdc",
+    "card:card_2d3c681740d34a85a68aea7c79",
+    "card:card_7d333085552b420a8463e96fe8",
+    "card:card_2cb18d8dcf27489faaee6a075b",
+    "card:card_6499004874464bc089d0027a23"
+  ]
+}

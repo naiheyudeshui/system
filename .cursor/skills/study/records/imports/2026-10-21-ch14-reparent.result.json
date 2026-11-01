@@ -1,0 +1,156 @@
+{
+  "server": "http://192.168.31.20:8033",
+  "created_groups": 9,
+  "operations": [
+    {
+      "operation": "create-outline",
+      "node_id": "node:node_965cdcabb5b84a2da74f1e7ab7",
+      "title": "成本与可靠性指标",
+      "parent_id": "node:node_1a3f0671890a4e18b54488b7bd"
+    },
+    {
+      "operation": "move",
+      "node_id": "card:card_5d57038686bc42ec8eaf4a9c6f",
+      "target_node_id": "node:node_965cdcabb5b84a2da74f1e7ab7",
+      "result": "card:card_5d57038686bc42ec8eaf4a9c6f"
+    },
+    {
+      "operation": "move",
+      "node_id": "card:card_52c89135abe0456a9a98bbc582",
+      "target_node_id": "node:node_965cdcabb5b84a2da74f1e7ab7",
+      "result": "card:card_52c89135abe0456a9a98bbc582"
+    },
+    {
+      "operation": "create-outline",
+      "node_id": "node:node_23b4d1d4f91c4bd2882788bbc5",
+      "title": "故障监视、调查与定位",
+      "parent_id": "node:node_fd118ee8f7764db1ba4e54e481"
+    },
+    {
+      "operation": "move",
+      "node_id": "card:card_27ad2570da934f22aeaea97ed6",
+      "target_node_id": "node:node_23b4d1d4f91c4bd2882788bbc5",
+      "result": "card:card_27ad2570da934f22aeaea97ed6"
+    },
+    {
+      "operation": "move",
+      "node_id": "card:card_e1eb625463b04cd58bab328b63",
+      "target_node_id": "node:node_23b4d1d4f91c4bd2882788bbc5",
+      "result": "card:card_e1eb625463b04cd58bab328b63"
+    },
+    {
+      "operation": "create-outline",
+      "node_id": "node:node_cf7d0c57ef60420a8d1887ee7b",
+      "title": "故障处理、恢复与收尾",
+      "parent_id": "node:node_fd118ee8f7764db1ba4e54e481"
+    },
+    {
+      "operation": "move",
+      "node_id": "card:card_ee05c43cca194ba3bcfb3a99a1",
+      "target_node_id": "node:node_cf7d0c57ef60420a8d1887ee7b",
+      "result": "card:card_ee05c43cca194ba3bcfb3a99a1"
+    },
+    {
+      "operation": "move",
+      "node_id": "card:card_2cb18d8dcf27489faaee6a075b",
+      "target_node_id": "node:node_cf7d0c57ef60420a8d1887ee7b",
+      "result": "card:card_2cb18d8dcf27489faaee6a075b"
+    },
+    {
+      "operation": "create-outline",
+      "node_id": "node:node_a9ca318b4bca4d3dbab817b2c1",
+      "title": "维护性与维护度量",
+      "parent_id": "node:node_76631d7630fb46a79513297234"
+    },
+    {
+      "operation": "move",
+      "node_id": "card:card_6c09661cda3145b9b6b15d2a82",
+      "target_node_id": "node:node_a9ca318b4bca4d3dbab817b2c1",
+      "result": "card:card_6c09661cda3145b9b6b15d2a82"
+    },
+    {
+      "operation": "move",
+      "node_id": "card:card_2d3c681740d34a85a68aea7c79",
+      "target_node_id": "node:node_a9ca318b4bca4d3dbab817b2c1",
+      "result": "card:card_2d3c681740d34a85a68aea7c79"
+    },
+    {
+      "operation": "create-outline",
+      "node_id": "node:node_898032c927e24fb9841ae15eba",
+      "title": "维护类型与维护流程",
+      "parent_id": "node:node_76631d7630fb46a79513297234"
+    },
+    {
+      "operation": "move",
+      "node_id": "card:card_affccd90f4634a5c99b235109f",
+      "target_node_id": "node:node_898032c927e24fb9841ae15eba",
+      "result": "card:card_affccd90f4634a5c99b235109f"
+    },
+    {
+      "operation": "move",
+      "node_id": "card:card_ffd3fb885ca04f419f508c1bdc",
+      "target_node_id": "node:node_898032c927e24fb9841ae15eba",
+      "result": "card:card_ffd3fb885ca04f419f508c1bdc"
+    },
+    {
+      "operation": "create-outline",
+      "node_id": "node:node_81436416c8f74020a4dde2b4dd",
+      "title": "评价目的、流程与指标",
+      "parent_id": "node:node_9fd82b56a0274118af109c3a2e"
+    },
+    {
+      "operation": "move",
+      "node_id": "card:card_eb11ba5f3c3a471e9f4ecbd6ac",
+      "target_node_id": "node:node_81436416c8f74020a4dde2b4dd",
+      "result": "card:card_eb11ba5f3c3a471e9f4ecbd6ac"
+    },
+    {
+      "operation": "move",
+      "node_id": "card:card_0434967ace82472da433eecfd1",
+      "target_node_id": "node:node_81436416c8f74020a4dde2b4dd",
+      "result": "card:card_0434967ace82472da433eecfd1"
+    },
+    {
+      "operation": "create-outline",
+      "node_id": "node:node_7593f8bdbb8a487b99267434b3",
+      "title": "遗留系统评价与处置策略",
+      "parent_id": "node:node_149a0186b1ee49889be5c6d16b"
+    },
+    {
+      "operation": "move",
+      "node_id": "card:card_7d333085552b420a8463e96fe8",
+      "target_node_id": "node:node_7593f8bdbb8a487b99267434b3",
+      "result": "card:card_7d333085552b420a8463e96fe8"
+    },
+    {
+      "operation": "move",
+      "node_id": "card:card_ddba20dc773846858b6a99040d",
+      "target_node_id": "node:node_7593f8bdbb8a487b99267434b3",
+      "result": "card:card_ddba20dc773846858b6a99040d"
+    },
+    {
+      "operation": "create-outline",
+      "node_id": "node:node_3ac64fbcc36c42859141dde949",
+      "title": "转换方案与切换策略",
+      "parent_id": "node:node_4e1c9665e1174c92924da714da"
+    },
+    {
+      "operation": "move",
+      "node_id": "card:card_ba9aaea954c34e9ba81f695d08",
+      "target_node_id": "node:node_3ac64fbcc36c42859141dde949",
+      "result": "card:card_ba9aaea954c34e9ba81f695d08"
+    },
+    {
+      "operation": "create-outline",
+      "node_id": "node:node_58d3ff629e974e82abe47b4373",
+      "title": "数据迁移实施与校验",
+      "parent_id": "node:node_4e1c9665e1174c92924da714da"
+    },
+    {
+      "operation": "move",
+      "node_id": "card:card_1ea1e0073ecb4fffa33e64dd1a",
+      "target_node_id": "node:node_58d3ff629e974e82abe47b4373",
+      "result": "card:card_1ea1e0073ecb4fffa33e64dd1a"
+    }
+  ]
+}

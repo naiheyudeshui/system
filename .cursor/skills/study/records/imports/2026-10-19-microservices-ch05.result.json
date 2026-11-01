@@ -1,0 +1,319 @@
+{
+  "server": "http://192.168.31.20:8033",
+  "nodes": [
+    {
+      "key": "overview",
+      "node_id": "card:card_afd4b50ff9af4fc7903c46f411",
+      "parent_id": "node:node_bbe1a905616442689215c4e089",
+      "title": "5.1 微服务系统概述：什么是微服务，有什么优势？"
+    },
+    {
+      "key": "compare",
+      "node_id": "card:card_a1438075ba934d1cb605d59a6f",
+      "parent_id": "card:card_afd4b50ff9af4fc7903c46f411",
+      "title": "单体系统与微服务系统如何按七个维度比较？"
+    },
+    {
+      "key": "implementation",
+      "node_id": "card:card_e970c18dca694d6b84e1ce85a5",
+      "parent_id": "card:card_afd4b50ff9af4fc7903c46f411",
+      "title": "微服务系统的六类实现手段分别解决什么问题？"
+    },
+    {
+      "key": "features",
+      "node_id": "card:card_7572ef72e66e4eb69261272dc4",
+      "parent_id": "card:card_afd4b50ff9af4fc7903c46f411",
+      "title": "微服务系统的七项特征是什么？"
+    },
+    {
+      "key": "architecture",
+      "node_id": "card:card_6ffb22cb0fb34571a68f9737ec",
+      "parent_id": "node:node_bbe1a905616442689215c4e089",
+      "title": "5.2 微服务系统架构：设计原则与架构模式如何区分？"
+    },
+    {
+      "key": "principles",
+      "node_id": "card:card_3319b5fcbd464046be2e79c5e6",
+      "parent_id": "card:card_6ffb22cb0fb34571a68f9737ec",
+      "title": "微服务架构的九项设计原则分别要求什么？"
+    },
+    {
+      "key": "smart",
+      "node_id": "card:card_6b35f90af30a4c33b900d1f27f",
+      "parent_id": "card:card_3319b5fcbd464046be2e79c5e6",
+      "title": "如何理解智能端点与简单消息传递？"
+    },
+    {
+      "key": "patterns",
+      "node_id": "card:card_4f3a8910f4664ee5bb3d729372",
+      "parent_id": "card:card_6ffb22cb0fb34571a68f9737ec",
+      "title": "微服务六种架构模式如何快速辨认？"
+    },
+    {
+      "key": "aggregator",
+      "node_id": "card:card_43f5b7593ca04cfcb138f0eef7",
+      "parent_id": "card:card_4f3a8910f4664ee5bb3d729372",
+      "title": "聚合器微服务做什么，具备哪三项功能？"
+    },
+    {
+      "key": "proxy",
+      "node_id": "card:card_e236b87cb735412bb477c75d01",
+      "parent_id": "card:card_4f3a8910f4664ee5bb3d729372",
+      "title": "代理微服务与聚合器微服务有什么区别？"
+    },
+    {
+      "key": "chain",
+      "node_id": "card:card_d32b26c706964922a8c00ac71d",
+      "parent_id": "card:card_4f3a8910f4664ee5bb3d729372",
+      "title": "链式微服务与分支微服务的调用路径有何不同？"
+    },
+    {
+      "key": "sharing",
+      "node_id": "card:card_2eca297cb9c64f77818707cc04",
+      "parent_id": "card:card_4f3a8910f4664ee5bb3d729372",
+      "title": "数据共享微服务怎样共享数据，有什么边界？"
+    },
+    {
+      "key": "async",
+      "node_id": "card:card_58fc2d9a984d48e69d1d839b16",
+      "parent_id": "card:card_4f3a8910f4664ee5bb3d729372",
+      "title": "异步消息微服务怎样协作，带来什么收益？"
+    },
+    {
+      "key": "development",
+      "node_id": "card:card_ca9f669f44ff427aad94fc9c0a",
+      "parent_id": "node:node_bbe1a905616442689215c4e089",
+      "title": "5.3 微服务系统开发涉及哪些技术领域？"
+    },
+    {
+      "key": "delivery",
+      "node_id": "card:card_13dd8e1984b344c38181fc3869",
+      "parent_id": "card:card_ca9f669f44ff427aad94fc9c0a",
+      "title": "容器化与自动化部署分别解决什么问题？"
+    },
+    {
+      "key": "docker",
+      "node_id": "card:card_3bfcc0afc7c0453494333c5e6a",
+      "parent_id": "card:card_13dd8e1984b344c38181fc3869",
+      "title": "Docker 的作用及五项特点是什么？"
+    },
+    {
+      "key": "k8s",
+      "node_id": "card:card_036249d394ba4a378b36e1bba2",
+      "parent_id": "card:card_13dd8e1984b344c38181fc3869",
+      "title": "Kubernetes 的目标及 Master、Node 如何分工？"
+    },
+    {
+      "key": "k8sobjects",
+      "node_id": "card:card_b206a5efd6914a8a82cba20cbd",
+      "parent_id": "card:card_036249d394ba4a378b36e1bba2",
+      "title": "K8s 的 Pod、Service、Volume、Namespace 分别是什么？"
+    },
+    {
+      "key": "jenkins",
+      "node_id": "card:card_d2848f356b5d4796af832b3399",
+      "parent_id": "card:card_13dd8e1984b344c38181fc3869",
+      "title": "Jenkins 如何支撑持续集成与持续交付？"
+    },
+    {
+      "key": "discovery",
+      "node_id": "card:card_7ed520b0603743969839271291",
+      "parent_id": "card:card_ca9f669f44ff427aad94fc9c0a",
+      "title": "服务注册与发现的基本流程是什么？"
+    },
+    {
+      "key": "consul",
+      "node_id": "card:card_2f7e28d4bb514689bff5685c3b",
+      "parent_id": "card:card_7ed520b0603743969839271291",
+      "title": "Consul 提供哪五项主要功能？"
+    },
+    {
+      "key": "zookeeper",
+      "node_id": "card:card_444d1ab228a745bfaf974fa102",
+      "parent_id": "card:card_7ed520b0603743969839271291",
+      "title": "ZooKeeper 如何用于协调与服务注册发现？"
+    },
+    {
+      "key": "eureka",
+      "node_id": "card:card_2664a3f3089542de99d2fc8846",
+      "parent_id": "card:card_7ed520b0603743969839271291",
+      "title": "Eureka Server 与 Eureka Client 分别负责什么？"
+    },
+    {
+      "key": "etcd",
+      "node_id": "card:card_85d88f661aac4cfa977b118a15",
+      "parent_id": "card:card_7ed520b0603743969839271291",
+      "title": "Etcd 的数据模型、一致性机制和用途是什么？"
+    },
+    {
+      "key": "communication",
+      "node_id": "card:card_89d984e7da0b4875a602c8bff4",
+      "parent_id": "card:card_ca9f669f44ff427aad94fc9c0a",
+      "title": "同步调用与异步消息如何选型？"
+    },
+    {
+      "key": "rest",
+      "node_id": "card:card_f6fddb2e2a064feebc5e50219a",
+      "parent_id": "card:card_89d984e7da0b4875a602c8bff4",
+      "title": "HTTP 与 REST 分别是什么，有哪些特点？"
+    },
+    {
+      "key": "grpc",
+      "node_id": "card:card_4969f1097d9d4676a064a56d24",
+      "parent_id": "card:card_89d984e7da0b4875a602c8bff4",
+      "title": "gRPC 如何完成跨服务调用，为什么性能较高？"
+    },
+    {
+      "key": "grpcmodes",
+      "node_id": "card:card_35ae01c94da54a81bbdbcce4c9",
+      "parent_id": "card:card_4969f1097d9d4676a064a56d24",
+      "title": "gRPC 四种通信方式的请求与响应数量是什么？"
+    },
+    {
+      "key": "thrift",
+      "node_id": "card:card_8f189ff0c12247218f0849aff0",
+      "parent_id": "card:card_89d984e7da0b4875a602c8bff4",
+      "title": "Apache Thrift 的定位与特点是什么？"
+    },
+    {
+      "key": "kafka",
+      "node_id": "card:card_765a352cec8840b3bb3b77db6f",
+      "parent_id": "card:card_89d984e7da0b4875a602c8bff4",
+      "title": "Kafka 的发布订阅、分区和副本各解决什么问题？"
+    },
+    {
+      "key": "kafkacomponents",
+      "node_id": "card:card_e4cddae19b8448e08aef652401",
+      "parent_id": "card:card_765a352cec8840b3bb3b77db6f",
+      "title": "Kafka 的六个架构概念分别是什么？"
+    },
+    {
+      "key": "security",
+      "node_id": "card:card_7a873cda838b4f99b3de2781c4",
+      "parent_id": "card:card_ca9f669f44ff427aad94fc9c0a",
+      "title": "微服务安全与授权中的四类技术如何分工？"
+    },
+    {
+      "key": "oauth",
+      "node_id": "card:card_9179c3b36bb0433bb53d62180e",
+      "parent_id": "card:card_7a873cda838b4f99b3de2781c4",
+      "title": "OAuth 2.0 的四个角色与基本授权链路是什么？"
+    },
+    {
+      "key": "oauthmodes",
+      "node_id": "card:card_903f931b6a0449fab5f8daa951",
+      "parent_id": "card:card_9179c3b36bb0433bb53d62180e",
+      "title": "教材中的 OAuth 2.0 四种授权模式如何区分？"
+    },
+    {
+      "key": "jwt",
+      "node_id": "card:card_ad7c2613fe194eaa90d6750e69",
+      "parent_id": "card:card_7a873cda838b4f99b3de2781c4",
+      "title": "JWT 的三部分、使用过程与五项优点是什么？"
+    },
+    {
+      "key": "tls",
+      "node_id": "card:card_70a59f4c9fb0480c9c226fa65b",
+      "parent_id": "card:card_7a873cda838b4f99b3de2781c4",
+      "title": "TLS/SSL 如何保护微服务通信？"
+    },
+    {
+      "key": "gateway",
+      "node_id": "card:card_c108b68bd0b548abbb6a7bb11d",
+      "parent_id": "card:card_7a873cda838b4f99b3de2781c4",
+      "title": "API 网关能做哪些事，主要优势是什么？"
+    },
+    {
+      "key": "operations",
+      "node_id": "card:card_60a884abaa0d43929fd33ab2b7",
+      "parent_id": "card:card_ca9f669f44ff427aad94fc9c0a",
+      "title": "微服务运维监控包括哪四方面，工具怎样分工？"
+    },
+    {
+      "key": "prometheus",
+      "node_id": "card:card_0cd89490246442d2a9650b7bf3",
+      "parent_id": "card:card_60a884abaa0d43929fd33ab2b7",
+      "title": "Prometheus 的四个组件及 pull 流程是什么？"
+    },
+    {
+      "key": "grafana",
+      "node_id": "card:card_7cf6b0b8c86e4f9ea686479ff5",
+      "parent_id": "card:card_60a884abaa0d43929fd33ab2b7",
+      "title": "Grafana 的作用、特点和常看指标是什么？"
+    },
+    {
+      "key": "elk",
+      "node_id": "card:card_e470cea504f043079f0bcd8f0a",
+      "parent_id": "card:card_60a884abaa0d43929fd33ab2b7",
+      "title": "ELK 的三个组件如何完成日志处理？"
+    },
+    {
+      "key": "zipkin",
+      "node_id": "card:card_3269c7aaaded41d0a5b397a8ba",
+      "parent_id": "card:card_60a884abaa0d43929fd33ab2b7",
+      "title": "Zipkin 怎样定位跨服务请求，其四个组件是什么？"
+    },
+    {
+      "key": "testing",
+      "node_id": "card:card_91ac85bb14df43809b52b178a7",
+      "parent_id": "node:node_bbe1a905616442689215c4e089",
+      "title": "5.4 微服务系统测试：五个重点是什么？"
+    },
+    {
+      "key": "teststages",
+      "node_id": "card:card_0c00fd5a6c2649b3ad6f65b9b2",
+      "parent_id": "card:card_91ac85bb14df43809b52b178a7",
+      "title": "开发、集成、系统、部署运维阶段各测试什么？"
+    },
+    {
+      "key": "testprocess",
+      "node_id": "card:card_c2fa676ab16248389b1930667a",
+      "parent_id": "card:card_91ac85bb14df43809b52b178a7",
+      "title": "微服务测试过程包括哪五步？"
+    },
+    {
+      "key": "functional",
+      "node_id": "card:card_cae45c94037d42f4b6d8e9973c",
+      "parent_id": "card:card_91ac85bb14df43809b52b178a7",
+      "title": "微服务功能测试要覆盖哪六类内容？"
+    },
+    {
+      "key": "performance",
+      "node_id": "card:card_6c00ba6e1e6949b9bab7378f2a",
+      "parent_id": "card:card_91ac85bb14df43809b52b178a7",
+      "title": "微服务性能测试的七类内容如何理解？"
+    },
+    {
+      "key": "fault",
+      "node_id": "card:card_83d2d0ec690847f6a2203ff5d4",
+      "parent_id": "card:card_91ac85bb14df43809b52b178a7",
+      "title": "微服务容错性测试包括哪五类，验证什么？"
+    },
+    {
+      "key": "securitytests",
+      "node_id": "card:card_33a76337a7e142ea9f9336725b",
+      "parent_id": "card:card_91ac85bb14df43809b52b178a7",
+      "title": "微服务安全性测试覆盖哪七类内容？"
+    }
+  ],
+  "probe": {
+    "server": "http://192.168.31.20:8033",
+    "reachable": true,
+    "readable": true,
+    "writable": true,
+    "schema": {
+      "tree_api": "knowledge",
+      "editing_provider": "study-knowledge/v1",
+      "node_count": 734,
+      "scope_count": 1
+    },
+    "errors": [],
+    "warnings": []
+  },
+  "card_count": 49,
+  "modified_roots": [
+    "node:node_bbe1a905616442689215c4e089"
+  ],
+  "preexisting_other_rows_unchanged": true,
+  "provenance_note": "HTTP接口继承父节点旧source_ref；本批真实教材定位写入每卡正文及draft，不通过整库导入改来源字段"
+}

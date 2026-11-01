@@ -1,0 +1,37 @@
+{
+  "server": "http://10.0.0.100:8033",
+  "source": "用户确认的四卡草稿，2026-10-19",
+  "modified": [
+    {
+      "node_id": "card:card_314f813d1dfa48b6a89c107129",
+      "old_title": "配置库三种类型？",
+      "title": "配置管理的基础概念：配置项、属性与三大核心活动是什么？"
+    },
+    {
+      "node_id": "card:card_99ecd86eafdf4b24959b99fc3b",
+      "old_title": "配置管理的基线、变更控制和状态报告分别做什么？",
+      "title": "配置管理过程的六大步骤是什么？"
+    },
+    {
+      "node_id": "card:card_536c17a5fafd46668cd6197e2d",
+      "old_title": "功能基线、分配基线、产品基线各在什么时候建立？",
+      "title": "三大基线分别何时形成、对应什么成果？"
+    },
+    {
+      "node_id": "card:card_b657d57f409b4be9a58bac6066",
+      "old_title": "三种配置库和三种基线是什么？",
+      "title": "三大配置库各存什么、由谁控制、怎样修改？"
+    },
+    {
+      "node_id": "node:node_ac489f9c4b694c21813757cf84",
+      "old_title": "配置管理",
+      "title": "配置管理"
+    },
+    {
+      "node_id": "node:node_0dfe3cdb2fa644b69ff197723e",
+      "old_title": "配置管理与变更",
+      "title": "配置管理与变更"
+    }
+  ],
+  "added": 0
+}

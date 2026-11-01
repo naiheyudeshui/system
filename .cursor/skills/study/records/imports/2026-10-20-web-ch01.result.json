@@ -1,0 +1,358 @@
+{
+  "server": "http://192.168.31.20:8033",
+  "nodes": [
+    {
+      "key": "root",
+      "node_id": "card:card_e068e737b1be4b9ca4272898c2",
+      "parent_id": "node:node_ce4ef92c44b04e5a90a8c1efce",
+      "title": "Web 应用系统分析与设计"
+    },
+    {
+      "key": "intro",
+      "node_id": "card:card_18c6295bed1c4335975ab461d5",
+      "parent_id": "card:card_e068e737b1be4b9ca4272898c2",
+      "title": "1.1 Web 应用是什么，有哪些优势与现代特征？"
+    },
+    {
+      "key": "spa",
+      "node_id": "card:card_f6d3a57d70ce4dc799512e4f9d",
+      "parent_id": "card:card_18c6295bed1c4335975ab461d5",
+      "title": "传统 Web 应用与单页应用 SPA 有什么区别？"
+    },
+    {
+      "key": "arch",
+      "node_id": "card:card_cf510f10b8674fca8b389276e9",
+      "parent_id": "card:card_e068e737b1be4b9ca4272898c2",
+      "title": "1.2 Web 架构设计从哪三个角度复习？"
+    },
+    {
+      "key": "separation",
+      "node_id": "card:card_f54f372b85794d05bb8b7f3079",
+      "parent_id": "card:card_cf510f10b8674fca8b389276e9",
+      "title": "分离关注点与封装分别解决什么问题？"
+    },
+    {
+      "key": "dependency",
+      "node_id": "card:card_7b0c5f11de75499b88fc6bf635",
+      "parent_id": "card:card_cf510f10b8674fca8b389276e9",
+      "title": "依赖关系反转与显式依赖关系有什么区别？"
+    },
+    {
+      "key": "srp",
+      "node_id": "card:card_aec2b9a1774f485ea0d17a535f",
+      "parent_id": "card:card_cf510f10b8674fca8b389276e9",
+      "title": "单一责任与避免自我重复原则如何理解？"
+    },
+    {
+      "key": "persistence",
+      "node_id": "card:card_55ee744812d948b4be4b4731d8",
+      "parent_id": "card:card_cf510f10b8674fca8b389276e9",
+      "title": "持久性无知与有界上下文分别是什么意思？"
+    },
+    {
+      "key": "deploymenttypes",
+      "node_id": "card:card_f75e3e851b9547eda208faf58d",
+      "parent_id": "card:card_cf510f10b8674fca8b389276e9",
+      "title": "单体、微服务、无服务器架构如何选择？"
+    },
+    {
+      "key": "bs",
+      "node_id": "card:card_a0b1d9e0a47c457e98fd49fd02",
+      "parent_id": "card:card_cf510f10b8674fca8b389276e9",
+      "title": "B/S 三层架构每一层负责什么？"
+    },
+    {
+      "key": "p2p",
+      "node_id": "card:card_a9e733ab23a54aa4b6a801fbce",
+      "parent_id": "card:card_cf510f10b8674fca8b389276e9",
+      "title": "P2P 架构与教材的两种拓扑怎样理解？"
+    },
+    {
+      "key": "mvc",
+      "node_id": "card:card_e04a1d91f9dc4b4ca6d90a83a9",
+      "parent_id": "card:card_cf510f10b8674fca8b389276e9",
+      "title": "MVC 和 MVP 的角色与交互有什么区别？"
+    },
+    {
+      "key": "micro",
+      "node_id": "card:card_28638ff70a3549378f11e643b5",
+      "parent_id": "card:card_cf510f10b8674fca8b389276e9",
+      "title": "Web 微服务架构怎样满足三高，为什么还要治理？"
+    },
+    {
+      "key": "framework",
+      "node_id": "card:card_427373fa930d4d968758b6390a",
+      "parent_id": "card:card_e068e737b1be4b9ca4272898c2",
+      "title": "1.3 开发框架是什么，本章分哪几类？"
+    },
+    {
+      "key": "ssh",
+      "node_id": "card:card_13e50ef71d0f45cfa74817c8ad",
+      "parent_id": "card:card_427373fa930d4d968758b6390a",
+      "title": "SSH 三个框架怎样协作处理一次请求？"
+    },
+    {
+      "key": "spring",
+      "node_id": "card:card_d5cbce2e990d4fd9b302b5e455",
+      "parent_id": "card:card_13e50ef71d0f45cfa74817c8ad",
+      "title": "Spring 的分层与依赖注入为什么能降低耦合？"
+    },
+    {
+      "key": "struts",
+      "node_id": "card:card_19485d3c71524188bb1da72ec3",
+      "parent_id": "card:card_13e50ef71d0f45cfa74817c8ad",
+      "title": "Struts 在教材中的组成与作用是什么？"
+    },
+    {
+      "key": "hibernate",
+      "node_id": "card:card_85c4002e592a4133a73d4e10f1",
+      "parent_id": "card:card_13e50ef71d0f45cfa74817c8ad",
+      "title": "Hibernate 怎样把 Java 对象映射到关系数据库？"
+    },
+    {
+      "key": "jsf",
+      "node_id": "card:card_32520d6a3d974abf9eaea6ff2d",
+      "parent_id": "card:card_427373fa930d4d968758b6390a",
+      "title": "JSF 提供哪些能力，MVC 各由谁承担？"
+    },
+    {
+      "key": "dotnet",
+      "node_id": "card:card_082baf01770941a4920c1f2189",
+      "parent_id": "card:card_427373fa930d4d968758b6390a",
+      "title": ".NET 框架在 Web 开发中提供什么？"
+    },
+    {
+      "key": "webframework",
+      "node_id": "card:card_056db1ab50b0457c801b731214",
+      "parent_id": "card:card_427373fa930d4d968758b6390a",
+      "title": "WebPage3.0 与 AJAX 框架各侧重什么？"
+    },
+    {
+      "key": "dev",
+      "node_id": "card:card_9025f436f43c40b9868dbcb434",
+      "parent_id": "card:card_e068e737b1be4b9ca4272898c2",
+      "title": "1.4 Web 开发包括哪些工作与技术层次？"
+    },
+    {
+      "key": "protocol",
+      "node_id": "card:card_85b7850a671245a78b205c0c22",
+      "parent_id": "card:card_9025f436f43c40b9868dbcb434",
+      "title": "Web 通信中的 HTTP、RTP/RTSP、SMTP/POP3 怎样分工？"
+    },
+    {
+      "key": "http",
+      "node_id": "card:card_c6ecb3af4f334427a924d8c95c",
+      "parent_id": "card:card_85b7850a671245a78b205c0c22",
+      "title": "HTTP 无状态是什么意思，是否表示没有连接？"
+    },
+    {
+      "key": "infra",
+      "node_id": "card:card_5a778ab267cc4e40a020ef38f8",
+      "parent_id": "card:card_9025f436f43c40b9868dbcb434",
+      "title": "Web 基础设施五类组件分别解决什么问题？"
+    },
+    {
+      "key": "cache",
+      "node_id": "card:card_5a86514bc88e4d99a7fed22b8a",
+      "parent_id": "card:card_5a778ab267cc4e40a020ef38f8",
+      "title": "教材四种缓存方式如何区分？"
+    },
+    {
+      "key": "cloudcdn",
+      "node_id": "card:card_3d2f8b484a4348c3add1b23ec9",
+      "parent_id": "card:card_5a778ab267cc4e40a020ef38f8",
+      "title": "云存储与 CDN 的目标有什么不同？"
+    },
+    {
+      "key": "lb",
+      "node_id": "card:card_a44b5bbc6c724f3ba35cbf7610",
+      "parent_id": "card:card_5a778ab267cc4e40a020ef38f8",
+      "title": "负载均衡有哪些划分，消息队列如何解耦服务？"
+    },
+    {
+      "key": "client",
+      "node_id": "card:card_41c2b692fc444108b9beceb86c",
+      "parent_id": "card:card_9025f436f43c40b9868dbcb434",
+      "title": "Web 客户端技术按什么职责来记？"
+    },
+    {
+      "key": "html",
+      "node_id": "card:card_725c47ac085b44e1a0dff6c7f4",
+      "parent_id": "card:card_41c2b692fc444108b9beceb86c",
+      "title": "HTML、HTML5 与 XML 分别用来做什么？"
+    },
+    {
+      "key": "cssdom",
+      "node_id": "card:card_e39cceb1fe6d4381b9c0fc76f1",
+      "parent_id": "card:card_41c2b692fc444108b9beceb86c",
+      "title": "DHTML、CSS、DOM 和 JavaScript 如何配合？"
+    },
+    {
+      "key": "ajax",
+      "node_id": "card:card_1a82519657f94e83aaea31678f",
+      "parent_id": "card:card_41c2b692fc444108b9beceb86c",
+      "title": "AJAX 为什么不刷新整个页面也能更新内容？"
+    },
+    {
+      "key": "flash",
+      "node_id": "card:card_2552655b74cc4c9ebccce9ffaf",
+      "parent_id": "card:card_41c2b692fc444108b9beceb86c",
+      "title": "Flash 与 Flex 在教材中如何区分？"
+    },
+    {
+      "key": "server",
+      "node_id": "card:card_aa564bc749814779b393fbe9d3",
+      "parent_id": "card:card_9025f436f43c40b9868dbcb434",
+      "title": "Web 服务器端技术分哪三类？"
+    },
+    {
+      "key": "cgi",
+      "node_id": "card:card_f6a08dfba19349c78d4227771a",
+      "parent_id": "card:card_aa564bc749814779b393fbe9d3",
+      "title": "CGI 与 PHP 分别是什么？"
+    },
+    {
+      "key": "asp",
+      "node_id": "card:card_43ea389f53bd42b8ae42364eed",
+      "parent_id": "card:card_aa564bc749814779b393fbe9d3",
+      "title": "ASP 与 ASP.NET 的执行位置和区别是什么？"
+    },
+    {
+      "key": "servlet",
+      "node_id": "card:card_85729a2f2db04ce0af35017794",
+      "parent_id": "card:card_aa564bc749814779b393fbe9d3",
+      "title": "Servlet 容器如何处理一次 HTTP 请求？"
+    },
+    {
+      "key": "jsp",
+      "node_id": "card:card_3d09e4a394bd4de0a9a81033e4",
+      "parent_id": "card:card_aa564bc749814779b393fbe9d3",
+      "title": "JSP 与 Servlet 是什么关系，JSP 有哪些优点？"
+    },
+    {
+      "key": "languages",
+      "node_id": "card:card_618e0987cbf440a3aa07c5c01b",
+      "parent_id": "card:card_aa564bc749814779b393fbe9d3",
+      "title": "Perl、Ruby 与 Python 在教材中的定位是什么？"
+    },
+    {
+      "key": "release",
+      "node_id": "card:card_d004ec0f18c0424bae70b72df9",
+      "parent_id": "card:card_9025f436f43c40b9868dbcb434",
+      "title": "Web 部署有哪些活动与四项交付原则？"
+    },
+    {
+      "key": "deployenv",
+      "node_id": "card:card_c5ee6f4196484b1eaa7b4983a5",
+      "parent_id": "card:card_d004ec0f18c0424bae70b72df9",
+      "title": "部署环境、版本控制与 CMS 为什么重要？"
+    },
+    {
+      "key": "test",
+      "node_id": "card:card_f69d398fdd884d4f9e17029887",
+      "parent_id": "card:card_e068e737b1be4b9ca4272898c2",
+      "title": "1.5 Web 测试覆盖什么，为什么比单机测试复杂？"
+    },
+    {
+      "key": "stages",
+      "node_id": "card:card_704f49da7b68404db66f47e6b2",
+      "parent_id": "card:card_f69d398fdd884d4f9e17029887",
+      "title": "Web 测试在设计、开发、运行、维护阶段各关注什么？"
+    },
+    {
+      "key": "testprocess",
+      "node_id": "card:card_af34414491b845c8ae1ad7de54",
+      "parent_id": "card:card_f69d398fdd884d4f9e17029887",
+      "title": "Web 测试规划的四个步骤是什么？"
+    },
+    {
+      "key": "functional",
+      "node_id": "card:card_8a3e56de6bfa4f6f9fc4049f59",
+      "parent_id": "card:card_f69d398fdd884d4f9e17029887",
+      "title": "Web 功能测试分哪五类？"
+    },
+    {
+      "key": "links",
+      "node_id": "card:card_fa683c7856df425684261854ec",
+      "parent_id": "card:card_8a3e56de6bfa4f6f9fc4049f59",
+      "title": "链接与表单测试分别要检查哪些细节？"
+    },
+    {
+      "key": "cookiesdb",
+      "node_id": "card:card_81b45a2474b34de6aafa86d9ac",
+      "parent_id": "card:card_8a3e56de6bfa4f6f9fc4049f59",
+      "title": "Cookie、数据校验和数据库测试怎样区分？"
+    },
+    {
+      "key": "perf",
+      "node_id": "card:card_78d68422bb7847f3b23b3073c6",
+      "parent_id": "card:card_f69d398fdd884d4f9e17029887",
+      "title": "Web 性能测试的八类内容分别是什么？"
+    },
+    {
+      "key": "loadstress",
+      "node_id": "card:card_bbc310e9086548a99e61c97c9e",
+      "parent_id": "card:card_78d68422bb7847f3b23b3073c6",
+      "title": "负载、压力与可靠性测试怎样设计才不混淆？"
+    },
+    {
+      "key": "perfmeth",
+      "node_id": "card:card_939d00bc80e8484280d3ffa78c",
+      "parent_id": "card:card_78d68422bb7847f3b23b3073c6",
+      "title": "虚拟用户与 WUS 方法如何让测试负载接近真实？"
+    },
+    {
+      "key": "security",
+      "node_id": "card:card_a884a1615083435a8f5d23d16f",
+      "parent_id": "card:card_f69d398fdd884d4f9e17029887",
+      "title": "Web 安全测试的十项内容是什么？"
+    },
+    {
+      "key": "authsession",
+      "node_id": "card:card_f49350b915b648679e637d8d79",
+      "parent_id": "card:card_a884a1615083435a8f5d23d16f",
+      "title": "身份验证、访问控制和 Session 测试分别查什么？"
+    },
+    {
+      "key": "protect",
+      "node_id": "card:card_bd35d92b41cf4950b8b77af288",
+      "parent_id": "card:card_a884a1615083435a8f5d23d16f",
+      "title": "加密、日志、备份与恢复测试如何落到用例？"
+    },
+    {
+      "key": "vulnerability",
+      "node_id": "card:card_d5a4e2037c5644ac84dec3232c",
+      "parent_id": "card:card_a884a1615083435a8f5d23d16f",
+      "title": "安全漏洞、端口、脚本与防火墙测试怎样分工？"
+    },
+    {
+      "key": "servicetest",
+      "node_id": "card:card_b0e9cc00f1ce45b49a60debd42",
+      "parent_id": "card:card_f69d398fdd884d4f9e17029887",
+      "title": "Web 服务测试有哪些不同于普通应用的特性？"
+    },
+    {
+      "key": "servicelayers",
+      "node_id": "card:card_f7d567cfdf7a43f6ac0e9be94a",
+      "parent_id": "card:card_b0e9cc00f1ce45b49a60debd42",
+      "title": "Web 服务测试的三个层次各验证什么？"
+    }
+  ],
+  "probe": {
+    "server": "http://192.168.31.20:8033",
+    "reachable": true,
+    "readable": true,
+    "writable": true,
+    "schema": {
+      "tree_api": "knowledge",
+      "editing_provider": "study-knowledge/v1",
+      "node_count": 783,
+      "scope_count": 1
+    },
+    "errors": [],
+    "warnings": []
+  },
+  "card_count": 56,
+  "old_tree_unchanged": true,
+  "provenance_note": "真实来源写在每卡正文；HTTP source_ref 继承父级，不通过整库导入修改"
+}
