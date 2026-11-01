@@ -19,15 +19,15 @@ android {
         versionCode = 1
         versionName = "1.0"
         if (contractV2) {
-            versionCode = 5
-            versionName = "1.0.4"
+            versionCode = 8
+            versionName = "2.0.2"
             applicationIdSuffix = ".contractv2"
             versionNameSuffix = "-contract-v2"
         }
         buildConfigField("boolean", "CONTRACT_V2", contractV2.toString())
         buildConfigField("boolean", "SHOW_CONTRACT_DIAGNOSTICS", showContractDiagnostics.toString())
         buildConfigField("int", "SERVER_PORT", if (contractV2) "18033" else "8033")
-        manifestPlaceholders["appLabel"] = if (contractV2) "学习库 · 重构测试" else "@string/app_name"
+        manifestPlaceholders["appLabel"] = if (contractV2) "学习库 · 第二版" else "@string/app_name"
         ndk {
             abiFilters += listOf("arm64-v8a", "x86_64")
         }

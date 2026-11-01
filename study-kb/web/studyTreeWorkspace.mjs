@@ -1,6 +1,6 @@
-import { addConfigCardControls, confirmWorkbenchAction, openConfigManager } from "/3dworkbench/pluginConfigManager.mjs?v=20261029-authoring1";
-import { renderTablePreview } from "/3dworkbench/tablePreview.mjs?v=20261019-history-toolbar";
-import { createTreeWorkspace, filterTree, indexTree } from "/3dworkbench/treeWorkspace.mjs?v=20261019-history-toolbar";
+import { addConfigCardControls, confirmWorkbenchAction, openConfigManager } from "/3dworkbench/pluginConfigManager.mjs?v=20261030-tree-plans1";
+import { renderTablePreview } from "/3dworkbench/tablePreview.mjs?v=20261030-tree-plans1";
+import { createTreeWorkspace, filterTree, indexTree } from "/3dworkbench/treeWorkspace.mjs?v=20261030-tree-plans1";
 import * as markdownTools from "./studyMarkdown.mjs?v=20261030-managed-assets1";
 const { renderMarkdown } = markdownTools;
 import { createSearchableCombobox } from "/3dworkbench/searchableCombobox.mjs?v=20261019-history-toolbar";
@@ -37,8 +37,12 @@ export async function renderNodeTreePanel(panel, { api, postApi, presentationMod
     }
   };
   const originalPostApi = postApi;
+  const nodeRequest = (path, payload) => source?.config_id && data?.editing?.provider === "plugin-tree/v1" && path.startsWith("/api/study/knowledge/")
+    ? { path: `/api/plugin/config/tree-${path.endsWith("/read") ? "read" : "save"}`, payload: { ...payload, plugin_id: "study.node-tree", module_id: "trees", config_id: source.config_id } }
+    : { path, payload };
+  const postNode = (path, payload) => { const request = nodeRequest(path, payload); return originalPostApi(request.path, request.payload); };
   postApi = async (path, payload) => {
-    const result = await originalPostApi(path, payload);
+    const result = await postNode(path, payload);
     if (path === "/api/study/knowledge/save") recordEdit(payload, result);
     return result;
   };
@@ -47,24 +51,28 @@ export async function renderNodeTreePanel(panel, { api, postApi, presentationMod
   home.dataset.helpPage = "plans";
   const header = make("header", null, "study-review-header");
   const tools = make("div", null, "wb-config-actions");
-  const refresh = make("button", "刷新");
   const settings = make("button", "⚙", "trigger-settings"); settings.setAttribute("aria-label", "树方案设置");
-  tools.append(refresh, settings); header.append(make("h3", "章节树图"), tools);
+  settings.setAttribute("aria-pressed", "false");
+  tools.append(settings); header.append(make("h3", "章节树图"), tools);
   const grid = make("div", null, "study-plan-grid");
   const management = make("div", null, "metric-card study-plan-management"); management.hidden = true;
-  const edit = make("button", "编辑已有方案", "metric-card metric-management-card");
-  const add = make("button", "新增方案", "metric-card metric-management-card");
+  const edit = make("button", null, "metric-card metric-management-card");
+  const add = make("button", null, "metric-card metric-management-card");
+  const editIcon = make("b", "⚙"), addIcon = make("b", "+");
+  editIcon.setAttribute("aria-hidden", "true"); addIcon.setAttribute("aria-hidden", "true");
+  edit.append(editIcon, make("span", "编辑已有方案")); add.append(addIcon, make("span", "新增方案"));
   edit.dataset.helpAction = "manage-edit"; add.dataset.helpAction = "manage-add";
   management.append(edit, add);
-  const scopeLabel = make("label", "学习视角", "study-review-field");
-  const scopes = make("select"); scopes.setAttribute("aria-label", "学习视角"); scopes.append(new Option("全部节点", "")); scopeLabel.append(scopes);
   const info = make("p", "选择数据方案，先校验、预览筛选，再打开整页树图。", "action-hint");
-  home.append(header, info, grid, scopeLabel);
+  home.append(header, info, grid);
   const preview = make("section"); preview.hidden = true;
   preview.dataset.helpPage = "preview";
-  const previewHeader = make("header", null, "study-review-header");
+  const previewHeader = make("header", null, "study-review-header study-tree-preview-header");
   const previewTitle = make("h3", "树数据预览");
-  const returnHome = make("button", "返回方案"); previewHeader.append(previewTitle, returnHome);
+  const returnHome = make("button", null, "wb-tree-icon-button");
+  returnHome.setAttribute("aria-label", "返回方案"); returnHome.title = "返回方案";
+  returnHome.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 5-7 7 7 7M5 12h15"/></svg>';
+  previewHeader.append(previewTitle, returnHome);
   const report = make("p"); report.setAttribute("role", "status");
   const table = make("div");
   const rootTools = make("div", null, "wb-tree-root-tools");
@@ -113,16 +121,16 @@ export async function renderNodeTreePanel(panel, { api, postApi, presentationMod
     setMessage();
     window.dispatchEvent(new Event("resize"));
   };
-  const run = async (operation) => {
+  const run = async (operation, propagateError = false) => {
     if (busy) return;
     busy = true;
     const controls = [...panel.querySelectorAll("button,select,input")];
     const disabled = controls.map((control) => control.disabled);
     controls.forEach((control) => { control.disabled = true; });
-    try { await operation(); } catch (error) { setMessage(`操作失败：${error.message}`, "error"); }
+    try { await operation(); } catch (error) { setMessage(`操作失败：${error.message}`, "error"); if (propagateError) throw error; }
     finally {
       busy = false; controls.forEach((control, index) => { control.disabled = disabled[index]; });
-      edit.disabled = !selectedId;
+      edit.disabled = false;
       open.disabled = !filtered.length;
     }
   };
@@ -140,7 +148,7 @@ export async function renderNodeTreePanel(panel, { api, postApi, presentationMod
   };
   const fetchData = async (request) => request.config_id
     ? api(`/api/study/tree?config_id=${encodeURIComponent(request.config_id)}`)
-    : normalizeLegacy(await api(`/api/study/tree?model=knowledge${request.scope ? `&scope=${encodeURIComponent(request.scope)}` : ""}`));
+    : normalizeLegacy(await api("/api/study/tree?model=knowledge"));
   let localMutationRevision = 0;
   const findLocalNode = (id, roots = data?.roots || []) => {
     const wanted = String(id);
@@ -276,9 +284,10 @@ export async function renderNodeTreePanel(panel, { api, postApi, presentationMod
     return options.find((node) => node.id === value || node.title === value)?.id || value;
   };
   const prepare = () => run(async () => {
-    const request = { config_id: selectedId, scope: scopes.value };
+    const request = { config_id: selectedId };
     const next = await fetchData(request);
     indexTree(next.roots);
+    if (source?.config_id !== selectedId) { undoStack.length = 0; redoStack.length = 0; recorded.clear(); pendingHistory = null; }
     data = next; source = request;
     previewTitle.textContent = `${selected()?.name || "学习知识树"} · 预览与筛选`;
     renderPreview(next);
@@ -296,7 +305,7 @@ export async function renderNodeTreePanel(panel, { api, postApi, presentationMod
     }), initialFilters, ariaLabel: "树节点候选表格",
       labels: { node_id: "节点 ID", parent_id: "父节点 ID", title: "节点标题", content_md: "节点内容", source_type: "来源类型", source_id: "原始 ID", owner_node_id: "归属章节", ...Object.fromEntries(next.detail_fields.map((field, index) => [`detail_${index + 1}`, field.label])) },
       onChange: (rows) => { filtered = rows; fillRoots(); },
-      extraActions: [rootTools],
+      leadingActions: [rootTools],
     });
   };
   const renderCards = () => {
@@ -305,11 +314,11 @@ export async function renderNodeTreePanel(panel, { api, postApi, presentationMod
       const card = make("article", null, `metric-card study-plan-card${entry.id === selectedId ? " is-selected" : ""}`);
       const choose = make("button", entry.name, "study-plan-select"); choose.setAttribute("aria-pressed", String(entry.id === selectedId));
       choose.addEventListener("click", () => { if (!busy) { selectedId = entry.id; updateLease(); renderCards(); } });
-      card.append(choose, make("small", entry.id ? "SQL 数据源 · 自定义关系与详情模块" : "统一节点 · 章节与卡片均可筛选"));
-      if (entry.id && !management.hidden) addConfigCardControls(card, {
+      card.append(choose, make("small", entry.id ? "数据方案 · 自定义关系与详情模块" : "内置方案 · 章节与卡片均可筛选；编辑后另存为自定义方案"));
+      if (!management.hidden) addConfigCardControls(card, {
         name: entry.name,
-        onEdit: () => { void openManager(entry.id); },
-        onDelete: () => { void deletePlan(entry); },
+        onEdit: () => { void openManager(entry.id, !entry.id); },
+        onDelete: entry.id ? () => { void deletePlan(entry); } : null,
       });
       if (entry.id === selectedId) {
         const previewButton = make("button", "预览并筛选"); previewButton.addEventListener("click", () => { void prepare(); });
@@ -317,7 +326,7 @@ export async function renderNodeTreePanel(panel, { api, postApi, presentationMod
       }
       grid.append(card);
     }
-    scopeLabel.hidden = Boolean(selectedId); edit.disabled = !selectedId;
+    edit.disabled = false;
   };
   const reload = async () => {
     const payload = await api("/api/plugin/configs?plugin_id=study.node-tree&module_id=trees");
@@ -470,13 +479,14 @@ export async function renderNodeTreePanel(panel, { api, postApi, presentationMod
       [...viewer.querySelectorAll(".wb-tree-graph-node")].find((element) => element.dataset.nodeId === node.id)?.focus();
     };
     const postWithTimeout = async (path, body, ms = 45000) => {
+      const request = nodeRequest(path, body);
       const controller = new AbortController();
       const timer = window.setTimeout(() => controller.abort(), ms);
       try {
-        const response = await fetch(path, {
+        const response = await fetch(request.path, {
           method: "POST",
           headers: { Accept: "application/json", "Content-Type": "application/json" },
-          body: JSON.stringify(body),
+          body: JSON.stringify(request.payload),
           signal: controller.signal,
         });
         const data = await response.json();
@@ -680,7 +690,7 @@ export async function renderNodeTreePanel(panel, { api, postApi, presentationMod
       const target = from.at(-1);
       if (pendingHistory?.target !== target) pendingHistory = { target, id: requestId() };
       const id = pendingHistory.id;
-      await originalPostApi("/api/study/knowledge/save", {
+      await postNode("/api/study/knowledge/save", {
         operation: "history", target_request_id: target, request_id: id,
       });
       if (disposed) return;
@@ -707,7 +717,7 @@ export async function renderNodeTreePanel(panel, { api, postApi, presentationMod
     if (disposed) return;
     session?.dispose();
     page(viewer);
-    const canEditKnowledge = !source?.config_id || data.editing?.provider === "study-knowledge/v1";
+    const canEditKnowledge = !source?.config_id || ["study-knowledge/v1", "plugin-tree/v1"].includes(data.editing?.provider);
     session = createTreeWorkspace(viewer, { roots, detailFields: data.detail_fields, renderMarkdown, initialRoot, initialMode: state?.mode || (presentationMode === "outline" ? "outline" : "graph"), initialState: state,
       canUndo: undoStack.length > 0, canRedo: redoStack.length > 0,
       onUndo: canEditKnowledge ? () => replayHistory(undoStack, redoStack) : null,
@@ -768,7 +778,7 @@ export async function renderNodeTreePanel(panel, { api, postApi, presentationMod
       onDelete: canEditKnowledge ? async (node) => {
         const dialog = make("section", null, "study-tree-delete-dialog");
         dialog.setAttribute("role", "dialog"); dialog.setAttribute("aria-modal", "true");
-        dialog.append(make("h3", "删除知识节点"), make("p", `“${node.title}” 的复习历史会保留。请选择处理方式。`));
+        dialog.append(make("h3", "删除知识节点"), make("p", `将从数据库删除“${node.title}”及其调度和评分。仅删除自身会将子节点上移；递归删除包含所有后代。可通过撤销恢复。`));
         const actions = make("div", null, "study-tree-delete-actions");
         const cancel = make("button", "取消");
         const self = make("button", "删除该节点");
@@ -801,18 +811,7 @@ export async function renderNodeTreePanel(panel, { api, postApi, presentationMod
         }
       } : null,
       onBack: () => page(preview),
-      onRefresh: async () => {
-        const previousSession = session;
-        const request = { ...source };
-        const next = await fetchData(request);
-        if (disposed || session !== previousSession || viewer.hidden) return;
-        indexTree(next.roots);
-        const current = session.getState();
-        data = next;
-        renderPreview(next, previewState?.filters() || []);
-        const refreshed = filterTree(next.roots, filtered.map((row) => row.node_id));
-        showTree(refreshed.roots, current.root, current);
-      },
+      showRefresh: false,
     });
     if (state?.selectedId) [...viewer.querySelectorAll(".wb-tree-graph-node")].find((element) => element.dataset.nodeId === state.selectedId)?.focus();
   };
@@ -822,20 +821,43 @@ export async function renderNodeTreePanel(panel, { api, postApi, presentationMod
     showTree(result.roots, selectedRootId());
   });
   returnHome.addEventListener("click", () => page(home));
-  const openManager = (initialId) => run(() => openConfigManager(panel, { api, postApi, pluginId: "study.node-tree", moduleId: "trees", initialId, onBack: () => { void run(reload); } }));
+  const openManager = (initialId, copyBuiltin = false) => run(() => openConfigManager(panel, {
+    api, postApi, pluginId: "study.node-tree", moduleId: "trees", initialId,
+    initialDraft: copyBuiltin ? { name: "学习知识树（自定义）", sql: "SELECT * FROM v_study_knowledge_nodes ORDER BY sort_order, title, node_id", parameters: {}, settings: {} } : null,
+    onBack: (entry) => { if (entry?.id) selectedId = entry.id; void run(reload); },
+  }));
   settings.addEventListener("click", () => {
     management.hidden = !management.hidden;
     settings.setAttribute("aria-pressed", String(!management.hidden));
     settings.classList.toggle("active", !management.hidden);
     renderCards();
   });
-  edit.addEventListener("click", () => { void openManager(selectedId); });
+  edit.addEventListener("click", () => { void openManager(selectedId, !selectedId); });
   add.addEventListener("click", () => { void openManager(""); });
-  refresh.addEventListener("click", () => { void run(reload); });
+  panel.refresh = async () => {
+    if (disposed || busy) return;
+    if (panel.querySelector(".wb-config-editor,.study-tree-editor")) throw new Error("正在编辑，请先保存或返回后再刷新。");
+    return run(async () => {
+      if (!home.hidden) {
+        await reload();
+        return;
+      }
+      const target = viewer.hidden ? preview : viewer;
+      const previousSession = session;
+      const filters = previewState?.filters() || [];
+      const rootChoice = rootPicker.getValue();
+      const next = await fetchData({ ...source });
+      if (disposed || target.hidden || session !== previousSession || panel.querySelector(".study-tree-editor")) return;
+      indexTree(next.roots);
+      const current = target === viewer ? session.getState() : null;
+      data = next; renderPreview(next, filters);
+      const refreshed = filterTree(next.roots, filtered.map(row => row.node_id));
+      if (target === viewer) showTree(refreshed.roots, current.root, current);
+      else if (indexTree(refreshed.roots).has(rootChoice)) rootPicker.setValue(rootChoice);
+    }, true);
+  };
   panel.dispose = () => { disposed = true; activeAssetImport?.dispose(); activeAssetImport = null; if (leaseTimer) window.clearInterval(leaseTimer); updateLease(""); ++editorGeneration; ++localMutationRevision; cancelDelete?.(); if (messageTimer) window.clearTimeout(messageTimer); session?.dispose(); rootPicker.dispose?.(); };
   await run(async () => {
     await reload();
-    const payload = await api("/api/study/tree?model=knowledge");
-    scopes.append(...(payload.scopes || []).map((scope) => new Option(scope.label, scope.id)));
   });
 }

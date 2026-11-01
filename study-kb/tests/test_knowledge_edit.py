@@ -80,7 +80,7 @@ class KnowledgeEditTests(unittest.TestCase):
         self.assertEqual(list(self.con.execute("SELECT * FROM study_knowledge_schedule")), schedule)
         self.assertEqual(list(self.con.execute("SELECT * FROM study_knowledge_review_log")), logs)
 
-    def test_undo_creation_and_recursive_archive(self):
+    def test_undo_creation_and_recursive_physical_delete(self):
         key = "node:" + self.root["id"]
         payload = self.payload(key, "child")
         created = save_knowledge_node(payload)["node"]["node_id"]
@@ -180,24 +180,70 @@ class KnowledgeEditTests(unittest.TestCase):
         self.assertTrue(result["node"]["deleted"])
         self.assertEqual(self.con.execute("SELECT parent_id FROM study_knowledge_item WHERE id=?", (grandchild["node_id"],)).fetchone()[0], "node:" + self.root["id"])
         self.assertEqual(before, [tuple(row) for row in self.con.execute("SELECT * FROM study_knowledge_schedule")])
-        self.assertEqual(self.con.execute("SELECT COUNT(*) FROM study_knowledge_item WHERE status='archived'").fetchone()[0], 1)
+        self.assertIsNone(self.con.execute("SELECT 1 FROM study_knowledge_item WHERE id=?", (child["node_id"],)).fetchone())
         recursive_payload = {**self.payload(grandchild["node_id"], "delete"), "delete_mode": "recursive"}
         save_knowledge_node(recursive_payload)
-        self.assertEqual(self.con.execute("SELECT COUNT(*) FROM study_knowledge_item WHERE status='archived'").fetchone()[0], 2)
+        self.assertIsNone(self.con.execute("SELECT 1 FROM study_knowledge_item WHERE id=?", (grandchild["node_id"],)).fetchone())
+        self.assertEqual(self.con.execute("SELECT COUNT(*) FROM study_knowledge_item WHERE status='archived'").fetchone()[0], 0)
 
-    def test_card_delete_modes_keep_or_archive_its_children(self):
+    def test_card_delete_modes_reparent_or_remove_children(self):
         card_key = "card:" + self.card["id"]
         sub = save_knowledge_node(self.payload(card_key, "child"))["node"]
-        # "self": the card is archived, its sub-question moves up to the card's parent.
+        # "self": the card is removed, its sub-question moves up to its parent.
         save_knowledge_node({**self.payload(card_key, "delete"), "delete_mode": "self"})
-        self.assertEqual(self.con.execute("SELECT status FROM study_knowledge_item WHERE id=?", (card_key,)).fetchone()[0], "archived")
+        self.assertIsNone(self.con.execute("SELECT status FROM study_knowledge_item WHERE id=?", (card_key,)).fetchone())
+        self.assertIsNone(self.con.execute("SELECT 1 FROM study_knowledge_schedule WHERE item_id=?", (card_key,)).fetchone())
         self.assertEqual(self.con.execute("SELECT parent_id,status FROM study_knowledge_item WHERE id=?", (sub["node_id"],)).fetchone()[:], ("node:" + self.root["id"], "active"))
-        # "recursive": a card and everything below it are archived.
+        # "recursive": a card and everything below it are physically removed.
         nested = save_knowledge_node(self.payload(sub["node_id"], "child"))["node"]
         save_knowledge_node({**self.payload(sub["node_id"], "delete"), "delete_mode": "recursive"})
         statuses = dict(self.con.execute("SELECT id,status FROM study_knowledge_item WHERE id IN (?,?)", (sub["node_id"], nested["node_id"])).fetchall())
-        self.assertEqual(statuses, {sub["node_id"]: "archived", nested["node_id"]: "archived"})
+        self.assertEqual(statuses, {})
         self.assertEqual(self.con.execute("SELECT COUNT(*) FROM study_knowledge_review_log").fetchone()[0], 0)
+
+    def test_physical_delete_undo_redo_restores_exact_schedules_reviews_and_scopes(self):
+        key = "card:" + self.card["id"]
+        grade_card(self.con, card_id=self.card["id"], rating=3)
+        self.con.commit()
+        tables = ("study_knowledge_item", "study_knowledge_schedule", "study_knowledge_review_log", "study_knowledge_scope")
+        before = {table: [tuple(row) for row in self.con.execute(f"SELECT * FROM {table} ORDER BY rowid")] for table in tables}
+        delete = self.payload("node:" + self.root["id"], "delete", delete_mode="recursive")
+        deleted = save_knowledge_node(delete)
+        self.assertTrue(deleted["physical_delete"])
+        self.assertEqual(save_knowledge_node(delete), deleted)
+        for table in tables:
+            self.assertEqual(self.con.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0], 0)
+        undo = {"operation": "history", "request_id": str(uuid.uuid4()), "target_request_id": delete["request_id"]}
+        save_knowledge_node(undo)
+        after = {table: [tuple(row) for row in self.con.execute(f"SELECT * FROM {table} ORDER BY rowid")] for table in tables}
+        self.assertEqual(before, after)
+        redo = {"operation": "history", "request_id": str(uuid.uuid4()), "target_request_id": undo["request_id"]}
+        save_knowledge_node(redo)
+        self.assertIsNone(self.con.execute("SELECT 1 FROM study_knowledge_item WHERE id=?", (key,)).fetchone())
+        save_knowledge_node({"operation": "history", "request_id": str(uuid.uuid4()), "target_request_id": redo["request_id"]})
+        self.assertFalse(self.con.execute("PRAGMA foreign_key_check").fetchall())
+
+    def test_physical_delete_undo_preserves_other_edits_and_redo_rejects_new_reviews(self):
+        key = "card:" + self.card["id"]
+        delete = self.payload(key, "delete", delete_mode="self")
+        save_knowledge_node(delete)
+        undo = {"operation": "history", "request_id": str(uuid.uuid4()), "target_request_id": delete["request_id"]}
+        save_knowledge_node(undo)
+        grade_card(self.con, card_id=self.card["id"], rating=3)
+        self.con.commit()
+        with self.assertRaises(KnowledgeConflict):
+            save_knowledge_node({"operation": "history", "request_id": str(uuid.uuid4()), "target_request_id": undo["request_id"]})
+        self.assertEqual(self.con.execute("SELECT COUNT(*) FROM study_knowledge_review_log").fetchone()[0], 1)
+
+    def test_self_delete_undo_does_not_overwrite_reparented_child_edits(self):
+        key = "card:" + self.card["id"]
+        child = save_knowledge_node(self.payload(key, "child"))["node"]["node_id"]
+        delete = self.payload(key, "delete", delete_mode="self")
+        save_knowledge_node(delete)
+        save_knowledge_node(self.payload(child, "content", content_md="Another device"))
+        with self.assertRaises(KnowledgeConflict):
+            save_knowledge_node({"operation": "history", "request_id": str(uuid.uuid4()), "target_request_id": delete["request_id"]})
+        self.assertIsNone(self.con.execute("SELECT 1 FROM study_knowledge_item WHERE id=?", (key,)).fetchone())
 
     def test_reorder_changes_only_sibling_order(self):
         root_key = "node:" + self.root["id"]

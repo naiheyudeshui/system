@@ -173,3 +173,9 @@ python study-kb/tools/serve_ui.py
 ### 2026-09-19 插件界面修正
 
 插件管理仅在下栏进入；三区通过拖拽启停、定位和排序。顶栏使用扁平图标标签，打印/触发器自适应面板宽度。SQL 指标保留固定区域及原设置，不纳入插件。详见 `docs/WORKBENCH-UPGRADE.md`（docs 内为同级文件）。
+
+## 产品结构、说明书与可迁移构建
+
+维护者与 Agent 先读 [Study 产品结构说明](docs/PRODUCT-ARCHITECTURE.md)，了解公共宿主、产品业务、平台壳和用户数据各自的责任。新入口 `../tooling/build.py` 提供 `doctor/stage/verify`，用显式宿主路径和准确版本组装代码资源；现有 Web/Android 入口尚未切换。
+
+产品说明作者源从 [Study 手册](docs/manual/docs/index.md) 开始，当前帮助行为见 [查找帮助](docs/manual/docs/user/help.md)。这些新版作者源已可校验，完整正文生成与软件内阅读仍在实施，不能当作已经发布的网页。平台安装说明归公共工作台，插件特有说明归插件包，Study 业务说明归本仓。

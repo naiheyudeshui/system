@@ -1,4 +1,4 @@
-"""Transactional edits for canonical knowledge nodes without touching review state."""
+"""Transactional knowledge edits; physical deletes retain conflict-checked undo."""
 
 import hashlib
 import json
@@ -30,7 +30,11 @@ def history_snapshot(con):
 def history_restore(con, payload):
     record = con.execute("SELECT before_json FROM study_knowledge_edit WHERE request_id=?",
                          (payload.get("target_request_id"),)).fetchone()
-    delta = json.loads(record[0]).get("history_delta") if record else None
+    data = json.loads(record[0]) if record else {}
+    if data.get("physical_delete"):
+        from study_knowledge_delete import restore_history
+        return restore_history(con, data)
+    delta = data.get("history_delta")
     if not delta:
         raise ValueError("该操作没有可撤销的历史")
     current = history_snapshot(con)
@@ -106,8 +110,9 @@ def edit_knowledge(con, payload):
         return json.loads(previous["result_json"])
     if operation == "history":
         result, delta = history_restore(con, payload)
+        history_data = delta if isinstance(delta, dict) else {"history_delta": delta}
         con.execute("INSERT INTO study_knowledge_edit(request_id,request_hash,operation,before_json,result_json) VALUES (?,?,?,?,?)",
-                    (request_id, request_hash, operation, encoded({"history_delta": delta}), encoded(result)))
+                    (request_id, request_hash, operation, encoded(history_data), encoded(result)))
         return result
     items_before = history_snapshot(con)
     before = read_node(con, payload.get("node_id"))
@@ -163,7 +168,8 @@ def edit_knowledge(con, payload):
         con.execute("UPDATE study_knowledge_item SET parent_id=?,sort_order=(SELECT COALESCE(MAX(sort_order),0)+1 FROM study_knowledge_item WHERE parent_id=?),updated_at=datetime('now','localtime') WHERE id=?", (destination_key, destination_key, node_key))
         key = node["node_id"]
     elif operation == "delete":
-        # Preserve reviews: archive items and reparent children for self-only deletion.
+        # Delete real rows, not their visibility state. The existing operation
+        # history owns restoration snapshots, not hidden knowledge entities.
         source_ids = [node["node_id"]]
         if payload["delete_mode"] == "recursive":
             pending = list(source_ids)
@@ -179,15 +185,33 @@ def edit_knowledge(con, payload):
                 fallback = old_parent
             for child in con.execute("SELECT id FROM study_knowledge_item WHERE parent_id=?", (node["node_id"],)).fetchall():
                 con.execute("UPDATE study_knowledge_item SET parent_id=? WHERE id=?", (fallback, child[0]))
-        placeholders = ",".join("?" for _ in source_ids)
-        con.execute(f"UPDATE study_knowledge_item SET status='archived',updated_at=datetime('now','localtime') WHERE id IN ({placeholders})", source_ids)
+        from study_knowledge_delete import capture, remove, history
+        snapshot = capture(con, source_ids)
+        survivors = [{"before": items_before[item_id], "after": after}
+                     for item_id, after in history_snapshot(con).items()
+                     if item_id not in source_ids and items_before[item_id] != after]
+        remove(con, snapshot)
         key = node["node_id"]
+        result = {"node": {"node_id": key, "deleted": True}, "history_available": True,
+                  "deleted_count": len(source_ids), "physical_delete": True}
+        before.update(history(snapshot, survivors))
+        con.execute("INSERT INTO study_knowledge_edit(request_id,request_hash,operation,before_json,result_json) VALUES (?,?,?,?,?)",
+                    (request_id, request_hash, operation, encoded(before), encoded(result)))
+        return result
     result = {"node": {"node_id": key, "deleted": True}} if operation == "delete" else read_node(con, key)
+    if operation in {"child", "sibling"}:
+        from study_knowledge_delete import capture, history
+        before.update(history(capture(con, [key]), action="delete"))
+        result["history_available"] = True
+        con.execute("INSERT INTO study_knowledge_edit(request_id,request_hash,operation,before_json,result_json) VALUES (?,?,?,?,?)",
+                    (request_id, request_hash, operation, encoded(before), encoded(result)))
+        return result
     delta = []
     for item_id, after in history_snapshot(con).items():
         old = items_before.get(item_id)
         if old != after:
-            # Undo creation by archiving, never deleting schedules or review logs.
+            # Creation/deletion use complete physical snapshots above. Older
+            # historical receipts remain readable through the legacy handler.
             delta.append({"before": old if old else {**after, "status": "archived"}, "after": after})
     before["history_delta"] = delta
     result["history_available"] = bool(delta)

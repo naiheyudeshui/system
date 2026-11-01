@@ -6,7 +6,7 @@ import { renderSqliteTriggerPanel } from "/3dworkbench/sqliteTriggerPanel.mjs?v=
 import { renderLibrarySyncPanel } from "./studyLibrarySync.mjs?v=20261005-library";
 import { renderReviewTablePanel } from "./studySqlReview.mjs?v=20261030-collections";
 import { renderTimerPanel } from "./studyTimers.mjs?v=20261028-main-port1";
-import { renderNodeTreePanel } from "./studyTreeWorkspace.mjs?v=20261030-collections";
+import { renderNodeTreePanel } from "./studyTreeWorkspace.mjs?v=20261030-editable-trees1";
 import { renderPluginManager } from "/api/plugin/resource/official.plugin-manager/main.mjs";
 
 // Shown until the server has stored metric definitions.
@@ -33,13 +33,15 @@ export function createStudyRenderers(services) {
       onEditView: services.editViewByName,
       onRemoveView: services.removeView,
     }),
-    "study.table-grid": (panel, context) => renderTableGrid(panel, {
+    "study.table-grid": async (panel, context) => {
+      const { tableHelpTopics } = await import('/api/plugin/resource/study.table-grid/help.mjs');
+      return renderTableGrid(panel, {
       ...context,
+      helpTopics: tableHelpTopics,
       onCreateRecord: services.openCreateRecordDialog,
       onEditCell: services.openCellEditor,
-      onEditDocumentation: services.openSchemaDocDialog,
-      onEditView: services.openViewEditor,
-    }),
+    });
+    },
     "study.metrics": (panel, context) => renderMetricsPanel(panel, { ...context, builtinMetrics: STUDY_METRICS }),
     "study.pomodoro": (panel, context) => renderTimerPanel(panel, { ...context, kind: "pomodoro", mode: context.presentationMode }),
     "study.stopwatch": (panel, context) => renderTimerPanel(panel, { ...context, kind: "stopwatch", mode: context.presentationMode }),

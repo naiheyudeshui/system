@@ -231,8 +231,11 @@ def install() -> None:
                     if parsed.path in {"/api/study/knowledge/read", "/api/study/knowledge/save"}:
                         from study_knowledge_edit import read_knowledge_node, save_knowledge_node
 
-                        self.require_external_write_auth()
+                        # Consume the host-size-limited JSON body before replying
+                        # 403. Closing a Windows socket with unread POST bytes can
+                        # reset it before the client receives the denial response.
                         payload = self.read_json()
+                        self.require_external_write_auth()
                         operation = read_knowledge_node if parsed.path.endswith("/read") else save_knowledge_node
                         self.send_json(operation(payload))
                         return

@@ -138,7 +138,21 @@ def assemble() -> Path:
     _copy_tree(STUDY_ROOT / "web", "study-kb/web", copied)
     _copy_tree(STUDY_ROOT / "plugins", "study-kb/plugins", copied)
     _copy_tree(STUDY_ROOT / "schema", "study-kb/schema", copied)
-    _copy_database(STUDY_ROOT / "data" / "study.sqlite", copied)
+    initial_bundle = os.environ.get("STUDY_APK_LIBRARY_BUNDLE")
+    if initial_bundle:
+        from study_android_library import pack_library
+        pack_library(initial_bundle, DEST_ROOT, copied)
+    else:
+        _copy_database(STUDY_ROOT / "data" / "study.sqlite", copied)
+
+    # The current help reader loads publications offline on mobile as on Web.
+    for source, relative in (
+        (STUDY_ROOT / "manual-publications/study", "study-kb/manual-publications/study"),
+        (STUDIO_ROOT / "3dworkbench/manual-publications/workbench", "3dStudio/3dworkbench/manual-publications/workbench"),
+        (STUDIO_ROOT / "plugin-publications/official.tree-view", "3dStudio/plugin-publications/official.tree-view"),
+    ):
+        if source.is_dir():
+            _copy_tree(source, relative, copied)
 
     for name in STUDIO_TOOLS:
         _copy_file(STUDIO_ROOT / "tools" / name, f"3dStudio/tools/{name}", copied)
@@ -216,6 +230,20 @@ def assemble() -> Path:
 
 
 def main() -> int:
+    # Explicit portable staging uses the same manifest as Web and excludes all
+    # databases. It never removes the existing Android generated runtime.
+    import argparse
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--output", type=Path)
+    parser.add_argument("--studio-root", type=Path)
+    parser.add_argument("--allow-dirty", action="store_true")
+    args = parser.parse_args()
+    if args.output is not None:
+        import runpy
+        builder = runpy.run_path(str(REPO_ROOT / "tooling/build.py"))
+        print(json.dumps(builder["stage"](args.output, product_root=REPO_ROOT,
+            studio_root=args.studio_root or STUDIO_ROOT, platform="android", allow_dirty=args.allow_dirty), ensure_ascii=False))
+        return 0
     dest = assemble()
     count = sum(1 for path in dest.rglob("*") if path.is_file())
     print(f"已组装 {count} 个文件到 {dest}")

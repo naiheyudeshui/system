@@ -130,6 +130,10 @@ def time_state(kind: str, *, history_limit: int = 8) -> dict:
     now = _now()
     con = connect()
     try:
+        # Refresh also updates resource bindings and expires running timers.
+        # Reserve the writer before reading: another startup request must not
+        # invalidate the WAL snapshot before our first registry write.
+        con.execute("BEGIN IMMEDIATE")
         resources = ensure_plugin_resources(con, "study." + kind)
         session = quote(resources["session"])
         _finish_expired(con, kind, now)

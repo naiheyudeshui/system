@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.pm.ServiceInfo;
 import android.os.Build;
 import android.os.IBinder;
+import android.util.Log;
 
 import androidx.core.app.NotificationCompat;
 
@@ -23,6 +24,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class StudyServerService extends Service {
+    private static final String TAG = "StudyServer";
     private static final int NOTIFICATION_ID = 8033;
     private static final int PORT = BuildConfig.SERVER_PORT;
     private final AtomicBoolean running = new AtomicBoolean(false);
@@ -50,6 +52,7 @@ public class StudyServerService extends Service {
     private void serve() {
         AtomicReference<Throwable> failure = new AtomicReference<>();
         try {
+            Log.i(TAG, "Preparing application runtime");
             File runtime = RuntimeExtractor.extract(this);
             Thread server = new Thread(() -> {
                 try {
@@ -63,11 +66,13 @@ public class StudyServerService extends Service {
             server.start();
             waitUntilListening(server, failure);
             String status = runningStatus();
+            Log.i(TAG, "Study server ready on port " + PORT);
             StudyServerState.publish(StudyServerState.READY, status);
             updateNotification(status);
         } catch (Throwable error) {
             running.set(false);
             Throwable cause = failure.get() == null ? error : failure.get();
+            Log.e(TAG, "Study server startup failed", cause);
             StudyServerState.publish(StudyServerState.ERROR, cause.toString());
             updateNotification(getString(R.string.server_failed));
         }
@@ -106,7 +111,7 @@ public class StudyServerService extends Service {
     private String runningStatus() {
         String address = lanUrl();
         if (BuildConfig.CONTRACT_V2) {
-            return "重构测试版（独立数据） " + (address != null ? address
+            return "第二版（独立数据） " + (address != null ? address
                 : "http://127.0.0.1:" + PORT + " · " + getString(R.string.no_lan));
         }
         if (address == null) {

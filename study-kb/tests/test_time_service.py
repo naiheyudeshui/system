@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+from contextlib import closing
 import tempfile
+import sqlite3
 import unittest
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -102,6 +104,42 @@ class StudyTimeServiceTest(unittest.TestCase):
             self.assertFalse(any("pomodoro" in name or "stopwatch" in name or name == "study_time_session" for name in tables))
         finally:
             con.close()
+
+    def test_timer_state_serializes_with_another_startup_writer(self):
+        # A timer refresh writes its resource registry. Reproduce another
+        # plugin committing after the timer has already read a WAL snapshot.
+        service.time_state("pomodoro")
+        with closing(sqlite3.connect(self.database)) as con, con:
+            con.execute("CREATE TABLE startup_writer_probe(value INTEGER)")
+            con.execute("INSERT INTO startup_writer_probe VALUES(0)")
+        attempted = False
+
+        def concurrent_resources(con, *args, **kwargs):
+            nonlocal attempted
+            if attempted:
+                return ensure_plugin_resources(con, *args, **kwargs)
+            attempted = True
+            con.execute("SAVEPOINT startup_snapshot")
+            con.execute("SELECT value FROM startup_writer_probe").fetchone()
+            with closing(sqlite3.connect(self.database, timeout=0)) as rival, rival:
+                try:
+                    rival.execute("UPDATE startup_writer_probe SET value=1")
+                    rival.commit()
+                except sqlite3.OperationalError as error:
+                    if "locked" not in str(error):
+                        raise
+                    rival.rollback()
+            result = ensure_plugin_resources(con, *args, **kwargs)
+            con.execute("RELEASE SAVEPOINT startup_snapshot")
+            return result
+
+        with patch.object(service, "ensure_plugin_resources", side_effect=concurrent_resources):
+            state = service.time_state("pomodoro")
+        self.assertTrue(attempted)
+        self.assertEqual(state["schema"], "study.time/v5")
+        with closing(sqlite3.connect(self.database)) as con, con:
+            con.execute("UPDATE startup_writer_probe SET value=2")
+        self.assertIsNone(service.time_state("pomodoro")["current"])
 
     def test_pomodoro_default_task_history_edit_and_chart_aggregates(self):
         started = service.time_action({"kind": "pomodoro", "action": "start", "task_text": "", "planned_seconds": 60})

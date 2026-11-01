@@ -29,6 +29,8 @@ class ReviewHttpTests(unittest.TestCase):
             con = open_db(path)
             node = create_node(con, title='HTTP fixture', kind='book')
             create_card(con, node_id=node['id'], front='HTTP question', back='HTTP answer', due_at='2099-01-01 00:00:00')
+            con.execute('CREATE TABLE fixture_editable_tree(code TEXT PRIMARY KEY,owner TEXT,label TEXT,body TEXT)')
+            con.executemany('INSERT INTO fixture_editable_tree VALUES (?,?,?,?)', [('a',None,'Root','**Details**'),('b','a','Child','More')])
             con.commit()
             con.close()
 
@@ -120,8 +122,19 @@ class ReviewHttpTests(unittest.TestCase):
                 assert unified['node_count'] == 2
                 assert any(row['title'] == 'HTTP question' and row['content_md'] == 'HTTP answer' for row in unified['rows'])
                 assert tree['validation']['valid']
-                custom_tree = request('/api/plugin/config/save', {'plugin_id': 'study.node-tree', 'module_id': 'trees', 'name': 'Mapped tree', 'sql': "SELECT 'a' AS code, NULL AS owner, 'Root' AS label, '**Details**' AS body UNION ALL SELECT 'b','a','Child','More'", 'settings': {'tree': {'id': 'code', 'parent': 'owner', 'title': 'label', 'details': [{'column': 'body', 'label': 'Text', 'format': 'markdown'}]}}})
+                custom_tree = request('/api/plugin/config/save', {'plugin_id': 'study.node-tree', 'module_id': 'trees', 'name': 'Mapped tree', 'sql': "SELECT * FROM fixture_editable_tree ORDER BY code", 'settings': {'tree': {'id': 'code', 'parent': 'owner', 'title': 'label', 'details': [{'column': 'body', 'label': 'Text', 'format': 'markdown'}]}}})
                 mapped = request('/api/study/tree?config_id=' + custom_tree['id'])
+                assert mapped['editing']['provider'] == 'plugin-tree/v1'
+                tree_scope = {'plugin_id':'study.node-tree','module_id':'trees','config_id':custom_tree['id']}
+                original = request('/api/plugin/config/tree-read', {**tree_scope,'node_id':'a'})
+                edit = {**tree_scope,'node_id':'a','version':original['version'],'operation':'content','title':'Changed','content_md':'Updated','request_id':'http-tree-edit-request-001'}
+                request('/api/plugin/config/tree-save', edit, expected=400, external=True)
+                saved_edit = request('/api/plugin/config/tree-save', edit)
+                assert request('/api/plugin/config/tree-save', edit) == saved_edit
+                assert request('/api/plugin/config/tree-read', {**tree_scope,'node_id':'a'})['node']['title'] == 'Changed'
+                request('/api/plugin/config/tree-save', {**edit,'request_id':'http-tree-edit-stale-001'}, expected=409)
+                request('/api/plugin/config/tree-read', {**tree_scope,'module_id':'other'}, expected=400)
+                request('/api/plugin/config/save', {'plugin_id':'study.node-tree','module_id':'trees','name':'No write target','sql':"SELECT 'r' AS node_id,NULL AS parent_id,'Root' AS title,'' AS content_md"}, expected=400)
                 assert mapped['roots'][0]['children'][0]['id'] == 'b'
                 assert mapped['rows'][0]['detail_1'] == '**Details**'
                 request('/api/plugin/config/save', {**custom_tree, 'sql': "SELECT 'a' AS code, 'missing' AS owner, 'Root' AS label, 'Body' AS body"}, expected=400)

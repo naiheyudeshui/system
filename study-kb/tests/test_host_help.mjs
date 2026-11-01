@@ -168,7 +168,7 @@ test("plain help text cannot execute HTML and command references are not buttons
     assert.equal(dialog.querySelector("img"), null);
     assert.equal(dialog.querySelector("h2").textContent, value);
     assert.match(dialog.querySelector(".wb-help-commands").textContent, /data.binding.validate/);
-    assert.equal(dialog.querySelectorAll("button").length, 1);
+    assert.equal(dialog.querySelector('.wb-help-commands').querySelectorAll('button,a,input').length, 0, 'command references are text; manual navigation may have its own button');
     help.dispose();
   } finally { ui.dom.window.close(); }
 });

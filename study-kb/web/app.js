@@ -1,11 +1,12 @@
-import { createPluginWorkspace } from "/3dworkbench/pluginWorkspace.mjs?v=20261030-system1";
+import { createPluginWorkspace } from "/3dworkbench/pluginWorkspace.mjs?v=20261030-tables1";
 import { installSystemTools } from "/3dworkbench/systemTools/index.mjs";
 import { installHostHelp } from "/3dworkbench/hostHelp.mjs";
-import { createEditingServices, createHttpApi } from "/3dworkbench/hostServices.mjs?v=20261030-manager2";
+import { createEditingServices, createHttpApi } from "/3dworkbench/hostServices.mjs?v=20261030-tables1";
 import { createRefreshCoordinator } from "/3dworkbench/refreshCoordinator.mjs?v=20261030-manager2";
 import { applyIconButtons, setupLanguageSelect, t } from "/3dworkbench/workbenchPlatform.mjs?v=20261028-bsp1";
-import { studyHelpTopics } from "./studyHelp.mjs?v=20261029-authoring1";
-import { createStudyRenderers } from "./studyPlugins.mjs?v=20261030-manager2";
+import { studyHelpTopics } from "./studyHelp.mjs?v=20261030-editable-trees1";
+import { createStudyRenderers } from "./studyPlugins.mjs?v=20261030-tables1";
+import { renderMarkdown } from "./studyMarkdown.mjs";
 
 // Study host: a top bar plus one BSP workspace.  Every feature is a plugin in
 // its own pane; the host keeps only the load state and the shared services.
@@ -51,6 +52,7 @@ function handleLoadFailure(error) {
 }
 
 const editing = createEditingServices({
+  renderMarkdown,
   api,
   postApi,
   getSchema: () => state.schema,
@@ -93,10 +95,11 @@ const refreshCoordinator = createRefreshCoordinator({
 $("#refresh").addEventListener("click", () => { void refreshCoordinator.run({ reason: "global" }).catch(handleLoadFailure); });
 document.addEventListener("workbench:pluginschanged", () => { void refreshCoordinator.run({ reason: "plugins" }).catch(handleLoadFailure); });
 $("#retry-load").addEventListener("click", () => { firstLoad = true; void refreshCoordinator.run({ reason: "retry" }).catch(handleLoadFailure); });
-setupLanguageSelect({ select: ensureLanguageSelect(), storageKey: "study-language", initial: "zh", translations: STUDIO_I18N, onChange: applyStudioLanguage });
+const languageService = setupLanguageSelect({ select: ensureLanguageSelect(), storageKey: "study-language", initial: "zh", translations: STUDIO_I18N, onChange: applyStudioLanguage });
 applyStudioLanguage();
 const helpController = installHostHelp({ topics: studyHelpTopics, getContext: () => pluginWorkspace.getActiveContext() });
 const systemTools = installSystemTools({ workspace: pluginWorkspace, helpController,
+  languageService,
   refresh: () => refreshCoordinator.run({ reason: "global" }).catch(handleLoadFailure),
   themeStorageKey: "study-workbench-theme", legacyThemeKey: "study-theme",
   onError: (error) => console.error("System tool failed", error),

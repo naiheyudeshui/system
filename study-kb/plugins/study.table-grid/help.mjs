@@ -1,0 +1,8 @@
+// Package-owned user text, presented through the common host help service.
+const topic=(action,zh,en)=>({pluginId:'study.table-grid',page:'grid',...(action?{action}:{}),locales:{zh:{title:zh[0],hint:zh[1],body:zh[2]},en:{title:en[0],hint:en[1],body:en[2]}}});
+export const tableHelpTopics=[
+  topic(null,['表格阅读与编辑','锁定双击预览，解锁双击编辑。','从目录拖入表格，只绑定落入的这个窗格。单元格最多显示八行；双击查看完整内容。解锁后仅允许编辑具有有效写映射的字段。编辑器右下角可以放大，保存才写入，取消不写入。字段说明和 SQL 在集中配置中管理。'],['Read and edit tables','Double-click to preview when locked, or edit when unlocked.','Drag a table from the catalog into the destination pane. Cells show up to eight lines. Double-click for full content; unlocking only enables fields with valid write mappings. Expand using the lower-right icon. Only Save writes changes. Definitions and SQL are managed in shared settings.']),
+  topic('locked',['编辑已锁定','先解锁，再新增或修改。','锁定时双击只打开预览，不写数据。点击表格工具栏的锁图标解锁后，可新增记录或编辑允许写入的字段。'],['Editing locked','Unlock before adding or changing data.','Double-clicking in locked mode opens a read-only preview. Unlock using the table toolbar to add records or edit writable fields.']),
+  topic('read-only',['字段不可写','解锁不会改变字段权限。','主键、计算字段及没有有效原始表写映射的字段只能查看。请在集中设置中核对映射，不要用修改显示值绕过规则。'],['Read-only field','Unlocking does not change field permissions.','Primary keys, computed fields and fields without a valid source mapping are read-only. Check mappings in shared settings.']),
+  topic('draft',['尚有编辑草稿','请先保存或取消当前编辑。','切表、筛选和刷新前请先保存或取消。放大与缩回共用同一份草稿，不会保存；失败保留输入。取消有改动的内容时需再次确认放弃。'],['Unsaved cell draft','Save or cancel the active editor first.','Finish editing before changing tables, filters or refreshing. Expanding preserves the draft without saving. Failed saves retain input. Cancel again to confirm discarding changes.'])
+];

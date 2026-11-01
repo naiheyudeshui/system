@@ -500,7 +500,7 @@ test("tree browser replaces graph with outline and returns from nested details w
 });
 
 
-test("tree editor saves canonical content and retries toolbar refresh without duplicate writes", async () => {
+test("tree editor saves canonical content and retries shared refresh without duplicate writes", async () => {
   const ui = await setup();
   try {
     const root = ui.document.createElement("section"); ui.document.body.append(root);
@@ -546,7 +546,7 @@ test("tree editor saves canonical content and retries toolbar refresh without du
     assert.equal(saves, 1);
     assert.equal(root.querySelector(".study-tree-editor"), null);
     assert.match(root.textContent, /后台校验失败/);
-    root.querySelector('[aria-label="刷新"]').click(); await settle(); await settle();
+    await root.refresh(); await settle();
     assert.equal(saves, 1);
     assert.equal(root.querySelector(".study-tree-editor"), null);
     assert.equal(root.querySelector('[aria-label="展开或收起内容 Renamed"]').getAttribute("aria-expanded"), "true");
@@ -879,6 +879,87 @@ test("tree plan preview retains ancestors and allows a selected browsing root", 
     root.querySelector('[aria-label="返回方案"]').click();
     root.dispose();
   } finally { ui.dom.window.close(); }
+});
+
+test("builtin tree plan opens an editable copy and selects the saved custom plan", async () => {
+  const ui = await setup();
+  const root = ui.document.createElement("section"); ui.document.body.append(root);
+  const entries = []; const writes = [];
+  try {
+    await ui.treeAdapter.renderNodeTreePanel(root, {
+      api: async url => url.includes("/configs?") ? { configs: structuredClone(entries), definition: { contract: "tree-nodes/v1" } } : { roots: [], scopes: [] },
+      postApi: async (url, draft) => {
+        writes.push({ url, draft: structuredClone(draft) });
+        const saved = { ...draft, id: "custom-tree", revision: 1 };
+        entries.push(saved); return saved;
+      },
+    });
+    root.querySelector('[aria-label="树方案设置"]').click();
+    assert.equal(root.querySelector('[data-help-action="manage-edit"]').disabled, false);
+    assert.ok(root.querySelector('[aria-label="编辑方案 学习知识树"]'));
+    assert.equal(root.querySelector('[aria-label="删除方案 学习知识树"]'), null);
+    root.querySelector('[aria-label="编辑方案 学习知识树"]').click(); await settle(); await settle();
+    assert.equal(writes.length, 0);
+    assert.equal(root.querySelector('[aria-label="方案名称"]').value, "学习知识树（自定义）");
+    assert.match(root.querySelector('[aria-label="SQL（查询模块只允许只读语句）"]').value, /v_study_knowledge_nodes/);
+    await assert.rejects(root.refresh(), /编辑/);
+    root.querySelector('[data-help-action="save"]').click(); await settle(); await settle();
+    assert.equal(writes.length, 1);
+    assert.equal(writes[0].url, "/api/plugin/config/save");
+    assert.equal(writes[0].draft.id, undefined);
+    [...root.querySelectorAll("button")].find(node => node.textContent === "返回").click(); await settle(); await settle();
+    assert.equal(root.querySelector('.study-plan-select[aria-pressed="true"]').textContent, "学习知识树（自定义）");
+    root.querySelector('[aria-label="编辑方案 学习知识树（自定义）"]').click(); await settle(); await settle();
+    assert.equal(root.querySelector('[aria-label="管理已有方案"]').value, "custom-tree");
+  } finally { root.dispose?.(); ui.dom.window.close(); }
+});
+
+test("tree plans omit browsing scope, order actions and preserve filters and view on shared refresh", async () => {
+  const ui = await setup();
+  const root = ui.document.createElement("section"); ui.document.body.append(root);
+  const requests = []; let answer = "Before"; let unavailable = false;
+  const payload = () => ({ roots: [{ id: "root", title: "Book", children: [{ id: "leaf", title: "Leaf", answer_md: answer, children: [] }] }], scopes: [{ id: "book", label: "Book" }] });
+  try {
+    await ui.treeAdapter.renderNodeTreePanel(root, { api: async url => {
+      requests.push(url);
+      if (url.includes("/configs?")) return { configs: [] };
+      if (unavailable) throw new Error("offline");
+      return payload();
+    }, postApi: async () => ({}) });
+    const button = label => [...root.querySelectorAll("button")].find(node => node.textContent === label || node.getAttribute("aria-label") === label);
+    assert.equal(button("刷新"), undefined);
+    assert.equal(root.querySelector('[aria-label="浏览范围"]'), null);
+    await root.refresh();
+    button("预览并筛选").click(); await settle();
+    assert.equal(requests.at(-1), "/api/study/tree?model=knowledge");
+    const actions = root.querySelector(".wb-preview-actions");
+    assert.ok(actions.firstElementChild.matches(".wb-tree-root-tools"));
+    assert.equal(actions.children[1].textContent, "清空列筛选");
+    const back = root.querySelector('.study-tree-preview-header [aria-label="返回方案"]');
+    assert.equal(back.textContent, ""); assert.ok(back.querySelector("svg"));
+    button("筛选 节点标题").click();
+    ui.document.querySelector('.table-filter-popover input[value="Leaf"]').checked = true;
+    [...ui.document.querySelectorAll("button")].find(node => node.textContent === "应用").click();
+    root.querySelector('[aria-label="搜索或选择根节点"]').value = "leaf";
+    await root.refresh();
+    assert.equal(root.querySelector('[aria-label="搜索或选择根节点"]').value, "leaf");
+    assert.match(root.textContent, /筛选后 1 条/);
+    button("打开树图").click();
+    assert.equal(button("刷新"), undefined);
+    button("大纲").click();
+    answer = "After";
+    await root.refresh();
+    assert.equal(root.querySelector('.wb-tree-view-switch button[aria-pressed="true"]').textContent, "大纲");
+    assert.equal(root.querySelectorAll(".wb-tree-outline-row").length, 1);
+    assert.match(root.textContent, /筛选后 1 条/);
+    unavailable = true;
+    await assert.rejects(root.refresh(), /offline/);
+    assert.match(root.querySelector(".study-tree-status").textContent, /offline/);
+    assert.ok(root.classList.contains("is-browsing-tree"));
+    assert.equal(root.querySelector('.wb-tree-view-switch button[aria-pressed="true"]').textContent, "大纲");
+    back.click();
+    assert.equal(root.querySelector('[data-help-page="plans"]').hidden, false);
+  } finally { root.dispose?.(); ui.dom.window.close(); }
 });
 
 test("tree mapping editor synchronizes relation fields and multiple detail modules", async () => {
@@ -1408,6 +1489,24 @@ test("launcher refuses insufficient pane space without replacing existing conten
     assert.equal(ui.document.querySelectorAll(".wb-bsp-leaf").length, 1);
     assert.equal(ui.document.querySelector(".wb-app-menu").hidden, false);
     assert.match(ui.document.querySelector(".wb-launcher-status").textContent, /空间不足/);
+    host.dispose();
+  } finally { ui.dom.window.close(); }
+});
+
+test("launcher borrows whole-host space when individual phone panes cannot split", async () => {
+  const ui = await setup();
+  try {
+    const tree = split(leaf("demo.a", "a"), leaf("demo.b", "b"));
+    tree.orientation = "horizontal";
+    const { host, posts } = bspWorkspace(ui, { tree, renderers: {} });
+    await host.update([sized("demo.a"), sized("demo.b"), sized("demo.c")]);
+    ui.document.querySelector(".wb-bsp-host").getBoundingClientRect = () => ({ width:393, height:730 });
+    for (const pane of ui.document.querySelectorAll(".wb-bsp-leaf")) pane.getBoundingClientRect = () => ({ width:393, height:362 });
+    ui.document.querySelector('.wb-launcher-shortcut[data-plugin-id="demo.c"]').click();
+    for (let i=0;i<5;i++) await settle();
+    assert.equal(posts.length,1);assert.equal(ui.document.querySelectorAll('.wb-bsp-leaf').length,3);
+    assert.ok(ui.document.querySelector('[data-leaf-id="leaf-a"]'));assert.ok(ui.document.querySelector('[data-leaf-id="leaf-b"]'));
+    assert.equal(ui.document.querySelector('.wb-app-menu').hidden,true);
     host.dispose();
   } finally { ui.dom.window.close(); }
 });

@@ -71,6 +71,22 @@ def validate_review_binding(con, payload, result):
                 raise ValueError("此表包含不属于学习库的卡片；请选择自定义表的到期时间列，或新建独立复习表")
 
 
+def knowledge_tree_source(saved):
+    # Both the preset and an explicit binding to its canonical view use the
+    # product adapter, which preserves schedules, history and file references.
+    source = saved.get("settings", {}).get("dataSource", {})
+    mapping = source.get("mapping", {})
+    if source.get("mode") == "existing" and source.get("name") == "v_study_knowledge_nodes":
+        return all(mapping.get(key) == key for key in ("node_id", "parent_id", "title", "content_md"))
+    return not saved.get("parameters") and not saved.get("settings") and "".join(saved["sql"].lower().split()) == "".join(TREE_DEFAULTS[0]["sql"].lower().split())
+
+
+def validate_tree_binding(con, payload, result):
+    if not knowledge_tree_source(payload):
+        from plugin_tree_edit import describe
+        describe(con, {**payload, "id": payload.get("id", "draft")})
+
+
 def register_study_modules():
     register_data_delete_guard('study-review/v1', validate_content_deletion)
     for default in DEFAULTS:
@@ -78,7 +94,7 @@ def register_study_modules():
     for default in TREE_DEFAULTS:
         default["contract_version"] = "tree-nodes/v1"
     register_module("study.review-table", "reviews", contract="review-cards/v1", label="复习方案", defaults=DEFAULTS, data_template="review-basic/v1", binding_validator=validate_review_binding, file_workspace="study")
-    register_module("study.node-tree", "trees", contract="tree-nodes/v1", label="章节树方案", defaults=TREE_DEFAULTS, data_template="tree-basic/v1", tree_file_workspace="study")
+    register_module("study.node-tree", "trees", contract="tree-nodes/v1", label="章节树方案", defaults=TREE_DEFAULTS, data_template="tree-basic/v1", binding_validator=validate_tree_binding, tree_file_workspace="study")
 
 
 register_study_modules()
@@ -127,8 +143,12 @@ def sql_tree(key):
             raise ValueError("树方案不存在或已删除")
         from tree_model import tree_result
         result = tree_result(query_rows(con, saved["sql"], saved["parameters"], limit=5000, seconds=5, byte_limit=16*1048576), saved["settings"])
-        if saved["sql"] == TREE_DEFAULTS[0]["sql"] and not saved["parameters"] and not saved["settings"]:
+        if knowledge_tree_source(saved):
             result["editing"] = {"provider": "study-knowledge/v1"}
+        else:
+            from plugin_tree_edit import describe, order_result
+            result["editing"] = describe(con, saved)
+            order_result(con, saved, result)
         return result
     finally:
         con.close()

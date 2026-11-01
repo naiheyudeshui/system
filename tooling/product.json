@@ -1,0 +1,174 @@
+{
+  "schema": "workbench.product-build/v1",
+  "id": "study",
+  "version": "1.0.4",
+  "hostDependency": "tooling/dependencies.lock.json",
+  "entry": {
+    "server": "study-kb/tools/serve_workbench.py",
+    "web": "study-kb/web/index.html"
+  },
+  "dataPolicy": "external-runtime-data",
+  "platforms": {
+    "web": {
+      "status": "available"
+    },
+    "android": {
+      "status": "available",
+      "shell": "study-kb/android"
+    },
+    "ios": {
+      "status": "planned"
+    }
+  },
+  "documents": [
+    {
+      "documentId": "product:study",
+      "owner": "product",
+      "source": "study-kb/docs/manual",
+      "publication": "study-kb/manual-publications/study/manual/manifest.json"
+    },
+    {
+      "documentId": "platform:workbench",
+      "owner": "host",
+      "source": "3dworkbench/docs/manual",
+      "publication": "3dStudio/3dworkbench/manual-publications/workbench/manual/manifest.json"
+    }
+  ],
+  "resources": [
+    {
+      "owner": "product",
+      "source": "study-kb/tools",
+      "target": "study-kb/tools",
+      "include": [
+        "*.py"
+      ],
+      "exclude": [
+        "assemble_android_assets.py",
+        "knowledge_migration.py",
+        "migrate_from_studio.py",
+        "serve_ui.py",
+        "_tmp*"
+      ]
+    },
+    {
+      "owner": "product",
+      "source": "study-kb/web",
+      "target": "study-kb/web",
+      "include": [
+        "*"
+      ],
+      "exclude": []
+    },
+    {
+      "owner": "product",
+      "source": "study-kb/plugins",
+      "target": "study-kb/plugins",
+      "include": [
+        "*"
+      ],
+      "exclude": []
+    },
+    {
+      "owner": "product",
+      "source": "study-kb/schema",
+      "target": "study-kb/schema",
+      "include": [
+        "*.sql"
+      ],
+      "exclude": []
+    },
+    {
+      "owner": "host",
+      "source": "tools",
+      "target": "3dStudio/tools",
+      "include": [
+        "*.py"
+      ],
+      "exclude": [
+        "_tmp*"
+      ]
+    },
+    {
+      "owner": "host",
+      "source": "3dworkbench/python",
+      "target": "3dStudio/3dworkbench/python",
+      "include": [
+        "*.py"
+      ],
+      "exclude": []
+    },
+    {
+      "owner": "host",
+      "source": "3dworkbench/web",
+      "target": "3dStudio/3dworkbench/web",
+      "include": [
+        "*"
+      ],
+      "exclude": []
+    },
+    {
+      "owner": "host",
+      "source": "3dworkbench/plugins/official",
+      "target": "3dStudio/3dworkbench/plugins/official",
+      "include": [
+        "*"
+      ],
+      "exclude": []
+    },
+    {
+      "owner": "host",
+      "source": "packages/contracts",
+      "target": "3dStudio/packages/contracts",
+      "include": [
+        "*.json"
+      ],
+      "exclude": []
+    },
+    {
+      "owner": "host",
+      "source": "3dworkbench/contracts",
+      "target": "3dStudio/3dworkbench/contracts",
+      "include": [
+        "*.json"
+      ],
+      "exclude": []
+    },
+    {
+      "owner": "host",
+      "source": "tooling/sync-contracts",
+      "target": "3dStudio/tooling/sync-contracts",
+      "include": [
+        "*.py",
+        "*.mjs"
+      ],
+      "exclude": []
+    },
+    {
+      "owner": "product",
+      "source": "study-kb/manual-publications/study",
+      "target": "study-kb/manual-publications/study",
+      "include": [
+        "*"
+      ],
+      "exclude": []
+    },
+    {
+      "owner": "host",
+      "source": "3dworkbench/manual-publications/workbench",
+      "target": "3dStudio/3dworkbench/manual-publications/workbench",
+      "include": [
+        "*"
+      ],
+      "exclude": []
+    },
+    {
+      "owner": "host",
+      "source": "plugin-publications/official.tree-view",
+      "target": "3dStudio/plugin-publications/official.tree-view",
+      "include": [
+        "*"
+      ],
+      "exclude": []
+    }
+  ]
+}

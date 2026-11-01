@@ -1,4 +1,4 @@
-@import url("/3dworkbench/workbench.css?v=20261028-mobile2");
+@import url("/3dworkbench/workbench.css?v=20261030-tables1");
 
 /* Study reading theme — forest/phosphor greens (Glean + Forest Walk inspired). */
 
@@ -334,6 +334,13 @@ button.danger { background: var(--danger); color: var(--panel); }
 
 
 /* Pane presentations (manifest `when`, selected by the BSP pane size). */
+.study-tree-preview-header { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:start; }
+.study-tree-preview-header h3 { min-width:0; overflow-wrap:anywhere; margin:0; }
+.study-tree-preview-header > button { margin:0; }
+.study-tree-workspace > [data-help-page="preview"] .wb-preview-actions { flex-wrap:wrap; overflow:visible; align-items:center; }
+.study-tree-workspace .wb-preview-actions .wb-tree-root-tools { flex:1 1 400px; min-width:0; flex-wrap:wrap; }
+.study-tree-workspace .wb-preview-actions .wb-tree-root-picker { flex:1 1 180px; min-width:120px; }
+.study-tree-workspace .wb-preview-actions .wb-tree-root-tools > .primary { min-height:42px; }
 .wb-plugin-instance[data-presentation="compact"] .wb-table-catalog .nav-item small { display:none; }
 .wb-plugin-instance[data-presentation="compact"] .wb-table-catalog .nav-item b { display:none; }
 .wb-plugin-instance[data-presentation="compact"] .study-review-panel .study-plan-grid { grid-template-columns:minmax(0,1fr); }

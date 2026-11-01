@@ -54,6 +54,17 @@ class KnowledgeFileAssets(unittest.TestCase):
         self.assertEqual(read_node(self.con, self.key)["version"], before["version"])
         self.assertIsNone(self.con.execute("SELECT 1 FROM study_knowledge_edit WHERE request_id=?", (payload["request_id"],)).fetchone())
 
+    def test_physical_deletion_releases_current_link_and_undo_restores_the_file(self):
+        save_knowledge_node(self.payload(f"[manual](wb-asset://{self.asset})"))
+        deletion = {**self.payload(""), "operation": "delete", "delete_mode": "self"}
+        save_knowledge_node(deletion)
+        self.assertIsNone(self.con.execute("SELECT 1 FROM study_knowledge_item WHERE id=?", (self.key,)).fetchone())
+        self.assertEqual(self.con.execute("SELECT COUNT(*) FROM wb_file_reference WHERE owner_kind='study-item' AND owner_id=?", (self.key,)).fetchone()[0], 0)
+        self.assertTrue(self.files.content_path(self.asset).is_file())
+        save_knowledge_node({"operation": "history", "request_id": str(uuid.uuid4()), "target_request_id": deletion["request_id"]})
+        self.assertIn(self.asset, read_node(self.con, self.key)["node"]["content_md"])
+        self.assertEqual(self.con.execute("SELECT COUNT(*) FROM wb_file_reference WHERE owner_kind='study-item' AND owner_id=?", (self.key,)).fetchone()[0], 1)
+
     def test_replaying_old_edit_keeps_current_attachment_and_hint_source_fields(self):
         second = self.files.import_stream(io.BytesIO(b"second"), 6, "second.bin")["asset"]["assetId"]
         first = self.payload(f"[old](wb-asset://{self.asset})")

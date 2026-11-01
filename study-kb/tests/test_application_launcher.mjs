@@ -178,6 +178,16 @@ test("activation deduplicates rapid clicks and reports failure without losing di
   } finally { ui.launcher.dispose(); ui.dom.window.close(); }
 });
 
+test("a failed Dock activation never opens All apps as a side effect", async () => {
+  const ui = setup({ onActivate: async () => { throw new Error("no space"); } });
+  try {
+    ui.q(".wb-launcher-shortcut").click(); await settle();
+    assert.equal(ui.q(".wb-app-menu").hidden, true);
+    assert.equal(ui.q(".app-launcher-button").getAttribute("aria-expanded"), "false");
+    assert.equal(ui.errors.length, 1);
+  } finally { ui.launcher.dispose(); ui.dom.window.close(); }
+});
+
 test("storage failure is nonfatal; dynamic catalog and labels preserve query; dispose cleans document listeners", () => {
   const ui = setup({ storage: { getItem() { throw new Error("blocked"); }, setItem() { throw new Error("quota"); } } });
   try {

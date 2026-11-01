@@ -1,0 +1,277 @@
+{
+  "schema": "workbench.plugin-manual/v2",
+  "documentId": "product:study",
+  "version": "1.0.4",
+  "defaultLocale": "zh-CN",
+  "entryPageId": "overview",
+  "pages": [
+    {
+      "pageId": "overview",
+      "source": "index.md",
+      "locale": "zh-CN",
+      "audience": "user",
+      "kind": "overview",
+      "sections": {},
+      "evidence": [
+        {
+          "kind": "source",
+          "path": "study-kb/web/studyHelp.mjs",
+          "status": "inspected"
+        }
+      ]
+    },
+    {
+      "pageId": "help",
+      "source": "user/help.md",
+      "locale": "zh-CN",
+      "audience": "user",
+      "kind": "guide",
+      "sections": {
+        "goal": "goal",
+        "prerequisites": "prerequisites",
+        "steps": "steps",
+        "expected": "expected",
+        "troubleshooting": "troubleshooting"
+      },
+      "evidence": [
+        {
+          "kind": "source",
+          "path": "study-kb/web/app.js",
+          "status": "inspected"
+        }
+      ]
+    },
+    {
+      "pageId": "plugins",
+      "source": "user/plugins.md",
+      "locale": "zh-CN",
+      "audience": "user",
+      "kind": "reference",
+      "sections": {},
+      "evidence": [
+        {
+          "kind": "source",
+          "path": "study-kb/web/studyPlugins.mjs",
+          "status": "inspected"
+        },
+        {
+          "kind": "source",
+          "path": "study-kb/web/studyHelp.mjs",
+          "status": "inspected"
+        },
+        {
+          "kind": "source",
+          "path": "study-kb/web/studyLibrarySync.mjs",
+          "status": "inspected"
+        }
+      ]
+    },
+    {
+      "pageId": "configuration",
+      "source": "user/configuration.md",
+      "locale": "zh-CN",
+      "audience": "user",
+      "kind": "reference",
+      "sections": {},
+      "evidence": [
+        {
+          "kind": "source",
+          "path": "3dStudio/3dworkbench/web/configFieldHelp.mjs",
+          "status": "inspected"
+        },
+        {
+          "kind": "source",
+          "path": "study-kb/web/studyHelp.mjs",
+          "status": "inspected"
+        }
+      ]
+    }
+  ],
+  "help": {
+    "study.table-catalog": {
+      "pageId": "plugins",
+      "anchor": "catalog"
+    },
+    "study.table-grid": {
+      "pageId": "plugins",
+      "anchor": "grid"
+    },
+    "study.metrics": {
+      "pageId": "plugins",
+      "anchor": "metrics"
+    },
+    "study.node-tree": {
+      "pageId": "plugins",
+      "anchor": "tree"
+    },
+    "study.review-table": {
+      "pageId": "plugins",
+      "anchor": "review"
+    },
+    "study.pomodoro": {
+      "pageId": "plugins",
+      "anchor": "pomodoro"
+    },
+    "study.stopwatch": {
+      "pageId": "plugins",
+      "anchor": "stopwatch"
+    },
+    "study.library": {
+      "pageId": "plugins",
+      "anchor": "library"
+    },
+    "study.node-tree/config": {
+      "pageId": "configuration",
+      "anchor": "configuration"
+    },
+    "study.node-tree/config/name": {
+      "pageId": "configuration",
+      "anchor": "name"
+    },
+    "study.node-tree/config/source": {
+      "pageId": "configuration",
+      "anchor": "source"
+    },
+    "study.node-tree/config/mapping": {
+      "pageId": "configuration",
+      "anchor": "mapping"
+    },
+    "study.node-tree/config/rows": {
+      "pageId": "configuration",
+      "anchor": "rows"
+    },
+    "study.node-tree/config/node-id": {
+      "pageId": "configuration",
+      "anchor": "node-id"
+    },
+    "study.node-tree/config/parent-id": {
+      "pageId": "configuration",
+      "anchor": "parent-id"
+    },
+    "study.node-tree/config/title": {
+      "pageId": "configuration",
+      "anchor": "title"
+    },
+    "study.node-tree/config/card-id": {
+      "pageId": "configuration",
+      "anchor": "card-id"
+    },
+    "study.node-tree/config/question": {
+      "pageId": "configuration",
+      "anchor": "question"
+    },
+    "study.node-tree/config/answer": {
+      "pageId": "configuration",
+      "anchor": "answer"
+    },
+    "study.node-tree/config/intervals": {
+      "pageId": "configuration",
+      "anchor": "intervals"
+    },
+    "study.node-tree/config/sql": {
+      "pageId": "configuration",
+      "anchor": "sql"
+    },
+    "study.node-tree/config/parameters": {
+      "pageId": "configuration",
+      "anchor": "parameters"
+    },
+    "study.node-tree/config/settings": {
+      "pageId": "configuration",
+      "anchor": "settings"
+    },
+    "study.node-tree/config/preview": {
+      "pageId": "configuration",
+      "anchor": "preview"
+    },
+    "study.node-tree/config/save": {
+      "pageId": "configuration",
+      "anchor": "save"
+    },
+    "study.node-tree/plans/manage-edit": {
+      "pageId": "configuration",
+      "anchor": "manage-edit"
+    },
+    "study.node-tree/plans/manage-add": {
+      "pageId": "configuration",
+      "anchor": "manage-add"
+    },
+    "study.review-table/config": {
+      "pageId": "configuration",
+      "anchor": "configuration"
+    },
+    "study.review-table/config/name": {
+      "pageId": "configuration",
+      "anchor": "name"
+    },
+    "study.review-table/config/source": {
+      "pageId": "configuration",
+      "anchor": "source"
+    },
+    "study.review-table/config/mapping": {
+      "pageId": "configuration",
+      "anchor": "mapping"
+    },
+    "study.review-table/config/rows": {
+      "pageId": "configuration",
+      "anchor": "rows"
+    },
+    "study.review-table/config/node-id": {
+      "pageId": "configuration",
+      "anchor": "node-id"
+    },
+    "study.review-table/config/parent-id": {
+      "pageId": "configuration",
+      "anchor": "parent-id"
+    },
+    "study.review-table/config/title": {
+      "pageId": "configuration",
+      "anchor": "title"
+    },
+    "study.review-table/config/card-id": {
+      "pageId": "configuration",
+      "anchor": "card-id"
+    },
+    "study.review-table/config/question": {
+      "pageId": "configuration",
+      "anchor": "question"
+    },
+    "study.review-table/config/answer": {
+      "pageId": "configuration",
+      "anchor": "answer"
+    },
+    "study.review-table/config/intervals": {
+      "pageId": "configuration",
+      "anchor": "intervals"
+    },
+    "study.review-table/config/sql": {
+      "pageId": "configuration",
+      "anchor": "sql"
+    },
+    "study.review-table/config/parameters": {
+      "pageId": "configuration",
+      "anchor": "parameters"
+    },
+    "study.review-table/config/settings": {
+      "pageId": "configuration",
+      "anchor": "settings"
+    },
+    "study.review-table/config/preview": {
+      "pageId": "configuration",
+      "anchor": "preview"
+    },
+    "study.review-table/config/save": {
+      "pageId": "configuration",
+      "anchor": "save"
+    },
+    "study.review-table/plans/manage-edit": {
+      "pageId": "configuration",
+      "anchor": "manage-edit"
+    },
+    "study.review-table/plans/manage-add": {
+      "pageId": "configuration",
+      "anchor": "manage-add"
+    }
+  },
+  "dependencies": []
+}

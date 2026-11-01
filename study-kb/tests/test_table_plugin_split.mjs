@@ -25,13 +25,14 @@ test("catalog and grid renderers do not import each other or own SQL", async () 
   assert.doesNotMatch(catalog, /tableGrid/);
   assert.doesNotMatch(grid, /tableCatalog/);
   assert.doesNotMatch(catalog + grid, /study/, "shared components know no product");
-  assert.doesNotMatch(catalog, /INSERT|UPDATE|DELETE|CREATE\s+VIEW/i);
-  assert.doesNotMatch(grid, /INSERT|UPDATE|DELETE|CREATE\s+VIEW/i);
+  const mutatingSql = /\b(?:INSERT\s+INTO|UPDATE\s+\S+\s+SET|DELETE\s+FROM|CREATE\s+VIEW)\b/i;
+  assert.doesNotMatch(catalog, mutatingSql);
+  assert.doesNotMatch(grid, mutatingSql);
   assert.doesNotMatch(grid, /selectObject|workbench:table-selection/);
   assert.match(grid, /\/api\/object\?/);
   assert.match(grid, /pluginId\}::\$\{context\.instanceId/);
   assert.match(grid, /renderObjectGrid/);
-  assert.match(grid, /renderObjectInspector/);
+  assert.doesNotMatch(grid, /renderObjectInspector/, 'definitions and SQL belong to shared settings');
   assert.match(catalog, /renderObjectNavigator/);
   assert.match(catalog, /dispatchToAcceptors/);
   assert.doesNotMatch(catalog, /selectObject/);
