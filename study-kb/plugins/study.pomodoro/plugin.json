@@ -1,6 +1,7 @@
 {
   "id": "study.pomodoro",
   "icon": "icon.svg",
+  "iconPresentation": {"mode":"layered","accent":"icon-accent.svg"},
   "version": "1.0.0",
   "api": {"host": ">=1.0 <2.0"},
   "activation": ["onStartupFinished"],

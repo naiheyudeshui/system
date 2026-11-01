@@ -1,6 +1,7 @@
 {
   "id": "study.stopwatch",
   "icon": "icon.svg",
+  "iconPresentation": {"mode":"template"},
   "version": "1.0.0",
   "api": {"host": ">=1.0 <2.0"},
   "activation": ["onStartupFinished"],

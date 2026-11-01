@@ -380,8 +380,8 @@ test("plan cards expose only selected actions, edit current plan, create new and
     assert.equal(management.hidden, true);
     assert.equal(management, root.querySelector(".study-plan-grid").firstElementChild);
     assert.equal(management.children.length, 2);
-    assert.equal(button("编辑已有方案").querySelector("b").textContent, "⚙");
-    assert.equal(button("新增方案").querySelector("b").textContent, "+");
+    assert.ok(button("编辑已有方案").querySelector('svg[data-ui-icon="settings"]'));
+    assert.ok(button("新增方案").querySelector('svg[data-ui-icon="plus"]'));
     assert.ok(button("开始一轮学习").classList.contains("primary"));
     assert.ok(!button("预览并筛选").classList.contains("primary"));
     root.querySelector('[aria-label="方案设置"]').click();

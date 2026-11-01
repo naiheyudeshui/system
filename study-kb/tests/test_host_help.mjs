@@ -7,6 +7,7 @@ import { JSDOM } from "jsdom";
 const source = await readFile(new URL("../../3dStudio/3dworkbench/web/hostHelp.mjs", import.meta.url), "utf8");
 const studySource = await readFile(new URL("../web/studyHelp.mjs", import.meta.url), "utf8");
 const fieldHelpSource = await readFile(new URL("../../3dStudio/3dworkbench/web/configFieldHelp.mjs", import.meta.url), "utf8");
+const iconsSource = await readFile(new URL("../../3dStudio/3dworkbench/web/icons.mjs", import.meta.url), "utf8");
 const fixtures = JSON.parse(await readFile(new URL("../../3dStudio/tests/contracts/schema-fixtures.json", import.meta.url), "utf8"));
 const settle = () => new Promise((resolve) => setImmediate(resolve));
 const texts = (title) => ({ zh: { title, hint: title + "提示", body: title + "正文" }, en: { title: title + " EN", hint: "Hint", body: "Body" } });
@@ -18,7 +19,10 @@ async function setup() {
   dom.window.HTMLDialogElement.prototype.close = function () { this.open = false; this.dispatchEvent(new dom.window.Event("close")); };
   const context = vm.createContext({ document, window: dom.window, structuredClone, console });
   const module = new vm.SourceTextModule(source, { context });
-  await module.link(() => {}); await module.evaluate();
+  await module.link(specifier => {
+    assert.equal(specifier, "./icons.mjs");
+    return new vm.SourceTextModule(iconsSource, { context });
+  }); await module.evaluate();
   const study = new vm.SourceTextModule(studySource, { context });
   const fields = new vm.SourceTextModule(fieldHelpSource, { context });
   await fields.link(() => {});

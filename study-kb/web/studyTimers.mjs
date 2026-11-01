@@ -1,4 +1,5 @@
 import { attachInlineCellEditor } from "/3dworkbench/inlineCellEditor.mjs";
+import { createPluginIcon, resolvePluginIcon } from "/3dworkbench/icons.mjs";
 
 function make(tag, text, className) {
   const element = document.createElement(tag);
@@ -175,7 +176,11 @@ export async function renderTimerPanel(panel, { api, postApi, kind, mode = "comp
   const detailed = mode === "full" || mode === "phone";
   panel.classList.add("study-time-panel", `study-time-${kind}`, `study-time-${mode}`);
   const controller = make("section", null, "study-time-controller");
-  const icon = make("span", pomodoro ? "🍅" : "⏱", "study-time-icon");
+  const icon = make("span", null, "study-time-icon");
+  icon.append(createPluginIcon(panel.ownerDocument, resolvePluginIcon({
+    id: pomodoro ? "study.pomodoro" : "study.stopwatch", icon: "icon.svg",
+    iconPresentation: pomodoro ? {mode:"layered", accent:"icon-accent.svg"} : {mode:"template"},
+  })));
   const task = make("input"); task.maxLength = 500; task.placeholder = "所做事宜"; task.className = "study-time-field"; task.setAttribute("aria-label", "所做事宜");
   const project = makeChoiceDropdown({ label: "计时项目", className: "study-time-project-picker" });
   const clock = make("input"); clock.type = "text"; clock.inputMode = "numeric"; clock.value = pomodoro ? "25" : "00:00"; clock.className = "study-time-clock"; clock.setAttribute("aria-label", pomodoro ? "番茄钟分钟数" : "计时时间");

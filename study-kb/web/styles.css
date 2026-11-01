@@ -126,7 +126,8 @@ button.danger { background: var(--danger); color: var(--panel); }
 .study-review-panel [hidden] { display: none !important; }
 .study-time-panel { box-sizing:border-box; width:100%; max-width:100%; min-width:0; min-height:82px; overflow:hidden; background:color-mix(in srgb,var(--panel) 94%,transparent); }
 .study-time-controller { width:100%; min-width:0; display:grid; grid-template-columns:auto minmax(0,1.4fr) minmax(0,11rem) auto auto minmax(0,1fr) max-content; align-items:center; gap:10px; padding:10px 14px; box-sizing:border-box; }
-.study-time-icon { font-size:28px; line-height:1; }
+.study-time-icon { display:grid; place-items:center; line-height:1; color:var(--accent,var(--text)); }
+.study-time-icon > .wb-icon { width:28px; height:28px; }
 .study-time-panel input { min-width:0; }
 .study-time-controller > .study-time-field { border-color:transparent; background:transparent; box-shadow:none; color:var(--text); }
 .study-time-controller > .study-time-field:hover,.study-time-controller > .study-time-field:focus { border-color:var(--border-strong); background:var(--input); }
