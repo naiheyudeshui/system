@@ -123,6 +123,10 @@ public class MainActivity extends ComponentActivity {
             offerDownload(url, URLUtil.guessFileName(url, disposition, mime), mime));
         webView.addJavascriptInterface(new Object() {
             @JavascriptInterface
+            public int contentScalePercent() {
+                return 85;
+            }
+            @JavascriptInterface
             public void onThemeChanged() {
                 runOnUiThread(MainActivity.this::syncSystemBarColor);
             }
@@ -282,6 +286,9 @@ public class MainActivity extends ComponentActivity {
                 if (css.length() >= 2 && css.startsWith("\"") && css.endsWith("\"")) {
                     css = css.substring(1, css.length() - 1);
                 }
+                // During navigation the stylesheet may not have loaded yet.
+                // Android's parseColor indexes the first character even for "".
+                if (css.isEmpty()) return;
                 try {
                     int color = Color.parseColor(css);
                     rootView.setBackgroundColor(color);

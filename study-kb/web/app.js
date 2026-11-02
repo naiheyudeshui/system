@@ -1,11 +1,11 @@
-import { createPluginWorkspace } from "/3dworkbench/pluginWorkspace.mjs?v=20261101-unified1";
+import { createPluginWorkspace } from "/3dworkbench/pluginWorkspace.mjs?v=20261102-pane-state3";
 import { installSystemTools } from "/3dworkbench/systemTools/index.mjs";
 import { installHostHelp } from "/3dworkbench/hostHelp.mjs";
 import { createEditingServices, createHttpApi } from "/3dworkbench/hostServices.mjs?v=20261030-tables1";
 import { createRefreshCoordinator } from "/3dworkbench/refreshCoordinator.mjs?v=20261030-manager2";
 import { applyIconButtons, setupLanguageSelect, t } from "/3dworkbench/workbenchPlatform.mjs?v=20261101-unified1";
 import { studyHelpTopics } from "./studyHelp.mjs?v=20261030-editable-trees1";
-import { createStudyRenderers } from "./studyPlugins.mjs?v=20261101-unified1";
+import { createStudyRenderers } from "./studyPlugins.mjs?v=20261102-pane-state1";
 import { renderMarkdown } from "./studyMarkdown.mjs";
 
 // Study host: a top bar plus one BSP workspace.  Every feature is a plugin in

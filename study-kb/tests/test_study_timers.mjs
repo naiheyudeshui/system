@@ -181,6 +181,20 @@ test("full timer presentation renders statistics projects and history", async ()
   } finally { ui.dom.window.close(); }
 });
 
+test("timer shape changes preserve unsaved duration and task without requesting data", async () => {
+  const ui=await setup();
+  try {
+    let reads=0;
+    await ui.timers.renderTimerPanel(ui.panel,{kind:'pomodoro',mode:'compact',api:async()=>{reads++;return {current:null,projects:[],history:[],summary:{today:{},days:[],projects:[]}};},postApi:async()=>{throw Error('No writes expected');}});
+    const task=ui.panel.querySelector('[aria-label="所做事宜"]'),clock=ui.panel.querySelector('[aria-label="番茄钟分钟数"]');
+    task.value='unsaved task';clock.value='42';
+    for(const presentationMode of ['full','phone','compact','full'])ui.panel.updatePresentation({presentationMode});
+    assert.equal(ui.panel.querySelector('[aria-label="所做事宜"]'),task);assert.equal(task.value,'unsaved task');assert.equal(clock.value,'42');
+    assert.equal(reads,1);assert.ok(ui.panel.querySelector('.study-time-dashboard'));
+    ui.panel.dispose();
+  } finally {ui.dom.window.close();}
+});
+
 test("pomodoro history edits projects and notes inline with cancel and rollback", async () => {
   const ui = await setup();
   try {

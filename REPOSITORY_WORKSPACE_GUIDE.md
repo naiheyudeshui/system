@@ -1,6 +1,8 @@
 # Study 与公共宿主交接说明
 
-整理日期：2026-11-01。日常工作入口为 `D:\system`；`D:\system\3dStudio` 是重新克隆的独立宿主仓库。两处均有完整的 `.git` 目录，使用 `feat/workbench-contract-v2`，分别对应 `naiheyudeshui/system` 与 `naiheyudeshui/3dStudio`；运行不依赖旧宿主工作树。旧 worktrees 保留作来源和回退，其中旧 Study 图标工作树已使用 `feat/themeable-icons-20261101`；`D:\system\.git` 仍管理已有 Study worktrees，不得手动删除。
+整理日期：2026-11-01，2026-11-02 更新旧工作树退出状态。日常工作入口为 `D:\system`；`D:\system\3dStudio` 是重新克隆的独立宿主仓库。两处均有完整的 `.git` 目录，使用 `feat/workbench-contract-v2`，分别对应 `naiheyudeshui/system` 与 `naiheyudeshui/3dStudio`；运行不依赖旧宿主工作树。其他旧 worktrees 保留作历史来源；`D:\system\.git` 仍管理已有 Study worktrees，不得手动删除。
+
+`D:\worktrees\system-workbench-contract-v2` 已按用户要求核查并删除，Git 工作树登记也已移除；该分支无独有提交，未提交功能已进入正式仓库。完整历史、WIP 和 6538 个普通文件的校验归档位于 `D:\system-handoff-archive\20261102-retire-system-worktree`。后续 agent 使用上述正式入口，不重建或继续编辑已退出的旧路径。独立旧宿主 `D:\worktrees\3dstudio-workbench-contract-v2` 未删除。
 
 ## 内容分类
 
@@ -55,3 +57,9 @@ npm test --prefix 3dStudio/tests
 方案卡、统一图标及手册自动验收已汇入上述日常入口。具体来源、提交、回归和备份见 [汇合记录](tooling/agent-integration-20261101.md)。旧工作树保留历史/WIP，不能按目录整体覆盖当前运行仓；新任务先核对实际服务命令和产品宿主锁。
 
 本轮服务重载后的日志位于 `D:/system-handoff-archive/20261101-agent-unification/server.stdout.log` 与 `server.stderr.log`。完整干净源码验收在仓外独立 worktree 执行，避免运行库的正常变化影响发布检查。本轮新增提交保存在本地，尚未推送，已有 APK 不代表这个统一源码版本。
+
+## 2026-11-02 手机交互版本
+
+当前 Android 版本为 `2.0.11-contract-v2`（versionCode 17）。Study 的宿主锁已更新至 `73b27be7a8e8d33e7882e010b7142a5b9410bfb2`，包含窄窗格拖拽、固定 160px 下限、顶部中央横向六点把手，以及尺寸变化时保留插件页面的修复。Android 使用 85% 初始缩放并保留横竖屏切换时的 WebView。实现和验收边界见 [窗格交互记录](study-kb/docs/PANE-INTERACTION-STATE.md)。
+
+本轮提交上传两仓库源码、正式测试和说明，包含此前尚未推送的集成提交；生成 APK、手机备份、截图、日志和本地运行数据库不纳入 Git。运行库保留原地，不为取得干净状态覆盖或回滚。构建仍按产品宿主锁选择对应版本。

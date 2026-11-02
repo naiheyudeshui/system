@@ -5,8 +5,8 @@ import { renderTablePrintPanel } from "/3dworkbench/components/tablePrintPanel.m
 import { renderSqliteTriggerPanel } from "/3dworkbench/sqliteTriggerPanel.mjs?v=20261101-unified1";
 import { renderLibrarySyncPanel } from "./studyLibrarySync.mjs?v=20261005-library";
 import { renderReviewTablePanel } from "./studySqlReview.mjs?v=20261101-unified1";
-import { renderTimerPanel } from "./studyTimers.mjs?v=20261101-unified1";
-import { renderNodeTreePanel } from "./studyTreeWorkspace.mjs?v=20261101-unified1";
+import { renderTimerPanel } from "./studyTimers.mjs?v=20261102-pane-state1";
+import { renderNodeTreePanel } from "./studyTreeWorkspace.mjs?v=20261102-pane-state1";
 import { renderPluginManager } from "/api/plugin/resource/official.plugin-manager/main.mjs";
 
 // Shown until the server has stored metric definitions.

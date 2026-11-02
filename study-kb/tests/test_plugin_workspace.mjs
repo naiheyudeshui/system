@@ -1413,17 +1413,22 @@ test("workspace mounts every leaf through the renderer registry without host DOM
   } finally { ui.dom.window.close(); }
 });
 
-test("presentation follows the pane size and remounts only across a boundary", async () => {
+test("same-renderer presentation boundaries retain the live panel and notify its shape", async () => {
   const ui = await setup();
   try {
     const modes = [];
     const { host } = bspWorkspace(ui, {
       tree: leaf("demo.timer"),
-      renderers: { "demo.timer": (panel, context) => { modes.push(context.presentationMode); } },
+      renderers: { "demo.timer": (panel, context) => {
+        modes.push(context.presentationMode);
+        panel.updatePresentation = next => modes.push(next.presentationMode);
+        panel.innerHTML = '<input value="unsaved draft">';
+      } },
     });
     await host.update([sized("demo.timer")]);
     const instance = ui.document.querySelector(".wb-plugin-instance");
     await emitPane(ui, instance, 300, 400);
+    const input = instance.querySelector('input'); input.value = 'retained draft';
     await emitPane(ui, instance, 420, 400);
     await emitPane(ui, instance, 600, 400);
     await emitPane(ui, instance, 700, 400);
@@ -1433,7 +1438,78 @@ test("presentation follows the pane size and remounts only across a boundary", a
     await emitPane(ui, instance, 431, 200);
     assert.equal(instance.dataset.paneHeight, "short");
     assert.deepEqual(modes, ["compact", "default", "compact"], "a class change alone does not remount");
+    assert.equal(instance.querySelector('input'), input);
+    assert.equal(input.value, 'retained draft');
+    host.dispose();
   } finally { ui.dom.window.close(); }
+});
+
+test("tree detail survives size boundaries and layout rebuild without reloading its plan", async () => {
+  const ui = await setup();
+  let host;
+  try {
+    let reads = 0;
+    const payload = { roots: [{ id: 'root', title: 'Root', data: {content_md:'Keep this detail'}, children: [] }], rows: [{node_id:'root',title:'Root',content_md:'Keep this detail'}], columns:['node_id','title','content_md'], detail_fields:[{column:'content_md',format:'markdown'}], validation:{kind:'tree',root_count:1,max_depth:1,warnings:[]},scopes:[] };
+    ({host} = bspWorkspace(ui, {tree:leaf('study.node-tree'), renderers:{'study.node-tree':(panel,context)=>ui.treeAdapter.renderNodeTreePanel(panel,{...context,api:async url=>{reads++;return url.includes('/configs?')?{configs:[]}:payload;},postApi:async()=>({})})}}));
+    const plugin = sized('study.node-tree'); plugin.contributes.presentations[0].mode='outline';
+    await host.update([plugin]);
+    const instance=ui.document.querySelector('.wb-plugin-instance');
+    await emitPane(ui,instance,700,600); await settle();
+    visibleButtons(instance).find(b=>b.textContent==='预览并筛选').click(); await settle();
+    visibleButtons(instance).find(b=>b.textContent==='打开树图').click(); await settle();
+    instance.querySelector('.wb-tree-graph-node').dispatchEvent(new ui.dom.window.Event('click'));
+    instance.querySelector('[aria-label="节点详情"].wb-tree-radial-item').click();
+    const detail=instance.querySelector('.wb-tree-detail'), count=reads;
+    for(const width of [300,700,300]){
+      await emitPane(ui,instance,width,600); host.show();
+      assert.equal(instance.querySelector('.wb-tree-detail'),detail);
+      assert.equal(detail.hidden,false); assert.match(detail.textContent,/Keep this detail/);
+      assert.equal(instance.querySelector('.study-tree-viewer').hidden,false);
+    }
+    assert.equal(reads,count,'changing pane geometry never reloads the selected tree');
+  } finally { host?.dispose(); ui.dom.window.close(); }
+});
+
+test("revealed review card survives pane changes without another session request or score", async () => {
+  const ui=await setup(); let host;
+  try {
+    const reads=[],writes=[];
+    ui.dom.window.localStorage.setItem('study.review.session.v1',JSON.stringify('existing'));
+    ({host}=bspWorkspace(ui,{tree:leaf('study.review-table'),renderers:{'study.review-table':(panel,context)=>ui.review.renderReviewTablePanel(panel,{...context,api:async url=>{reads.push(url);return url.includes('/session/')?{session_id:'existing',config:{view:'test'},completed:0,total:2,position:0,card:{front:'Question',back:'Answer'}}:{configs:[],definition:{}};},postApi:async(url,payload)=>{writes.push(url);return {};}})}}));
+    await host.update([sized('study.review-table')]);
+    const instance=ui.document.querySelector('.wb-plugin-instance');
+    await emitPane(ui,instance,700,600);
+    clickText(instance,'继续上次复习'); await settle(); clickText(instance,'显示答案');
+    const card=instance.querySelector('.study-learning-card'),front=instance.querySelector('.study-review-question');
+    const count=reads.length;
+    for(const width of [300,700,300]) { await emitPane(ui,instance,width,500); host.show(); assert.equal(card.hidden,false);assert.equal(instance.querySelector('.study-review-question'),front);assert.equal(instance.querySelector('.study-review-ratings').hidden,false); }
+    assert.equal(reads.length,count); assert.ok(writes.every(url=>url.includes('/unit-lease/')));
+    assert.match(front.textContent,/Question/); assert.match(card.textContent,/Answer/);
+  } finally {host?.dispose();ui.dom.window.close();}
+});
+
+test("async mounting receives the latest presentation without starting a second mount", async () => {
+  const ui=await setup();let host,finish;
+  try {
+    let mounts=0;const shapes=[];
+    ({host}=bspWorkspace(ui,{tree:leaf('slow'),renderers:{slow:async panel=>{mounts++;await new Promise(resolve=>{finish=resolve;});panel.updatePresentation=next=>shapes.push(next.presentationMode);}}}));
+    await host.update([sized('slow')]);const instance=ui.document.querySelector('.wb-plugin-instance');
+    await emitPane(ui,instance,700,500);await emitPane(ui,instance,300,500);
+    finish();await settle();await settle();
+    assert.equal(mounts,1);assert.deepEqual(shapes,['compact']);
+  } finally {host?.dispose();ui.dom.window.close();}
+});
+
+test("switching to a distinct renderer still disposes the old view", async () => {
+  const ui=await setup();let host;
+  try {
+    let mounts=0,disposals=0;
+    ({host}=bspWorkspace(ui,{tree:leaf('different'),renderers:{different:panel=>{mounts++;panel.dispose=()=>{disposals++;};}}}));
+    const plugin=sized('different');for(const p of plugin.contributes.presentations)p.renderer=p.id;
+    await host.update([plugin]);const instance=ui.document.querySelector('.wb-plugin-instance');
+    await emitPane(ui,instance,700,500);await emitPane(ui,instance,300,500);
+    assert.equal(mounts,2);assert.equal(disposals,1);
+  } finally {host?.dispose();ui.dom.window.close();}
 });
 
 test("a renderer failure is marked on its panel instead of failing silently", async () => {

@@ -116,6 +116,11 @@ function secondsLabel(value) {
 
 async function renderStopwatchPanel(panel, { api, postApi, mode }) {
   panel.classList.add("study-stopwatch-panel", `study-stopwatch-${mode}`);
+  panel.updatePresentation = (next) => {
+    panel.classList.remove(`study-stopwatch-${mode}`);
+    mode = next.presentationMode;
+    panel.classList.add(`study-stopwatch-${mode}`);
+  };
   const face = make("section", null, "study-stopwatch-face");
   const clock = make("strong", "00:00", "study-stopwatch-clock");
   const status = make("span", "秒表", "study-stopwatch-state");
@@ -173,7 +178,7 @@ async function renderStopwatchPanel(panel, { api, postApi, mode }) {
 export async function renderTimerPanel(panel, { api, postApi, kind, mode = "compact" }) {
   if (kind === "stopwatch") return renderStopwatchPanel(panel, { api, postApi, mode });
   const pomodoro = kind === "pomodoro";
-  const detailed = mode === "full" || mode === "phone";
+  let detailed = mode === "full" || mode === "phone";
   panel.classList.add("study-time-panel", `study-time-${kind}`, `study-time-${mode}`);
   const controller = make("section", null, "study-time-controller");
   const icon = make("span", null, "study-time-icon");
@@ -330,6 +335,16 @@ export async function renderTimerPanel(panel, { api, postApi, kind, mode = "comp
   document.addEventListener("visibilitychange", onVisibilityChange);
   interval = window.setInterval(paint, 1000);
   panel.refreshContext = () => { void sync(); };
+  panel.updatePresentation = (next) => {
+    panel.classList.remove(`study-time-${mode}`);
+    mode = next.presentationMode;
+    panel.classList.add(`study-time-${mode}`);
+    detailed = mode === "full" || mode === "phone";
+    if (detailed) {
+      panel.append(dashboard);
+      if (!dashboard.childElementCount) renderDashboard();
+    } else dashboard.remove();
+  };
   panel.dispose = () => {
     if (interval) window.clearInterval(interval);
     document.removeEventListener("visibilitychange", onVisibilityChange);

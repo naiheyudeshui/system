@@ -1,6 +1,6 @@
 import { addConfigCardControls, confirmWorkbenchAction, openConfigManager } from "/3dworkbench/pluginConfigManager.mjs?v=20261030-tree-plans1";
 import { renderTablePreview } from "/3dworkbench/tablePreview.mjs?v=20261030-tree-plans1";
-import { createTreeWorkspace, filterTree, indexTree } from "/3dworkbench/treeWorkspace.mjs?v=20261030-tree-plans1";
+import { createTreeWorkspace, filterTree, indexTree } from "/3dworkbench/treeWorkspace.mjs?v=20261102-pane-state1";
 import { createUiIcon } from "/3dworkbench/icons.mjs";
 import * as markdownTools from "./studyMarkdown.mjs?v=20261030-managed-assets1";
 const { renderMarkdown } = markdownTools;
@@ -87,6 +87,10 @@ export async function renderNodeTreePanel(panel, { api, postApi, presentationMod
   const message = make("p", null, "study-tree-status"); message.setAttribute("role", "status");
   panel.replaceChildren(home, preview, viewer, message);
   let entries = [], selectedId = "", data = null, filtered = [], session = null, source = null, busy = false, previewState = null;
+  panel.updatePresentation = (next) => {
+    presentationMode = next.presentationMode;
+    session?.setMode(presentationMode === "outline" ? "outline" : "graph");
+  };
   let messageTimer = null, disposed = false, cancelDelete = null, activeAssetImport = null;
   const paneId = instanceId || panel.closest("[data-instance-id]")?.dataset.instanceId;
   const cardList = createPlanCardList({ container: grid,

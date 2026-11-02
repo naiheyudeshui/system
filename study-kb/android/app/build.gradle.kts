@@ -19,8 +19,8 @@ android {
         versionCode = 1
         versionName = "1.0"
         if (contractV2) {
-            versionCode = 10
-            versionName = "2.0.4"
+            versionCode = 17
+            versionName = "2.0.11"
             applicationIdSuffix = ".contractv2"
             versionNameSuffix = "-contract-v2"
         }
